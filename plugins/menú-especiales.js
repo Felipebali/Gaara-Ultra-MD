@@ -1,7 +1,7 @@
 // plugins/especiales.js
 let handler = async (m, { conn }) => {
   try {
-    const menus = ['.menuj','\.menuhot','.menugp','.menuow'];
+    const menus = ['.menuj','\.menuhot','.menugp','.menuow', 'menudl'];
     let menuText = `📂 *MENÚS ESPECIALES* 🐾\n\n`;
     menuText += menus.map(cmd => `┃ 🐾 ${cmd}`).join('\n');
     menuText += `\n\n> 😸 FelixCat-Bot`;
