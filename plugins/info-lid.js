@@ -1,9 +1,9 @@
 let handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
 
-  // Verificación de owner
+  // Verificación de owner segura
   const senderNumber = m.sender.replace(/[^0-9]/g, '') // solo números
-  const owners = global.owner?.map(o => o.replace(/[^0-9]/g, '')) || []
+  const owners = Array.isArray(global.owner) ? global.owner.filter(Boolean).map(o => String(o).replace(/[^0-9]/g, '')) : []
   const isOwner = owners.includes(senderNumber)
   if (!isOwner) return m.reply('❌ Solo el owner puede usar este comando.')
 
