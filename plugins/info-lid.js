@@ -25,7 +25,7 @@ let handler = async function (m, { conn, groupMetadata }) {
   const contenido = tarjetas.join('\n')
   const salida = [
     '╔══════════════════╗',
-    '║      🎀 FelixCat-Bot 🎀     ║',
+    '║      🐈‍⬛ FelixCat-Bot 🐈‍⬛     ║',
     '╠══════════════════╣',
     contenido,
     '╚══════════════════╝'
