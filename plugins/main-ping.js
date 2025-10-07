@@ -66,6 +66,6 @@ function getConnectionStatus(state) {
 
 handler.help = ['ping', 'info']
 handler.tags = ['main', 'info']
-handler.command = ['ping', 'p', 'speed', 'info']
+handler.command = ['ping', 'speed', 'info'] // <- .p eliminado
 
 export default handler
