@@ -1,26 +1,34 @@
 // plugins/unwarn.js
-let handler = async (m, { conn }) => {
-    if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
-    if (!m.mentionedJid || m.mentionedJid.length === 0) return conn.reply(m.chat, '❌ Menciona al usuario con *@user*', m);
+let handler = async (m, { conn, args, isAdmin, isROwner }) => {
+  if (!m.isGroup) return conn.reply(m.chat, '❌ Solo en grupos.', m)
+  if (!isAdmin && !isROwner) return conn.reply(m.chat, '❌ Solo administradores pueden usar esto.', m)
 
-    const chatId = m.chat;
-    const warnedUser = m.mentionedJid[0];
+  let target = (m.quoted && m.quoted.sender) || (m.mentionedJid && m.mentionedJid[0])
+  if (!target) return conn.reply(m.chat, '❗ Menciona o responde al mensaje del usuario.', m)
 
-    if (!global.db.data.chats[chatId]?.warns?.[warnedUser] || global.db.data.chats[chatId].warns[warnedUser] <= 0) {
-        return conn.reply(chatId, `ℹ️ El usuario @${warnedUser.split('@')[0]} no tiene advertencias.`, m, { mentions: [warnedUser] });
-    }
+  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
+  if (!global.db.data.chats[m.chat].warns) global.db.data.chats[m.chat].warns = {}
+  const warns = global.db.data.chats[m.chat].warns
 
-    global.db.data.chats[chatId].warns[warnedUser] -= 1;
-    const warns = global.db.data.chats[chatId].warns[warnedUser];
+  if (!warns[target]) return conn.reply(m.chat, 'ℹ️ Este usuario no tiene advertencias.', m)
 
-    conn.reply(chatId, `✅ Se ha eliminado una advertencia de @${warnedUser.split('@')[0]}.\nAdvertencias restantes: ${warns}/5`, m, { mentions: [warnedUser] });
-};
+  if (args[0] && args[0].toLowerCase() === 'reset') {
+    delete warns[target]
+    await global.db.write()
+    return conn.reply(m.chat, `✅ Advertencias de @${target.split('@')[0]} reiniciadas.`, m, { mentions: [target] })
+  }
 
-handler.help = ['unwarn @user'];
-handler.tags = ['admin'];
-handler.command = ['unwarn', 'ds'];
-handler.group = true;
-handler.admin = true;
-handler.register = true;
+  warns[target] = Math.max(0, (warns[target] || 0) - 1)
+  if (warns[target] === 0) delete warns[target]
+  await global.db.write()
+  return conn.reply(m.chat, `✅ Advertencia reducida. @${target.split('@')[0]} ahora tiene ${warns[target] || 0}/5`, m, { mentions: [target] })
+}
 
-export default handler;
+handler.help = ['unwarn','desadvertir']
+handler.tags = ['admin']
+handler.command = ['unwarn','desadvertir']
+handler.group = true
+handler.admin = true
+handler.register = true
+
+export default handler
