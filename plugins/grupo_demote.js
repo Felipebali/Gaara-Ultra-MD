@@ -1,24 +1,24 @@
-// plugins/demote.js
-export default {
-  name: 'demote',
-  description: 'Degrada a un administrador a usuario normal',
-  group: true,
-  admin: true,
-  botAdmin: true,
-  command: ['d'], // ahora se activa con .d
-  all: async function (m, { conn }) {
-    if (!m.mentionedJid?.[0] && !m.quoted) {
-      let texto = `⚠️ Menciona o responde al mensaje del administrador que deseas degradar.`
-      return conn.sendMessage(m.chat, { text: texto, mentions: [] });
-    }
+// demote.js (.d)
+let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
+    if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
+    if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.');
+    if (!isBotAdmin) return m.reply('❌ Necesito ser administrador para degradar.');
 
-    let user = m.mentionedJid?.[0] ? m.mentionedJid[0] : m.quoted.sender
+    const user = m.mentionedJid?.[0] || m.quoted?.sender;
+    if (!user) return m.reply('⚠️ Menciona o responde al usuario que deseas degradar.');
+
     try {
-      await conn.groupParticipantsUpdate(m.chat, [user], 'demote')
-      await conn.sendMessage(m.chat, { text: `✅ El administrador fue degradado a usuario normal.`, mentions: [user] });
+        await conn.groupParticipantsUpdate(m.chat, [user], 'demote');
+        await m.reply(`✅ Usuario @${user.split('@')[0]} degradado de administrador.`, m.chat, { mentions: [user] });
     } catch (e) {
-      console.error(e)
-      await conn.sendMessage(m.chat, { text: `❌ No se pudo degradar al administrador.`, mentions: [user] });
+        console.error(e);
+        m.reply('❌ Error al intentar degradar al usuario.');
     }
-  }
-}
+};
+
+handler.command = ['d'];
+handler.group = true;
+handler.admin = true;
+handler.botAdmin = true;
+
+export default handler;
