@@ -61,7 +61,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     }
     
     
-    let ownerInfo = '👑 xzzys26'
+    let ownerInfo = '👑 Balkoszky🇵🇱'
     try {
       if (global.owner && Array.isArray(global.owner) && global.owner.length > 0) {
         ownerInfo = `👑 @${global.owner[0].split('@')[0]}`
