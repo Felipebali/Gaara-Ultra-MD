@@ -8,14 +8,15 @@ let tags = {
   'info': '🌀 INFOS 🐱',
   'main': '📜 MENÚ FELINO 🐾',
   'nable': '⚡ MODO AVANZADO 🐾',
-  'game': '🎮 JUEGOS GATUNOS 😸',
+  'game': '🎮 JUEGOS GATUNOS 🐱',
   'group': '📚 GRUPOS 🐾',
   'downloader': '📥 DESCARGAS 😺',
   'sticker': '🖼️ STICKERS 🐾',
   'tools': '🧰 HERRAMIENTAS 😼',
   'gacha': '🧧 ANIME 🐱',
-  'nsfw': '🔞 NSFW 🐾'
-};
+  'nsfw': '🔞 NSFW 🐾',
+  'especiales': '📂 MENÚS ESPECIALES 🐾', .menuj':'🎮', '.menuhot':'🔥', '.menugp':'📚', '.menuow':'👑'}
+}; 
 
 let comandosPorCategoria = {
   'serbot': {'.qr':'🔗', '.code':'💻'},
@@ -34,11 +35,8 @@ let comandosPorCategoria = {
     '.antilink':'🔗', '.antitoxic':'☣️', '.antitoxicos':'☣️', '.antitraba':'🚫', '.antitrabas':'🚫', '.antifake':'❌',
     '.antivirtuales':'👻'
   },
-  'game': {
-    '.acertijo':'❓', '.adivinanza':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance <@user>':'💃', 
-    '.ttt':'❌', '.delttt':'🔄', '.ppt':'✂️', '.bandera':'🚩'
-  },
-  'group': {'.enable <opción>':'✅', '.disable <opción>':'❌', '.kick <@user>':'✂️', '.banuser <@user>':'🚫', '.unbanuser <@user>':'✅', '.warn <@user>':'⚠️', '.unwarn <@user>':'🟢', '.listadv':'📋'},
+  'game': {'.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃', '.delttt':'❌', '.ppt':'✂️', '.adivinanza':'❓'},
+  'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
   'downloader': {'.play <nombre de la canción>':'🎵'},
   'sticker': {'.stiker <img>':'🖼️', '.sticker <url>':'🖼️'},
   'tools': {'.invite':'📩', '.superinspect':'🔎', '.inspect':'🔍'},
@@ -52,8 +50,7 @@ let comandosPorCategoria = {
     '.sixnine/69 @tag':'🍆', '.anal/culiar @tag':'🍑', '.blowjob/mamada @tag':'💦', '.follar @tag':'🔥',
     '.grabboobs/agarrartetas @tag':'👙', '.searchhentai':'🔞', '.hentaisearch':'🔎', '.penetrar @user':'🍑',
     '.sexo/sex @tag':'🔥', '.tetas':'👙'
-  }
-};
+  },
 
 let handler = async (m, { conn }) => {
   try {
@@ -78,6 +75,7 @@ ${Object.entries(comandos).map(([cmd, emoji]) => `┃ 🐾 ${cmd} ${emoji}`).joi
     }
 
     menuText += `\n> 😸 Powered by FelixCat 🥷🏽`;
+
     await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
   } catch (e) {
     console.error(e);
