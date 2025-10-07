@@ -5,20 +5,21 @@ const handler = async (m, { conn, text, usedPrefix, command, groupMetadata, isAd
   if (!isBotAdmin) return m.reply('✦ Necesito ser administrador para poder eliminar usuarios.')
 
   const user = m.mentionedJid?.[0] || (m.quoted && m.quoted.sender)
-  const mensaje = text.split(" ").slice(1).join(" ")
+  const mensaje = text.split(" ").slice(1).join(" ").trim()
 
-  if (!user) return m.reply(`✦ Debes mencionar a alguien.\nEjemplo: *${usedPrefix}${command} @usuario razón*`)
-  if (!mensaje) return m.reply('✦ Debes escribir el motivo de la advertencia.')
+  if (!user) return m.reply(`✦ Debes mencionar a alguien.\nEjemplo: *${usedPrefix}${command} @usuario texto*`)
+  if (!mensaje) return m.reply('✦ Debes escribir algo para la advertencia.')
 
   const date = new Date().toLocaleDateString('es-ES')
 
-  // Inicializar warns si no existe
+  // Inicializar sistema de advertencias
   if (!global.db.data.chats[m.chat].warns) global.db.data.chats[m.chat].warns = {}
   const warns = global.db.data.chats[m.chat].warns
 
   // Obtener advertencias actuales
-  const currentWarns = warns[user] || { count: 0 }
-  const newWarnCount = currentWarns.count + 1
+  const currentWarns = warns[user] || {}
+  const currentCount = Number(currentWarns.count) || 0
+  const newWarnCount = currentCount + 1
 
   // Guardar advertencia
   warns[user] = { count: newWarnCount, date: date }
@@ -28,18 +29,18 @@ const handler = async (m, { conn, text, usedPrefix, command, groupMetadata, isAd
   const senderName = conn.getName(m.sender)
   const userName = conn.getName(user)
 
+  // Si alcanza 3 advertencias, eliminar
   if (newWarnCount >= 3) {
     const texto = `🚫 *USUARIO ELIMINADO* 🚫
 
-👤 *Usuario:* @${user.split('@')[0]}
-👮‍♂️ *Moderador:* ${senderName}
-📅 *Fecha:* ${date}
-⚠️ *Advertencias:* ${newWarnCount}/3
+👤 @${user.split('@')[0]}
+👮‍♂️ Moderador: ${senderName}
+📅 Fecha: ${date}
+⚠️ Advertencias: ${newWarnCount}/3
 
-📝 *Última razón:*
 ${mensaje}
 
-❌ *El usuario ha sido eliminado del grupo por acumular 3 advertencias.*`
+❌ El usuario ha sido eliminado por acumular 3 advertencias.`
 
     try {
       await conn.sendMessage(m.chat, { text: texto, mentions: [user, m.sender] }, { quoted: m })
@@ -54,16 +55,15 @@ ${mensaje}
   } else {
     const texto = `⚠️ *ADVERTENCIA ${newWarnCount}/3* ⚠️
 
-👤 *Usuario:* @${user.split('@')[0]}
-👮‍♂️ *Moderador:* ${senderName}
-📅 *Fecha:* ${date}
+👤 @${user.split('@')[0]}
+👮‍♂️ Moderador: ${senderName}
+📅 Fecha: ${date}
 
-📝 *Motivo:*
 ${mensaje}
 
 ${newWarnCount === 2
-      ? '🔥 *¡ÚLTIMA ADVERTENCIA!* La próxima advertencia resultará en eliminación del grupo.'
-      : '❗ Por favor, evita futuras faltas. Te quedan ' + (3 - newWarnCount) + ' advertencias.'}`
+      ? '🔥 ¡ÚLTIMA ADVERTENCIA! La próxima advertencia resultará en eliminación del grupo.'
+      : `❗ Te quedan ${3 - newWarnCount} advertencias.`}`
 
     try {
       await conn.sendMessage(m.chat, { text: texto, mentions: [user, m.sender] }, { quoted: m })
