@@ -28,7 +28,7 @@ let handler = async function (m, { conn, groupMetadata }) {
   await conn.sendMessage(m.chat, { react: { text: '📢', key: m.key } });
 };
 
-handler.command = ['invocar', 'hidetag', 'tag', 'tagall'];
+handler.command = ['invocar', 'tag', 'tagall'];
 handler.help = ['invocar', 'tagall'];
 handler.tags = ['grupos'];
 handler.group = true;
