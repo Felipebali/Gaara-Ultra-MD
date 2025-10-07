@@ -1,5 +1,5 @@
 // plugins/grupo-warn.js
-const handler = async (m, { conn, text, usedPrefix, command, groupMetadata, isAdmin, isBotAdmin }) => {
+const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin }) => {
   if (!m.isGroup) return m.reply('❌ Este comando solo se puede usar en grupos.')
   if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.')
   if (!isBotAdmin) return m.reply('❌ Necesito ser administrador para poder eliminar usuarios.')
@@ -18,9 +18,7 @@ const handler = async (m, { conn, text, usedPrefix, command, groupMetadata, isAd
   const newWarnCount = currentWarns.count + 1
   global.db.data.chats[m.chat].warns[user] = { count: newWarnCount, date }
 
-  // Nombres seguros
-  const senderName = conn.getName ? conn.getName(m.sender) : m.sender.split('@')[0]
-  const userName = conn.getName ? conn.getName(user) : user.split('@')[0]
+  const senderName = await conn.getName(m.sender).catch(() => m.sender.split('@')[0])
 
   if (newWarnCount >= 3) {
     try {
@@ -36,4 +34,18 @@ const handler = async (m, { conn, text, usedPrefix, command, groupMetadata, isAd
     }
   } else {
     await conn.sendMessage(m.chat, {
-      text: `⚠️ *ADVERTENCIA ${newWarnCount}/3* ⚠️\n\n👤 *Usuario:* @${user.split('@')[0]}\n👮‍♂️ *Moderador:* ${senderName}\n📅 *Fecha:* ${date}\n\n📝 *Motivo:*\n${reason}\n\n${newWarnCount === 2 ? '🔥 *¡ÚLTIMA ADVERTENCIA!* La próxima resultará en eliminación
+      text: `⚠️ *ADVERTENCIA ${newWarnCount}/3* ⚠️\n\n👤 *Usuario:* @${user.split('@')[0]}\n👮‍♂️ *Moderador:* ${senderName}\n📅 *Fecha:* ${date}\n\n📝 *Motivo:*\n${reason}\n\n${newWarnCount === 2 ? '🔥 *¡ÚLTIMA ADVERTENCIA!* La próxima resultará en eliminación del grupo.' : '❗ Te quedan ' + (3 - newWarnCount) + ' advertencias.'}`,
+      mentions: [user]
+    })
+  }
+
+  await global.db.write()
+}
+
+handler.command = ['advertencia','ad','daradvertencia','advertir','warn']
+handler.tags = ['grupo']
+handler.group = true
+handler.admin = true
+handler.botAdmin = true
+
+export default handler
