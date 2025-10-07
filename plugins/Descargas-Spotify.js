@@ -1,134 +1,130 @@
-import axios from 'axios';
-import fetch from 'node-fetch';
-
-const userRequests = {};
+import axios from 'axios'
+import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) return m.reply(`*🤔 ¿Qué está buscando?* Ejemplo: ${usedPrefix + command} ozuna`);
-  if (userRequests[m.sender]) return await conn.reply(m.chat, `⚠️ Hey @${m.sender.split('@')[0]}, ya estás descargando una canción 🙄\nEspera a que termine tu descarga. 👆`, m);
-  
-  userRequests[m.sender] = true;
-  m.react('⌛');
+  if (!text) return conn.reply(m.chat, `🎋 Por favor, proporciona el nombre de una canción o artista.\nEjemplo: ${usedPrefix}spotify <canción>`, m)
 
   try {
-    const results = await spotifyxv(text);
-    if (!results.length) return m.reply('⚠️ No se encontraron resultados para esa búsqueda.');
+    // Buscamos en la API principal
+    let searchUrl = `https://api.delirius.store/search/spotify?q=${encodeURIComponent(text)}&limit=1`
+    let searchRes = await axios.get(searchUrl, { timeout: 15000 })
+    let searchData = searchRes.data
 
-    const track = results[0];
-    const spotifyMessage = `*• Título:* ${track.name}
-*• Artista:* ${track.artista.join(', ')}
-*• Álbum:* ${track.album}
-*• Duración:* ${track.duracion}
+    if (!searchData.status || !searchData.data || searchData.data.length === 0) {
+      throw new Error('No se encontró resultado.')
+    }
 
-> 🚀 *Enviando canción, espere un momento...*`;
+    let data = searchData.data[0]
+    let { title, artist, album, duration, popularity, publish, url: spotifyUrl, image } = data
+
+    let caption = `「✦」Descargando *<${title}>*\n\n` +
+      `> ꕥ Autor » *${artist}*\n` +
+      (album ? `> ❑ Álbum » *${album}*\n` : '') +
+      (duration ? `> ⴵ Duración » *${duration}*\n` : '') +
+      (popularity ? `> ✰ Popularidad » *${popularity}*\n` : '') +
+      (publish ? `> ☁︎ Publicado » *${publish}*\n` : '') +
+      (spotifyUrl ? `> 🜸 Enlace » ${spotifyUrl}` : '')
 
     await conn.sendMessage(m.chat, {
-      text: spotifyMessage,
+      text: caption,
       contextInfo: {
-        forwardingScore: 1,
-        isForwarded: true,
         externalAdReply: {
-          showAdAttribution: true,
-          renderLargerThumbnail: true,
-          title: track.name,
-          body: "Enviando canción 🚀",
+          title: '🕸️ ✧ Spotify • Music ✧ 🌿',
+          body: artist,
+          thumbnailUrl: image,
+          sourceUrl: spotifyUrl,
           mediaType: 1,
-          thumbnailUrl: track.imagen,
-          mediaUrl: track.url,
-          sourceUrl: track.url
+          renderLargerThumbnail: true
         }
       }
-    }, { quoted: m });
+    }, { quoted: m })
 
-    // Intenta descargar con diferentes APIs
-    const downloadAttempts = [
-      async () => {
-        const res = await fetch(`https://api.siputzx.my.id/api/d/spotify?url=${track.url}`);
-        const data = await res.json();
-        return data?.data?.download || null;
-      },
-      async () => {
-        const res = await fetch(`https://tu-api.com/download/spotifydl?url=${track.url}`);
-        const data = await res.json();
-        return data?.data?.url || null;
-      }
-    ];
+    // Intentamos descargar desde varias APIs
+    let downloadUrl = null
+    let serverUsed = 'Desconocido'
 
-    let downloadUrl = null;
-    for (const attempt of downloadAttempts) {
+    const tryFetchJson = async (url) => {
       try {
-        downloadUrl = await attempt();
-        if (downloadUrl) break;
-      } catch (err) {
-        console.error(`Error en intento: ${err.message}`);
+        let res = await fetch(url, { timeout: 20000 })
+        let text = await res.text()
+        try {
+          return JSON.parse(text)
+        } catch {
+          return null
+        }
+      } catch {
+        return null
       }
     }
 
-    if (!downloadUrl) throw new Error('No se pudo descargar la canción desde ninguna API');
-
-    await conn.sendMessage(m.chat, {
-      audio: { url: downloadUrl },
-      fileName: `${track.name}.mp3`,
-      mimetype: 'audio/mpeg'
-    }, { quoted: m });
-
-    m.react('✅');
-  } catch (error) {
-    m.reply(`⚠️ Ocurrió un error\n\n> ${error.message}`);
-    console.error(error);
-    m.react('❌');
-  } finally {
-    delete userRequests[m.sender];
-  }
-};
-
-handler.help = ['spotify'];
-handler.tags = ['descargas'];
-handler.command = /^(spotify|music)$/i;
-handler.register = true;
-handler.limit = 1;
-
-export default handler;
-
-
-async function spotifyxv(query) {
-  let token = await tokens();
-  try {
-    let response = await axios.get(`https://api.spotify.com/v1/search?q=${query}&type=track`, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-    const tracks = response.data.tracks.items;
-    return tracks.map(track => ({
-      name: track.name,
-      artista: track.artists.map(artist => artist.name),
-      album: track.album.name,
-      duracion: timestamp(track.duration_ms),
-      url: track.external_urls.spotify,
-      imagen: track.album.images.length ? track.album.images[0].url : ''
-    }));
-  } catch (error) {
-    console.error(`Error en spotifyxv: ${error}`);
-    return [];
-  }
-}
-
-async function tokens() {
-  try {
-    const response = await axios.post('https://accounts.spotify.com/api/token', 'grant_type=client_credentials', {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: 'Basic ' + Buffer.from('TU_CLIENT_ID:TU_CLIENT_SECRET').toString('base64')
+    // 1. Nekolabs
+    try {
+      let apiV1 = `https://api.nekolabs.my.id/downloader/spotify/v1?url=${encodeURIComponent(spotifyUrl)}`
+      let dl1 = await axios.get(apiV1, { timeout: 20000 })
+      if (dl1?.data?.result?.downloadUrl) {
+        downloadUrl = dl1.data.result.downloadUrl
+        serverUsed = 'Nekolabs'
       }
-    });
-    return response.data.access_token;
-  } catch (error) {
-    console.error(`Error en tokens: ${error}`);
-    throw new Error('No se pudo obtener el token de acceso');
+    } catch { }
+
+    // 2. Sylphy
+    if (!downloadUrl) {
+      try {
+        let apiSylphy = `https://api.sylphy.xyz/download/spotify?url=${encodeURIComponent(spotifyUrl)}&apikey=sylphy-c519`
+        let dlSylphy = await axios.get(apiSylphy, { timeout: 20000 })
+        if (dlSylphy?.data?.status && dlSylphy?.data?.data?.dl_url) {
+          downloadUrl = dlSylphy.data.data.dl_url
+          serverUsed = 'Sylphy'
+        }
+      } catch { }
+    }
+
+    // 3. Neoxr
+    if (!downloadUrl) {
+      let apiV3 = `https://api.neoxr.eu/api/spotify?url=${encodeURIComponent(spotifyUrl)}&apikey=russellxz`
+      let json3 = await tryFetchJson(apiV3)
+      if (json3?.status && json3?.data?.url) {
+        downloadUrl = json3.data.url
+        serverUsed = 'Neoxr'
+      }
+    }
+
+    // Enviar audio si encontramos un link válido
+    if (downloadUrl) {
+      let audio = await fetch(downloadUrl)
+      let buffer = await audio.buffer()
+
+      await conn.sendMessage(m.chat, {
+        audio: buffer,
+        mimetype: 'audio/mpeg',
+        fileName: `${title}.mp3`,
+        ptt: false,
+        contextInfo: {
+          externalAdReply: {
+            title: "🍏 Spotify • Music 🌿",
+            body: "Disfruta tu música favorita 🎋",
+            thumbnailUrl: image,
+            sourceUrl: spotifyUrl,
+            mediaType: 1,
+            renderLargerThumbnail: true
+          }
+        }
+      }, { quoted: m })
+
+      await conn.reply(m.chat, `> ✎ Descarga completa.\n> ✿ Servidor usado: *${serverUsed}*`, m)
+    } else {
+      await conn.reply(m.chat, `❌ No se encontró un link de descarga válido para esta canción.`, m)
+    }
+
+  } catch (e) {
+    console.error(e)
+    await conn.reply(m.chat, `❌ Error al buscar o descargar la canción.`, m)
   }
 }
 
-function timestamp(ms) {
-  const minutes = Math.floor(ms / 60000);
-  const seconds = Math.floor((ms % 60000) / 1000);
-  return minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-}
+handler.help = ["spotify"]
+handler.tags = ["download"]
+handler.command = ["spotify","splay"]
+handler.group = true
+
+export default handler
