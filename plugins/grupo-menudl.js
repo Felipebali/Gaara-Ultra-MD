@@ -4,7 +4,7 @@ let handler = async (m, { conn }) => {
 ┃ 📥 *Menú de Descargas*
 ┃
 ┃ • .facebook
-┃ • .instagram
+┃ • .ig
 ┃ • .tiktok
 ┃ • .tiktoksearch
 ┃ • .spotify
