@@ -1,12 +1,11 @@
 /**
  * Plugin Anti-Link para FelixCat-Bot
- * Detecta links de grupos de WhatsApp y los elimina, incluso si el mensaje es de un admin.
- * Se activa o desactiva con el comando .antilink
+ * Detecta links de grupos de WhatsApp y elimina mensajes de usuarios normales
+ * No elimina ni expulsa a administradores
  */
 
 const groupLinkRegex = /chat.whatsapp.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
 
-// Función que se ejecuta antes de procesar cualquier mensaje
 export async function before(m, { conn }) {
     if (!m || !m.text) return
     if (m.isBaileys && m.fromMe) return !0
@@ -21,15 +20,26 @@ export async function before(m, { conn }) {
 
     if (!chat.antiLink) return !0  // No está activado
 
-    // Si hay link de grupo, eliminar el mensaje
+    // Si hay link de grupo
     if (m.text.match(groupLinkRegex)) {
         try {
-            await conn.sendMessage(m.chat, { delete: m.key }) // borrar mensaje
-            await conn.reply(m.chat, `> ⚠️ @${m.sender.split`@`[0]} fue eliminado por Anti-Link`, null, { mentions: [m.sender] })
-            await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove') // expulsar usuario
-            console.log(`Usuario ${m.sender} eliminado del grupo ${m.chat} por Anti-Link`)
+            // Obtener lista de admins del grupo
+            const groupMetadata = await conn.groupMetadata(m.chat)
+            const admins = groupMetadata.participants.filter(p => p.admin).map(p => p.id)
+
+            // Si el remitente NO es admin, eliminar mensaje
+            if (!admins.includes(m.sender)) {
+                await conn.sendMessage(m.chat, { delete: m.key }) // borrar mensaje
+                await conn.reply(m.chat, `> ⚠️ @${m.sender.split`@`[0]} fue eliminado por Anti-Link`, null, { mentions: [m.sender] })
+                console.log(`Usuario ${m.sender} eliminado del grupo ${m.chat} por Anti-Link`)
+            } else {
+                // Si es admin, solo avisamos y borramos el mensaje (sin expulsar)
+                await conn.sendMessage(m.chat, { delete: m.key })
+                await conn.reply(m.chat, `⚠️ Administrador @${m.sender.split`@`[0]} envió un link de grupo y fue eliminado solo el mensaje`, null, { mentions: [m.sender] })
+                console.log(`Mensaje de admin ${m.sender} eliminado por Anti-Link`)
+            }
         } catch (error) {
-            console.error("Error eliminando mensaje o expulsando usuario:", error)
+            console.error("Error procesando Anti-Link:", error)
         }
     }
     return !0
