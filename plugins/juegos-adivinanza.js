@@ -1,88 +1,69 @@
-// 🎮 Adivinanzas estilo Gaara-Ultra-MD / FelixCat 😼
-
+// plugins/adivinanza.js
 const adivinanzas = [
   { pregunta: '🌕 ¿Qué cosa cuanto más grande menos se ve?', respuesta: 'oscuridad' },
   { pregunta: '🦴 ¿Qué se rompe sin tocarlo?', respuesta: 'silencio' },
   { pregunta: '🔥 ¿Qué sube y nunca baja?', respuesta: 'edad' },
   { pregunta: '🌧️ ¿Qué cae sin mojarse?', respuesta: 'sombra' },
   { pregunta: '🦉 ¿Qué tiene ojos y no ve?', respuesta: 'aguja' },
-  { pregunta: '🌳 ¿Qué tiene hojas pero no es un árbol?', respuesta: 'libro' },
-  { pregunta: '🔥 Cuanto más le quitas, más grande se hace. ¿Qué es?', respuesta: 'agujero' },
-  { pregunta: '💧 Si me nombras, desaparezco. ¿Qué soy?', respuesta: 'silencio' },
-  { pregunta: '🌬️ Vuelo sin alas, lloro sin ojos. ¿Qué soy?', respuesta: 'nube' },
-  { pregunta: '💡 Cuanto más me usas, más pequeño soy. ¿Qué soy?', respuesta: 'lápiz' },
-  { pregunta: '🐍 Tengo dientes pero no muerdo. ¿Qué soy?', respuesta: 'peine' },
-  { pregunta: '🕒 Siempre va pero nunca llega. ¿Qué es?', respuesta: 'reloj' },
-  { pregunta: '🪞 Me miras y no soy tú. ¿Qué soy?', respuesta: 'espejo' },
-  { pregunta: '🐾 Cuatro patas arriba, cuatro patas abajo, en medio un suave colchón. ¿Qué soy?', respuesta: 'cama' },
-  { pregunta: '🦷 Blanco por dentro, verde por fuera. Si quieres que te lo diga, espera. ¿Qué es?', respuesta: 'pera' },
-  { pregunta: '🌞 Sale de noche y se esconde de día. ¿Qué es?', respuesta: 'estrella' },
-  { pregunta: '🚿 Cuanto más lavo, más sucio me pongo. ¿Qué soy?', respuesta: 'agua' },
-  { pregunta: '👂 Entra duro y grande y sale blando y pequeño. ¿Qué es?', respuesta: 'chicle' },
-  { pregunta: '🎩 Si me dejas me rompo, si me rompes funciono. ¿Qué soy?', respuesta: 'huevo' },
-  { pregunta: '🪄 Me puedes ver en el agua, pero nunca me mojo. ¿Qué soy?', respuesta: 'reflejo' }
-]
+  { pregunta: '💧 ¿Qué siempre está en el agua pero nunca se moja?', respuesta: 'reflejo' },
+  { pregunta: '⏳ ¿Qué corre pero nunca camina?', respuesta: 'tiempo' },
+  { pregunta: '🔑 ¿Qué tiene llaves pero no puede abrir puertas?', respuesta: 'piano' },
+  { pregunta: '🌳 ¿Qué tiene ramas pero no hojas ni tronco?', respuesta: 'árbol genealógico' },
+  { pregunta: '📦 ¿Qué tiene contenido pero está vacío?', respuesta: 'caja' },
+  { pregunta: '🛏️ ¿Qué tiene una cama pero nunca duerme?', respuesta: 'río' },
+  { pregunta: '🕰️ ¿Qué tiene manos pero no puede aplaudir?', respuesta: 'reloj' },
+  { pregunta: '📚 ¿Qué tiene hojas pero no es un árbol?', respuesta: 'libro' },
+  { pregunta: '🏠 ¿Qué tiene puerta y ventanas pero no es casa?', respuesta: 'microondas' },
+  { pregunta: '🎈 ¿Qué se infla pero no es globo de helio?', respuesta: 'neumático' },
+  { pregunta: '👀 ¿Qué tiene ojos pero no puede ver?', respuesta: 'aguja' },
+  { pregunta: '🍳 ¿Qué se rompe al decir su nombre?', respuesta: 'silencio' },
+  { pregunta: '⚡ ¿Qué va rápido pero no tiene patas?', respuesta: 'electricidad' },
+  { pregunta: '🖊️ ¿Qué tiene tinta pero no es un calamar?', respuesta: 'bolígrafo' },
+  { pregunta: '🕳️ ¿Qué tiene un agujero pero sigue siendo útil?', respuesta: 'aguja' },
+  { pregunta: '🚪 ¿Qué se abre pero nunca se cierra?', respuesta: 'mañana' },
+  { pregunta: '🌊 ¿Qué siempre fluye pero nunca se detiene?', respuesta: 'agua' },
+  { pregunta: '🌬️ ¿Qué sopla pero no tiene boca?', respuesta: 'viento' },
+  { pregunta: '🍽️ ¿Qué se sirve pero nunca se come?', respuesta: 'mesa' },
+  { pregunta: '🛎️ ¿Qué suena pero nunca habla?', respuesta: 'campana' },
+  { pregunta: '🔒 ¿Qué se puede abrir y cerrar sin llave?', respuesta: 'cerradura' },
+  { pregunta: '💡 ¿Qué ilumina pero no es el sol?', respuesta: 'bombilla' },
+  { pregunta: '🎵 ¿Qué se puede escuchar pero no se ve?', respuesta: 'música' },
+  { pregunta: '🧩 ¿Qué encaja pero no es un rompecabezas?', respuesta: 'pieza' },
+  { pregunta: '🕯️ ¿Qué se consume pero no se come?', respuesta: 'vela' }
+];
 
-global.juegosActivos = global.juegosActivos || {}
-let partidas = {} // almacena partidas activas por chat
+const handler = async (m, { conn }) => {
+  const chat = global.db.data.chats[m.chat] || {};
+  if (!chat.games) return m.reply('❌ Los mini-juegos están desactivados en este chat. Usa .juegos para activarlos.');
 
-const handler = async (m, { conn, usedPrefix }) => {
-  const chat = m.chat
-  const user = m.sender
+  const adivinanza = adivinanzas[Math.floor(Math.random() * adivinanzas.length)];
+  conn.adivinanza = conn.adivinanza || {};
+  conn.adivinanza[m.chat] = adivinanza;
 
-  if (!m.isGroup) return m.reply('❌ Este comando solo puede usarse en grupos.')
-  if (!global.juegosActivos[chat]) return m.reply(`🎮 Los juegos están desactivados.\nActívalos con *${usedPrefix}juegos on*`)
+  await conn.sendMessage(m.chat, {
+    text: `❓ *Adivinanza FelixCat* 🐾\n\n${adivinanza.pregunta}\n\n⌛ Tienes 30 segundos para responder.`
+  }, { quoted: m });
 
-  if (partidas[chat]) return m.reply('⚠️ Ya hay una adivinanza activa. Espera que termine ⏳')
-
-  const adiv = adivinanzas[Math.floor(Math.random() * adivinanzas.length)]
-  partidas[chat] = {
-    pregunta: adiv.pregunta,
-    respuesta: adiv.respuesta.toLowerCase(),
-    activo: true,
-    jugador: null
-  }
-
-  const msg = `
-🎯 *Adivinanza FelixCat* 🐾
-────────────────────
-❓ ${adiv.pregunta}
-
-⌛ *Tienes 30 segundos para responder.*
-(Escribe la respuesta directamente en el chat)
-────────────────────`
-
-  await conn.sendMessage(chat, { text: msg }, { quoted: m })
-
-  // Tiempo límite
   setTimeout(() => {
-    if (partidas[chat]?.activo) {
-      conn.sendMessage(chat, { text: `⏰ *Tiempo terminado.*\nLa respuesta era: *${adiv.respuesta}* 😺` })
-      delete partidas[chat]
+    if (conn.adivinanza[m.chat]) {
+      conn.sendMessage(m.chat, { text: `⏰ Tiempo terminado.\nLa respuesta era: *${adivinanza.respuesta}* 😸` });
+      delete conn.adivinanza[m.chat];
     }
-  }, 30000)
+  }, 30000);
 }
 
-// Detectar respuestas
 handler.before = async (m, { conn }) => {
-  const chat = m.chat
-  if (!partidas[chat] || !partidas[chat].activo) return
+  conn.adivinanza = conn.adivinanza || {};
+  const juego = conn.adivinanza[m.chat];
+  if (!juego) return;
 
-  const texto = m.text?.trim().toLowerCase()
-  if (!texto) return
-
-  const partida = partidas[chat]
-  if (texto === partida.respuesta) {
-    partida.activo = false
-    await conn.sendMessage(chat, {
-      text: `🎉 ¡Correcto, *${m.pushName}*! Era *${partida.respuesta}* 😺`
-    })
-    delete partidas[chat]
+  if (m.text.toLowerCase().trim() === juego.respuesta.toLowerCase()) {
+    await conn.sendMessage(m.chat, { text: `🎉 ¡Correcto, ${m.pushName}! Era *${juego.respuesta}* 😺` });
+    delete conn.adivinanza[m.chat];
   }
+  return true;
 }
 
-handler.command = ['adivinanza', 'adivina']
-handler.tags = ['juegos']
-handler.group = true
-handler.help = ['adivinanza']
-export default handler
+handler.command = ['adivinanza'];
+handler.group = true;
+export default handler;
