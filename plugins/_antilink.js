@@ -1,7 +1,7 @@
 /**
  * Plugin Anti-Link para FelixCat-Bot
  * Detecta links de grupos de WhatsApp y elimina mensajes de usuarios normales
- * No elimina ni expulsa a administradores
+ * Para admins: solo borra mensaje y advierte que las reglas aplican para todos
  */
 
 const groupLinkRegex = /chat.whatsapp.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
@@ -23,25 +23,26 @@ export async function before(m, { conn }) {
     // Si hay link de grupo
     if (m.text.match(groupLinkRegex)) {
         try {
-            // Obtener lista de admins del grupo
             const groupMetadata = await conn.groupMetadata(m.chat)
             const admins = groupMetadata.participants.filter(p => p.admin).map(p => p.id)
 
-            // Si el remitente NO es admin, eliminar mensaje y expulsar
+            // Borrar el mensaje siempre
+            await conn.sendMessage(m.chat, { delete: m.key })
+
             if (!admins.includes(m.sender)) {
-                await conn.sendMessage(m.chat, { delete: m.key }) // borrar mensaje
-                await conn.reply(m.chat, `> ⚠️ @${m.sender.split`@`[0]} fue eliminado por Anti-Link`, null, { mentions: [m.sender] })
+                // Usuario normal: borrar y expulsar
+                await conn.reply(m.chat, `> ⚠️ @${m.sender.split`@`[0]} fue eliminado por enviar un link de grupo.`, null, { mentions: [m.sender] })
+                await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
                 console.log(`Usuario ${m.sender} eliminado del grupo ${m.chat} por Anti-Link`)
             } else {
-                // Si es admin, solo borramos mensaje y avisamos que las reglas aplican para todos
-                await conn.sendMessage(m.chat, { delete: m.key })
+                // Admin: solo aviso
                 await conn.reply(
                     m.chat,
-                    `⚠️ Administrador @${m.sender.split`@`[0]} envió un link de grupo.\n🔹 Recuerda que las reglas son iguales para todos y el mensaje fue eliminado.`,
+                    `⚠️ Administrador @${m.sender.split`@`[0]} envió un link de grupo.\n🔹 Las reglas son iguales para todos y el mensaje fue eliminado.`,
                     null,
                     { mentions: [m.sender] }
                 )
-                console.log(`Mensaje de admin ${m.sender} eliminado por Anti-Link, reglas iguales para todos`)
+                console.log(`Mensaje de admin ${m.sender} eliminado, reglas iguales para todos`)
             }
         } catch (error) {
             console.error("Error procesando Anti-Link:", error)
