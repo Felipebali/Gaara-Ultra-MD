@@ -1,12 +1,8 @@
 // plugins/menuhot.js
-export default {
-    name: 'menuhot',
-    description: 'Menú NSFW con comandos calientes 🔥',
-    group: true,
-    all: async function (m, { conn }) {
-        if (!m.isGroup) return;
+let handler = async (m, { conn }) => {
+    if (!m.isGroup) return;
 
-        const menuText = `
+    const menuText = `
 ╭━━━〔 🔞 NSFW 🐾 〕━━━⬣
 ┃ 🐾 .PeneBrayanOFC/35 @tag 🍆
 ┃ 🐾 .anal/culiar @tag 🍑
@@ -20,8 +16,14 @@ export default {
 ┃ 🐾 .tetas 👙
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 > 👑 Powered by FelixCat 🥷🏽
-        `.trim();
+    `.trim();
 
-        await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
-    }
+    await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 };
+
+handler.help = ['menuhot'];
+handler.tags = ['nsfw'];
+handler.command = ['menuhot'];
+handler.group = true;
+
+export default handler;
