@@ -38,6 +38,12 @@ let handler = async (m, { conn }) => {
 ┃ 🐾 .del - Elimina el mensaje respondido ✖️
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
+╭━━━〔 ⚠️ ADVERTENCIAS 〕━━━⬣
+┃ 🐾 .warn @user - Dar advertencia ⚠️
+┃ 🐾 .unwarn @user - Quitar advertencia 🟢
+┃ 🐾 .listadv - Lista de usuarios advertidos 📋
+╰━━━━━━━━━━━━━━━━━━━━⬣
+
 > 👑 Powered by FelixCat 🐾
         `;
 
