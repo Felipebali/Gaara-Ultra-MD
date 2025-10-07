@@ -2,6 +2,18 @@
 let handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return;
 
+  // Verificar si está activado el tagall
+  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
+  const chatSettings = global.db.data.chats[m.chat];
+
+  if (chatSettings.antitagall) {
+    // Si antiTagAll está activado, bloqueamos
+    return await conn.sendMessage(m.chat, {
+      text: `❌ @${m.sender.split('@')[0]}, el TagAll está desactivado en este grupo.`,
+      mentions: [m.sender]
+    }, { quoted: m });
+  }
+
   const participantes = groupMetadata?.participants || [];
   const mencionados = participantes.map(p => p.id).filter(Boolean);
 
