@@ -1,35 +1,32 @@
 // plugins/warnlist.js
 let handler = async (m, { conn }) => {
-    if (!m.isGroup) return conn.reply(m.chat, '❌ Solo en grupos.', m);
+  if (!m.isGroup) return conn.reply(m.chat, '❌ Solo en grupos.', m)
 
-    const chatId = m.chat;
+  const chatId = m.chat
+  if (!global.db.data.chats[chatId]) global.db.data.chats[chatId] = {}
+  if (!global.db.data.chats[chatId].warns) global.db.data.chats[chatId].warns = {}
 
-    // Asegurar que exista la estructura
-    if (!global.db.data.chats[chatId]) global.db.data.chats[chatId] = {};
-    if (!global.db.data.chats[chatId].warns) global.db.data.chats[chatId].warns = {};
+  const warns = global.db.data.chats[chatId].warns
+  const entries = Object.entries(warns)
 
-    const warns = global.db.data.chats[chatId].warns;
+  if (entries.length === 0) return conn.reply(chatId, 'ℹ️ No hay advertencias en este grupo.', m)
 
-    if (Object.keys(warns).length === 0) {
-        return conn.reply(chatId, 'ℹ️ No hay advertencias.', m);
-    }
+  let text = '⚠️ *Advertencias actuales:*\n'
+  const mentions = []
+  for (let [jid, count] of entries) {
+    mentions.push(jid)
+    const name = await conn.getName(jid).catch(()=> jid.split('@')[0])
+    text += `• ${name}: ${count}/5\n`
+  }
 
-    let text = '⚠️ *Advertencias actuales:*\n';
-    const mentions = [];
-    for (let jid in warns) {
-        mentions.push(jid);
-        const nombre = conn.getName(jid);
-        text += `• ${nombre}: ${warns[jid]}/5\n`;
-    }
+  await conn.sendMessage(chatId, { text, mentions }, { quoted: m })
+}
 
-    await conn.sendMessage(chatId, { text, mentions }, { quoted: m });
-};
+handler.help = ['warnlist','advertencias','listaadv']
+handler.tags = ['admin']
+handler.command = ['warnlist','advertencias','listaadv']
+handler.group = true
+handler.admin = true
+handler.register = true
 
-handler.help = ['warnlist'];
-handler.tags = ['admin'];
-handler.command = ['warnlist','advertencias','listadv'];
-handler.group = true;
-handler.admin = true;
-handler.register = true;
-
-export default handler;
+export default handler
