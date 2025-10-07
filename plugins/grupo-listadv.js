@@ -3,7 +3,7 @@ const handler = async (m, { conn, groupMetadata, isAdmin }) => {
     if (!m.isGroup) return m.reply('❌ Este comando solo se puede usar en grupos.')
     if (!isAdmin) return m.reply('⚠️ Solo los administradores pueden usar este comando.')
 
-    const chat = global.db.data.chats[m.chat] || {}
+    const chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
     if (!chat.warns) chat.warns = {}
     const warns = chat.warns
 
@@ -16,9 +16,9 @@ const handler = async (m, { conn, groupMetadata, isAdmin }) => {
     for (let i = 0; i < warnedUsers.length; i++) {
         const jid = warnedUsers[i]
         const count = warns[jid].count || 0
-        const name = await conn.getName(jid).catch(() => jid.split('@')[0])
-
-        listaTexto += `${i + 1}. ${name} (@${jid.split('@')[0]}) - ⚠️ ${count}/3\n`
+        let name = jid.split('@')[0]
+        try { name = await conn.getName(jid) } catch {}
+        listaTexto += `${i+1}. ${name} (@${jid.split('@')[0]}) - ⚠️ ${count}/3\n`
         mentionedUsers.push(jid)
     }
 
