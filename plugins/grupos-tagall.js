@@ -2,12 +2,15 @@
 let handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return;
 
-  // Verificar si está activado el tagall
+  // Inicializar configuración del chat
   if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
   const chatSettings = global.db.data.chats[m.chat];
 
+  // Si no existe, activamos tagall por defecto
+  if (chatSettings.antitagall === undefined) chatSettings.antitagall = false;
+
+  // Bloquear tagall si antimención está activado
   if (chatSettings.antitagall) {
-    // Si antiTagAll está activado, bloqueamos
     return await conn.sendMessage(m.chat, {
       text: `❌ @${m.sender.split('@')[0]}, el TagAll está desactivado en este grupo.`,
       mentions: [m.sender]
@@ -17,7 +20,8 @@ let handler = async function (m, { conn, groupMetadata }) {
   const participantes = groupMetadata?.participants || [];
   const mencionados = participantes.map(p => p.id).filter(Boolean);
 
-  // Mensaje con @all
+  if (mencionados.length === 0) return;
+
   let listaUsuarios = mencionados.map(jid => `┃ ⚡ @${jid.split('@')[0]}`).join('\n');
 
   const mensaje = [
@@ -41,7 +45,7 @@ handler.command = ['invocar', 'tag', 'tagall'];
 handler.help = ['invocar', 'tagall'];
 handler.tags = ['grupos'];
 handler.group = true;
-handler.admin = false; // cualquiera puede usarlo
+handler.admin = false;
 handler.botAdmin = false;
 
 export default handler;
