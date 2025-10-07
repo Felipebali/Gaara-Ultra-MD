@@ -1,8 +1,6 @@
 /**
- * Plugin Anti-Link para FelixCat-Bot
- * Detecta links de grupos de WhatsApp
- * Admins: solo se borra el mensaje y se avisa que las reglas son iguales
- * Usuarios normales: mensaje borrado y expulsión
+ * Anti-Link actualizado para FelixCat-Bot
+ * Solo borra mensaje si es admin, expulsa usuarios normales
  */
 
 const groupLinkRegex = /chat.whatsapp.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
@@ -23,9 +21,9 @@ export async function before(m, { conn }) {
         try {
             const groupMetadata = await conn.groupMetadata(m.chat)
 
-            // Todos los admins: admin o superadmin
+            // Lista de admins robusta
             const admins = groupMetadata.participants
-                .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
+                .filter(p => p.admin || p.isAdmin || p.admin === 'superadmin' || p.admin === 'admin')
                 .map(p => p.id)
 
             // Borrar mensaje siempre
@@ -56,16 +54,4 @@ export async function before(m, { conn }) {
         }
     }
     return !0
-}
-
-// Comando para activar/desactivar Anti-Link
-export async function antilinkCommand(m, { conn, isAdmin }) {
-    if (!m.isGroup) return conn.reply(m.chat, "Este comando solo funciona en grupos.", m)
-    if (!isAdmin) return conn.reply(m.chat, "Solo administradores pueden activar/desactivar Anti-Link.", m)
-
-    let chat = global.db.data.chats[m.chat] || { antiLink: true }
-    chat.antiLink = !chat.antiLink
-    global.db.data.chats[m.chat] = chat
-    await global.db.write()
-    conn.reply(m.chat, `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.`, m)
 }
