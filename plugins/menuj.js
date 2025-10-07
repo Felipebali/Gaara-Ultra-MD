@@ -4,46 +4,24 @@ let handler = async (m, { conn }) => {
         const chatSettings = global.db.data.chats[m.chat] || {};
         const gamesEnabled = chatSettings.games !== false; // por defecto activados
 
-        let menuText = `
-╭━━━〔 🎮 MENÚ 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐾 〕━━━⬣
-┃ ❒ *Diviértete con estos mini-juegos* 😸
-┃ ❒ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
-╰━━━━━━━━━━━━━━━━━━━━⬣
-`;
+        let menuText = `╭━━━〔 🎮 MENÚ 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐾 〕━━━⬣
+┃ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
+╰━━━━━━━━━━━━━━━━━━━━⬣\n`;
 
         if (gamesEnabled) {
             menuText += `
-╭━━━〔 🧮 MATEMÁTICAS 〕━━━⬣
-┃ 🐾 .math - Resuelve operaciones matemáticas 🧠
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 ❌ TIC-TAC-TOE 〕━━━⬣
-┃ 🐾 .ttt - Juega al clásico tres en línea ✖️⭕
-┃ 🐾 .delttt - Reinicia la sesión de TicTacToe 🔄
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 ✋ PIEDRA, PAPEL O TIJERA 〕━━━⬣
-┃ 🐾 .ppt - Desafía a otro jugador ✊✋✌️
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 💃 DANCE / BAILA 〕━━━⬣
-┃ 🐾 .dance <@user> - Retar a un amigo a bailar 💃🕺
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 🚩 BANDERAS 〕━━━⬣
-┃ 🐾 .bandera - Adivina la bandera del país 🌍
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 ❓ ACERTIJOS 〕━━━⬣
-┃ 🐾 .acertijo - Resuelve y gana 🎁
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 🔤 AHORCADO 〕━━━⬣
-┃ 🐾 .ahorcado - Adivina antes de perder 😵
-╰━━━━━━━━━━━━━━━━━━━━⬣
+🐾 .math       - Operaciones matemáticas 🧠
+🐾 .ttt        - Tic-Tac-Toe ✖️⭕
+🐾 .delttt     - Reiniciar Tic-Tac-Toe 🔄
+🐾 .ppt <@user> - Piedra, papel o tijera ✊✋✌️
+🐾 .dance <@user> - Retar a un amigo a bailar🕺
+🐾 .bandera    - Adivina la bandera 🌍
+🐾 .acertijo   - Resolver acertijos 🎁
+🐾 .ahorcado   - Adivina antes de perder 😵
+🐾 .adivinanza - Resuelve adivinanzas 😸
 `;
         } else {
-            menuText += `\n╭━━━〔 ⚠️ Los juegos están desactivados 🔴 〕━━━⬣\n`;
+            menuText += `⚠️ Los mini-juegos están desactivados. Usa .juegos para activarlos 🔴\n`;
         }
 
         menuText += `\n> 👑 Powered by FelixCat 🐾`;
