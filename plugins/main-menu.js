@@ -16,7 +16,6 @@ let tags = {
   'gacha': '🧧 ANIME 🐱',
   'nsfw': '🔞 NSFW 🐾',
   'especiales': '📂 MENÚS ESPECIALES 🐾'
-  'especiales': {
   '.menuj':'🎮',
   '.menuhot':'🔥',
   '.menugp':'📚',
