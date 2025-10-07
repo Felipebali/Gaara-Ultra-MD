@@ -49,7 +49,7 @@ Seguramente no tengo permisos suficientes.`, m);
 
 handler.help = ['kick'];
 handler.tags = ['grupo'];
-handler.command = ['kick', 'echar', 'sacar', 'ban'];
+handler.command = ['k', 'echar', 'sacar', 'ban'];
 handler.admin = true;
 handler.group = true;
 handler.botAdmin = true;
