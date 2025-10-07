@@ -16,11 +16,7 @@ let tags = {
   'gacha': '🧧 ANIME 🐱',
   'nsfw': '🔞 NSFW 🐾',
   'especiales': '📂 MENÚS ESPECIALES 🐾'
-  '.menuj':'🎮',
-  '.menuhot':'🔥',
-  '.menugp':'📚',
-  '.menuow':'👑'
-}; 
+};
 
 let comandosPorCategoria = {
   'serbot': {'.qr':'🔗', '.code':'💻'},
@@ -39,7 +35,9 @@ let comandosPorCategoria = {
     '.antilink':'🔗', '.antitoxic':'☣️', '.antitoxicos':'☣️', '.antitraba':'🚫', '.antitrabas':'🚫', '.antifake':'❌',
     '.antivirtuales':'👻'
   },
-  'game': {'.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃', '.delttt':'❌', '.ppt':'✂️', '.adivinanza':'❓'},
+  'game': {
+    '.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃', '.delttt':'❌', '.ppt':'✂️', '.adivinanza':'❓'
+  },
   'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
   'downloader': {'.play <nombre de la canción>':'🎵'},
   'sticker': {'.stiker <img>':'🖼️', '.sticker <url>':'🖼️'},
@@ -55,6 +53,13 @@ let comandosPorCategoria = {
     '.grabboobs/agarrartetas @tag':'👙', '.searchhentai':'🔞', '.hentaisearch':'🔎', '.penetrar @user':'🍑',
     '.sexo/sex @tag':'🔥', '.tetas':'👙'
   },
+  'especiales': {
+    '.menuj':'🎮',
+    '.menuhot':'🔥',
+    '.menugp':'📚',
+    '.menuow':'👑'
+  }
+};
 
 let handler = async (m, { conn }) => {
   try {
@@ -67,7 +72,8 @@ let handler = async (m, { conn }) => {
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 `;
 
-    for (let tag in tags) {
+    // Itera todas las categorías incluyendo especiales
+    for (let tag of ['serbot','info','main','nable','game','group','downloader','sticker','tools','gacha','nsfw','especiales']) {
       let comandos = comandosPorCategoria[tag];
       if (!comandos) continue;
 
@@ -79,7 +85,6 @@ ${Object.entries(comandos).map(([cmd, emoji]) => `┃ 🐾 ${cmd} ${emoji}`).joi
     }
 
     menuText += `\n> 😸 Powered by FelixCat 🥷🏽`;
-
     await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
   } catch (e) {
     console.error(e);
