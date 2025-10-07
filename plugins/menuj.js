@@ -19,6 +19,7 @@ let handler = async (m, { conn }) => {
 
 ╭━━━〔 ❌ TIC-TAC-TOE 〕━━━⬣
 ┃ 🐾 .ttt - Juega al clásico tres en línea ✖️⭕
+┃ 🐾 .delttt - Reinicia la sesión de TicTacToe 🔄
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 ✋ PIEDRA, PAPEL O TIJERA 〕━━━⬣
@@ -31,6 +32,14 @@ let handler = async (m, { conn }) => {
 
 ╭━━━〔 🚩 BANDERAS 〕━━━⬣
 ┃ 🐾 .bandera - Adivina la bandera del país 🌍
+╰━━━━━━━━━━━━━━━━━━━━⬣
+
+╭━━━〔 ❓ ACERTIJOS 〕━━━⬣
+┃ 🐾 .acertijo - Resuelve el acertijo y gana monedas 🎁
+╰━━━━━━━━━━━━━━━━━━━━⬣
+
+╭━━━〔 🔤 AHORCADO 〕━━━⬣
+┃ 🐾 .ahorcado - Adivina la palabra antes de perder 😵
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 `;
         } else {
