@@ -8,6 +8,7 @@ let handler = async (m, { conn }) => {
     const modulos = {
         Juegos: chatConfig.games !== false,
         Antilink: chatConfig.antilink !== false,
+        Antimención: chatConfig.antimencion !== false, // <-- agregado
         Bienvenida: chatConfig.welcome !== false,
         Despedida: chatConfig.bye !== false,
         NSFW: chatConfig.nsfw !== false,
