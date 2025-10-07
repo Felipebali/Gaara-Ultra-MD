@@ -1,8 +1,7 @@
 /**
  * Plugin Anti-Link para FelixCat-Bot
- * Detecta links de grupos de WhatsApp
- * Admins: solo se borra mensaje
- * Usuarios normales: se borra mensaje y se expulsa
+ * Detecta links de grupos de WhatsApp y elimina mensajes de usuarios normales
+ * No elimina ni expulsa a administradores
  */
 
 const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
@@ -14,17 +13,24 @@ export async function before(m, { conn }) {
 
     if (!global.db) global.db = { data: { chats: {} } }
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = { antiLink: false }
-    var chat = global.db.data.chats[m.chat]
+    let chat = global.db.data.chats[m.chat]
 
     if (!chat.antiLink) return true
 
-    if (groupLinkRegex.test(m.text)) {
+    if (m.text.match(groupLinkRegex)) {
         try {
-            var groupMetadata = await conn.groupMetadata(m.chat)
-            var senderId = m.sender.split('@')[0]
+            const groupMetadata = await conn.groupMetadata(m.chat)
+            const senderId = m.sender.split('@')[0]
+
+            // Obtener nombre del remitente
+            let senderName = senderId
+            const participant = groupMetadata.participants.find(function(p) {
+                return p.id.split('@')[0] === senderId
+            })
+            if (participant && participant.name) senderName = participant.name
 
             // Obtener admins
-            var admins = groupMetadata.participants
+            const admins = groupMetadata.participants
                 .filter(function(p) { return p.admin === 'admin' || p.admin === 'superadmin' })
                 .map(function(p) { return p.id.split('@')[0] })
 
@@ -33,16 +39,19 @@ export async function before(m, { conn }) {
 
             if (admins.indexOf(senderId) >= 0) {
                 // Admin: solo aviso
-                await conn.sendMessage(
+                await conn.reply(
                     m.chat,
-                    { text: "⚠️ El administrador *" + senderId + "* envió un link de grupo.\n🔹 Las reglas son iguales para todos y el mensaje fue eliminado." }
+                    "⚠️ El administrador *" + senderName + "* envió un link de grupo.\n🔹 Las reglas son iguales para todos y el mensaje fue eliminado.",
+                    null,
+                    { mentions: [m.sender] }
                 )
-                console.log("Mensaje de admin " + senderId + " eliminado, reglas iguales para todos")
+                console.log("Mensaje de admin " + senderName + " eliminado, reglas iguales para todos")
             } else {
                 // Usuario normal: borrar y expulsar
-                await conn.sendMessage(
+                await conn.reply(
                     m.chat,
-                    { text: "> ⚠️ @" + senderId + " fue eliminado por enviar un link de grupo." },
+                    "> ⚠️ @" + senderId + " fue eliminado por enviar un link de grupo.",
+                    null,
                     { mentions: [m.sender] }
                 )
                 await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
@@ -59,13 +68,13 @@ export async function before(m, { conn }) {
 
 // Comando para activar/desactivar Anti-Link
 export async function antilinkCommand(m, { conn, isAdmin }) {
-    if (!m.isGroup) return conn.sendMessage(m.chat, { text: "Este comando solo funciona en grupos." })
-    if (!isAdmin) return conn.sendMessage(m.chat, { text: "Solo administradores pueden activar/desactivar Anti-Link." })
+    if (!m.isGroup) return conn.reply(m.chat, "Este comando solo funciona en grupos.", m)
+    if (!isAdmin) return conn.reply(m.chat, "Solo administradores pueden activar/desactivar Anti-Link.", m)
 
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = { antiLink: true }
-    var chat = global.db.data.chats[m.chat]
+    let chat = global.db.data.chats[m.chat]
     chat.antiLink = !chat.antiLink
 
     await global.db.write()
-    conn.sendMessage(m.chat, { text: "✅ Anti-Link ahora está " + (chat.antiLink ? "activado" : "desactivado") + " en este grupo." })
+    conn.reply(m.chat, "✅ Anti-Link ahora está " + (chat.antiLink ? "activado" : "desactivado") + " en este grupo.", m)
 }
