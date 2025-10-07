@@ -6,8 +6,9 @@ export async function before(m, { conn }) {
   const chat = global.db.data.chats[m.chat]
   if (!chat?.welcome) return true
 
+  // Tomar nombre visible o número limpio
   const usuarioJid = m.messageStubParameters?.[0] || m.key.participant
-  const nombreUsuario = await conn.getName(usuarioJid) || usuarioJid.split('@')[0]
+  const nombreUsuario = m.pushName || await conn.getName(usuarioJid) || usuarioJid.split('@')[0]
 
   if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
     await conn.sendMessage(m.chat, { text: `👋 ¡${nombreUsuario} se ha unido al grupo!` })
