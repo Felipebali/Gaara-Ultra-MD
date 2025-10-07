@@ -1,5 +1,5 @@
 // plugins/menugp.js
-let handler = async (m) => {
+let handler = async (m, { conn }) => {
     try {
         let menuText = `
 ╭━━━〔 🐾 MENÚ DE GRUPO 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐾 〕━━━⬣
@@ -32,6 +32,10 @@ let handler = async (m) => {
 ╭━━━〔 📢 MENCIÓN GENERAL 〕━━━⬣
 ┃ 🐾 .tagall - Mencionar a todos 📣
 ┃ 🐾 .hidetag - Mención oculta 👻
+╰━━━━━━━━━━━━━━━━━━━━⬣
+
+╭━━━〔 🗑️ BORRAR MENSAJE 〕━━━⬣
+┃ 🐾 .del - Elimina el mensaje respondido ✖️
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 > 👑 Powered by FelixCat 🐾
