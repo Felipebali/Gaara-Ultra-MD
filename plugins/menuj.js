@@ -35,11 +35,11 @@ let handler = async (m, { conn }) => {
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 ❓ ACERTIJOS 〕━━━⬣
-┃ 🐾 .acertijo - Resuelve el acertijo y gana monedas 🎁
+┃ 🐾 .acertijo - Resuelve y gana 🎁
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 🔤 AHORCADO 〕━━━⬣
-┃ 🐾 .ahorcado - Adivina la palabra antes de perder 😵
+┃ 🐾 .ahorcado - Adivina antes de perder 😵
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 `;
         } else {
