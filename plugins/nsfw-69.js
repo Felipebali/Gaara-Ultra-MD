@@ -20,11 +20,11 @@ if (!db.data.chats[m.chat].nsfw && m.isGroup) {
 
     let str;
     if (m.mentionedJid.length > 0) {
-        str = `\`${name2}\` *está haciendo un 35 con* \`${name || who}\`.`;
+        str = `\`${name2}\` *está haciendo un 69 con* \`${name || who}\`.`;
     } else if (m.quoted) {
-        str = `\`${name2}\` *hizo un 35 con* \`${name || who}\`.`; 
+        str = `\`${name2}\` *hizo un 69 con* \`${name || who}\`.`; 
     } else {
-        str = `\`${name2}\` *está haciendo un 35! >.<.*`.trim();
+        str = `\`${name2}\` *está haciendo un 69! >.<.*`.trim();
     }
 
     if (m.isGroup) {
@@ -46,9 +46,9 @@ if (!db.data.chats[m.chat].nsfw && m.isGroup) {
     }
 }
 
-handler.help = ['PeneBrayanOFC/35 @tag'];
+handler.help = ['69 @tag'];
 handler.tags = ['nsfw'];
-handler.command = ['peneBrayanOFC','35'];
+handler.command = ['sixnine', '69'];
 handler.group = true;
 
 export default handler;
