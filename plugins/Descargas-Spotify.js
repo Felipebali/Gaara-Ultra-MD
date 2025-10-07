@@ -1,11 +1,11 @@
 import axios from 'axios'
 import fetch from 'node-fetch'
 
-let handler = async (m, { conn, text }) => {
-  if (!text) return conn.reply(m.chat, `🎋 Proporciona el nombre de una canción o artista.`, m)
+let handler = async (m, { conn, text, usedPrefix }) => {
+  if (!text) return conn.reply(m.chat, `🎋 Por favor, proporciona el nombre de una canción o artista.\nEjemplo: ${usedPrefix}spotify <canción>`, m)
 
   try {
-    // Buscar en API principal
+    // Buscamos en la API principal
     let searchUrl = `https://api.delirius.store/search/spotify?q=${encodeURIComponent(text)}&limit=1`
     let searchRes = await axios.get(searchUrl, { timeout: 15000 })
     let searchData = searchRes.data
@@ -51,7 +51,7 @@ let handler = async (m, { conn, text }) => {
       if (res?.data?.url) { downloadUrl = res.data.url; break }
     }
 
-    if (!downloadUrl) return conn.reply(m.chat, `❌ No se encontró un link de descarga válido.`, m)
+    if (!downloadUrl) return conn.reply(m.chat, `❌ No se encontró un link de descarga válido para esta canción.`, m)
 
     // Descargar audio
     let audio = await fetch(downloadUrl)
