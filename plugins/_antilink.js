@@ -1,31 +1,53 @@
-const groupLinkRegex = /chat.whatsapp.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
-const channelLinkRegex = /whatsapp.com\/channel\/([0-9A-Za-z]+)/i
+/**
+ * Plugin Anti-Link para FelixCat-Bot
+ * Detecta links de grupos de WhatsApp y los elimina, incluso si el mensaje es de un admin.
+ * Se activa o desactiva con el comando .antilink
+ */
 
-export async function before(m, { conn, isAdmin, isBotAdmin }) {
-if (!m || !m.text) return
-if (m.isBaileys && m.fromMe) return !0
-if (!m.isGroup) return !1
-if (!isBotAdmin) return
-let chat = global.db?.data?.chats?.[m.chat]
-if (!chat || !chat.antiLink) return !0
-let isGroupLink = m.text.match(groupLinkRegex)
-let isChannelLink = m.text.match(channelLinkRegex)
-if ((isGroupLink || isChannelLink) && !isAdmin) {
-if (isBotAdmin) {
-try {
-const linkThisGroup = `https://chat.whatsapp.com/${await conn.groupInviteCode(m.chat)}`
-if (isGroupLink && m.text.includes(linkThisGroup)) return !0
-} catch (error) {
-console.error("[ERROR] No se pudo obtener el código del grupo:", error)
-}}
-await conn.reply(m.chat, `> ✦ Se ha eliminado a @${m.sender.split`@`[0]} del grupo por \`Anti-Link\`! No permitimos enlaces de ${isChannelLink ? 'canales' : 'otros grupos'}.`, null, { mentions: [m.sender] })
-if (isBotAdmin) {
-try {
-await conn.sendMessage(m.chat, { delete: m.key })
-await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-console.log(`Usuario ${m.sender} eliminado del grupo ${m.chat}`)
-} catch (error) {
-console.error("No se pudo eliminar el mensaje o expulsar al usuario:", error)
-}}}
-return !0
+const groupLinkRegex = /chat.whatsapp.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
+
+// Función que se ejecuta antes de procesar cualquier mensaje
+export async function before(m, { conn }) {
+    if (!m || !m.text) return
+    if (m.isBaileys && m.fromMe) return !0
+    if (!m.isGroup) return !1
+
+    // Obtenemos la configuración del chat
+    let chat = global.db?.data?.chats?.[m.chat]
+    if (!chat) {
+        if (global.db?.data?.chats) global.db.data.chats[m.chat] = { antiLink: false }
+        chat = global.db?.data?.chats?.[m.chat]
+    }
+
+    if (!chat.antiLink) return !0  // No está activado
+
+    // Si hay link de grupo, eliminar el mensaje
+    if (m.text.match(groupLinkRegex)) {
+        try {
+            await conn.sendMessage(m.chat, { delete: m.key }) // borrar mensaje
+            await conn.reply(m.chat, `> ⚠️ @${m.sender.split`@`[0]} fue eliminado por Anti-Link`, null, { mentions: [m.sender] })
+            await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove') // expulsar usuario
+            console.log(`Usuario ${m.sender} eliminado del grupo ${m.chat} por Anti-Link`)
+        } catch (error) {
+            console.error("Error eliminando mensaje o expulsando usuario:", error)
+        }
+    }
+    return !0
+}
+
+// Comando para activar/desactivar Anti-Link
+export async function antilinkCommand(m, { conn, args, isAdmin }) {
+    if (!m.isGroup) return conn.reply(m.chat, "Este comando solo funciona en grupos.", m)
+    if (!isAdmin) return conn.reply(m.chat, "Solo administradores pueden activar/desactivar Anti-Link.", m)
+
+    let chat = global.db.data.chats[m.chat]
+    if (!chat) {
+        global.db.data.chats[m.chat] = { antiLink: true }
+        chat = global.db.data.chats[m.chat]
+    } else {
+        chat.antiLink = !chat.antiLink
+    }
+
+    await global.db.write()
+    conn.reply(m.chat, `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.`, m)
 }
