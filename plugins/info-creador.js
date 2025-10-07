@@ -1,48 +1,59 @@
-// créditos by xzzys26 Para Gaara-Ultra-MD 
+// Créditos actualizados para FelixCat-Bot
 
 async function handler(m, { conn, usedPrefix }) {
   try {
-    await m.react('👨🏻‍💻')
+    await m.react('👨‍💻');
 
-    const imageUrl = 'https://files.catbox.moe/inqghn.jpg'
+    const imageUrl = 'https://files.catbox.moe/inqghn.jpg'; // Podés cambiar la imagen por tu logo
 
-    let messageText = `
-🤖 *Gaara-Ultra-MD*
-👤 *Creador:* xzzys26
-📱 *Número:* +18493907272
-🌐 *Dashboard:* https://dash.deluxehost.cl
-💻 *GitHub:* https://github.com/xzzys26
-`
+    const messageText = `
+🤖 *FelixCat-Bot*
+👤 *Creador:* Balkoszky 🇵🇱
+📱 *Número:* +59898719147
+🌐 *GitHub:* https://github.com/FelipeBali
+📸 *Instagram:* https://www.instagram.com/feli_bali
+`;
 
-    await conn.sendMessage(m.chat, {
-      image: { url: imageUrl },
-      caption: messageText,
-      footer: '*⚡ Servicios Privado Con Alta Calidad*',
-      buttons: [
-        {
-          buttonId: `${usedPrefix}code`,
-          buttonText: { displayText: "🤖 𝗖𝗼𝗱𝗲" },
-          type: 1,
-        },
-        {
-          buttonId: `${usedPrefix}menu`,
-          buttonText: { displayText: "📜 𝗠𝗲𝗻𝘂" },
-          type: 1,
-        },
-      ],
-      headerType: 4
-    }, { quoted: m })
-
+    await conn.sendMessage(
+      m.chat,
+      {
+        image: { url: imageUrl },
+        caption: messageText,
+        footer: '*⚡ Bot Personalizado por Balkoszky🇵🇱*',
+        buttons: [
+          {
+            buttonId: `${usedPrefix}menu`,
+            buttonText: { displayText: "📜 𝗠𝗲𝗻𝘂" },
+            type: 1,
+          },
+          {
+            buttonId: `${usedPrefix}contacto`,
+            buttonText: { displayText: "📞 𝗖𝗼𝗻𝘁𝗮𝗰𝘁𝗼" },
+            type: 1,
+          },
+        ],
+        headerType: 4,
+      },
+      { quoted: m }
+    );
   } catch (error) {
-    console.error('Error:', error)
-    await conn.sendMessage(m.chat, { 
-      text: '🤖 *Gaara-Ultra-MD*\n👤 *Creador:* xzzys26\n📱 *Número:* +18097769423\n🌐 *Dashboard:* https://dash.deluxehost.cl\n💻 *GitHub:* https://github.com/xzzys26\n\n*⚡ Servicios Privado Con Alta Calidad*'
-    }, { quoted: m })
+    console.error('Error:', error);
+    await conn.sendMessage(m.chat, {
+      text: `
+🤖 *FelixCat-Bot*
+👤 *Creador:* Balkoszky 🇵🇱
+📱 *Número:* +59898719147
+🌐 *GitHub:* https://github.com/FelipeBali
+📸 *Instagram:* https://www.instagram.com/feli_bali
+
+*⚡ Bot Personalizado por Balkoszky🇵🇱*
+`,
+    });
   }
 }
 
-handler.help = ['creador']
-handler.tags = ['info']
-handler.command = ['owner', 'creator', 'creador', 'dueño']
+handler.help = ['creador'];
+handler.tags = ['info'];
+handler.command = ['owner', 'creator', 'creador', 'dueño'];
 
-export default handler
+export default handler;
