@@ -4,27 +4,28 @@ let handler = async (m, { conn }) => {
         const chatSettings = global.db.data.chats[m.chat] || {};
         const gamesEnabled = chatSettings.games !== false; // por defecto activados
 
-        let menuText = `╭━━━〔 🎮 MENÚ 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐾 〕━━━⬣
-┃ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
-╰━━━━━━━━━━━━━━━━━━━━⬣\n`;
+        let menuText = `╭━━━━━━━━━━━━━━━〔 🎮 *MENÚ MINI-JUEGOS FELIXCAT* 🐾 〕━━━━━━━━━━━━━━━⬣
+┃ Estado: ${gamesEnabled ? '🟢 *Activados*' : '🔴 *Desactivados*'}
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━⬣\n`;
 
         if (gamesEnabled) {
             menuText += `
-🐾 .math       - Operaciones matemáticas 🧠
-🐾 .ttt        - Tic-Tac-Toe ✖️⭕
-🐾 .delttt     - Reiniciar Tic-Tac-Toe 🔄
-🐾 .ppt <@user> - Piedra, papel o tijera ✊✋✌️
-🐾 .dance <@user> - Retar a un amigo a bailar🕺
-🐾 .bandera    - Adivina la bandera 🌍
-🐾 .acertijo   - Resolver acertijos 🎁
-🐾 .ahorcado   - Adivina antes de perder 😵
-🐾 .adivinanza - Resuelve adivinanzas 😸
+🐾 *Math*           ➤ Realiza operaciones matemáticas 🧠
+🐾 *Tic-Tac-Toe*    ➤ Juega Tic-Tac-Toe ✖️⭕
+🐾 *Reiniciar TTT*  ➤ Reiniciar Tic-Tac-Toe 🔄
+🐾 *Piedra, Papel o Tijera* ➤ .ppt <@user> ✊✋✌️
+🐾 *Dance*          ➤ .dance <@user> 💃🕺
+🐾 *Bandera*        ➤ Adivina la bandera 🌍
+🐾 *Acertijo*       ➤ Resolver acertijos 🎁
+🐾 *Ahorcado*       ➤ Adivina antes de perder 😵
+🐾 *Adivinanza*     ➤ Resuelve adivinanzas 😸
 `;
         } else {
-            menuText += `⚠️ Los mini-juegos están desactivados. Usa .juegos para activarlos 🔴\n`;
+            menuText += `⚠️ *Los mini-juegos están desactivados.*\nUsa .juegos para activarlos 🔴\n`;
         }
 
-        menuText += `\n> 👑 Powered by FelixCat 🐾`;
+        menuText += `\n╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━⬣
+> 👑 *Powered by FelixCat* 🐾`;
 
         await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 
