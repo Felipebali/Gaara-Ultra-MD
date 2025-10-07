@@ -8,20 +8,20 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
     if (m.quoted) {
         user = m.quoted.sender;
     } else {
-        return conn.reply(m.chat, '⭐ Responde al mensaje del usuario que quieres mutear.', m);
+        return conn.reply(m.chat, '⭐ Responde al mensaje del usuario que quieres mutear/desmutear.', m);
     }
 
-    if (command === "mute") {
+    if (["mute", "silenciar"].includes(command)) {
         mutedUsers.add(user);
         conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
-    } else if (command === "unmute") {
+    } else if (["unmute", "desilenciar"].includes(command)) {
         mutedUsers.delete(user);
         conn.reply(m.chat, `✅ *Usuario desmuteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
     }
 };
 
 handler.before = async (m, { conn }) => {
-    if (mutedUsers.has(m.sender) && m.mtype !== 'stickerMessage') {
+    if (mutedUsers.has(m.sender)) { // Ya no se excluyen los stickers
         try {
             await conn.sendMessage(m.chat, { delete: m.key });
         } catch (e) {
@@ -30,9 +30,9 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-handler.help = ['mute', 'unmute'];
+handler.help = ['mute', 'unmute', 'silenciar', 'desilenciar'];
 handler.tags = ['grupo'];
-handler.command = ['mute','unmute'];
+handler.command = ['mute', 'unmute', 'silenciar', 'desilenciar'];
 handler.group = true;
 handler.admin = true;
 handler.botAdmin = true;
