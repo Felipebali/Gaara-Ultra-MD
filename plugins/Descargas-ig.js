@@ -8,7 +8,14 @@ let handler = async (m, { conn, args, usedPrefix }) => {
 
   try {
     const res = await fetch(`https://api.sylphy.xyz/instagram?username=${username}&apikey=sylphy-fbb9`);
-    const data = await res.json();
+    const text = await res.text(); // obtenemos como texto para revisar si es JSON
+
+    let data;
+    try {
+      data = JSON.parse(text); // intentamos parsear JSON
+    } catch {
+      throw new Error('La API no respondió JSON válido. Puede estar caída o la clave API es incorrecta.');
+    }
 
     if (!data.status) throw new Error('Usuario no encontrado o privado');
 
