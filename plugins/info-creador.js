@@ -4,7 +4,7 @@ async function handler(m, { conn, usedPrefix }) {
   try {
     await m.react('👨‍💻');
 
-    const imageUrl = 'https://files.catbox.moe/inqghn.jpg'; // Podés cambiar la imagen por tu logo
+    const imageUrl = 'https://files.catbox.moe/in2ou9.jpg'; // Podés cambiar la imagen por tu logo
 
     const messageText = `
 🤖 *FelixCat-Bot*
@@ -20,18 +20,6 @@ async function handler(m, { conn, usedPrefix }) {
         image: { url: imageUrl },
         caption: messageText,
         footer: '*⚡ Bot Personalizado por Balkoszky🇵🇱*',
-        buttons: [
-          {
-            buttonId: `${usedPrefix}menu`,
-            buttonText: { displayText: "📜 𝗠𝗲𝗻𝘂" },
-            type: 1,
-          },
-          {
-            buttonId: `${usedPrefix}contacto`,
-            buttonText: { displayText: "📞 𝗖𝗼𝗻𝘁𝗮𝗰𝘁𝗼" },
-            type: 1,
-          },
-        ],
         headerType: 4,
       },
       { quoted: m }
