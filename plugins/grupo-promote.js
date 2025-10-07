@@ -1,19 +1,24 @@
-const handler = async (m, { conn }) => {
-  if (!m.mentionedJid[0] && !m.quoted) {
-    let texto = `*${emojis} Menciona o responde al mensaje del usuario que deseas promover a administrador.*`
-    return m.reply(texto, m.chat, { mentions: conn.parseMention(texto) })
+// plugins/promote.js
+export default {
+  name: 'promote',
+  description: 'Promueve a un usuario a administrador',
+  group: true,
+  admin: true,
+  botAdmin: true,
+  command: ['p'], // ahora se activa con .p
+  all: async function (m, { conn }) {
+    if (!m.mentionedJid?.[0] && !m.quoted) {
+      let texto = `⚠️ Menciona o responde al mensaje del usuario que deseas promover a administrador.`
+      return conn.sendMessage(m.chat, { text: texto, mentions: [] });
+    }
+
+    let user = m.mentionedJid?.[0] ? m.mentionedJid[0] : m.quoted.sender
+    try {
+      await conn.groupParticipantsUpdate(m.chat, [user], 'promote')
+      await conn.sendMessage(m.chat, { text: `✅ El usuario fue promovido a administrador.`, mentions: [user] });
+    } catch (e) {
+      console.error(e)
+      await conn.sendMessage(m.chat, { text: `❌ No se pudo promover al usuario.`, mentions: [user] });
+    }
   }
-
-  let user = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted.sender
-  await conn.groupParticipantsUpdate(m.chat, [user], 'promote')
-  m.reply(`*✅ El usuario fue promovido a la administración.*`)
 }
-
-handler.help = ['promote']
-handler.tags = ['grupo']
-handler.command = ['promote'];
-handler.group = true
-handler.admin = true
-handler.botAdmin = true
-
-export default handler
