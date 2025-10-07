@@ -2,7 +2,9 @@ let handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
 
   // Verificación de owner
-  const isOwner = global.owner?.includes(m.sender)
+  const senderNumber = m.sender.replace(/[^0-9]/g, '') // solo números
+  const owners = global.owner?.map(o => o.replace(/[^0-9]/g, '')) || []
+  const isOwner = owners.includes(senderNumber)
   if (!isOwner) return m.reply('❌ Solo el owner puede usar este comando.')
 
   const participantes = groupMetadata?.participants || []
@@ -17,19 +19,19 @@ let handler = async function (m, { conn, groupMetadata }) {
                    p.admin === 'admin' ? '🛡️ Admin' : '👤 Miembro'
 
     return [
-      '┏━━━━━━━━━━━━━━━🐈‍⬛',
+      '┏━━━━━━━━━━━━━━━🐾',
       `┃ 🌟 *Participante ${index + 1}*`,
       `┃ 🙍‍♂️ Usuario: @${user}`,
       `┃ 🔑 LID: ${lid}`,
       `┃ 🏷️ Estado: ${estado}`,
-      '┗━━━━━━━━━━━━━━━🐈‍⬛'
+      '┗━━━━━━━━━━━━━━━🐾'
     ].join('\n')
   })
 
   const contenido = tarjetas.join('\n┃\n')
   const salida = [
     '╔══════════════════╗',
-    '║      🐈‍⬛ FelixCat-Bot 🐈‍⬛     ║',
+    '║      🐾 FelixCat-Bot 🐾     ║',
     '╠══════════════════╣',
     contenido,
     '╚══════════════════╝'
