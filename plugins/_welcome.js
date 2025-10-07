@@ -1,25 +1,60 @@
-//codigo creado por BrayanOFC // plugins/welcome.js
-export default {
-  name: 'welcome',
-  description: 'Mensaje de bienvenida simple',
-  group: true,
-  all: async function (m, { conn }) {
-    if (!m.isGroup) return;
-    if (!global.db.data.chats[m.chat].welcome) return; // Si el welcome está desactivado
-    if (!m.added || m.added.length === 0) return; // Si no hay usuarios añadidos
+import { WAMessageStubType } from '@whiskeysockets/baileys'
+import fetch from 'node-fetch'
 
-    try {
-      const groupMetadata = await conn.groupMetadata(m.chat);
-      const groupName = groupMetadata.subject || 'este grupo';
+export async function before(m, { conn, participants, groupMetadata }) {
+  // Solo grupos
+  if (!m.isGroup) return true
 
-      for (let user of m.added) {
-        let mention = '@' + user.split('@')[0];
-        let text = `👋 ¡Hola ${mention}! Bienvenido/a a *${groupName}*`;
-        await conn.sendMessage(m.chat, { text, mentions: [user] });
-      }
+  const chat = global.db.data.chats[m.chat]
+  // Solo enviar si welcome está activado
+  if (!chat?.welcome) return true
 
-    } catch (e) {
-      console.error(e);
+  const getPais = (numero) => {
+    const paises = {
+      "1": "🇺🇸 EE.UU.", "34": "🇪🇸 España", "52": "🇲🇽 México",
+      "54": "🇦🇷 Argentina", "55": "🇧🇷 Brasil", "56": "🇨🇱 Chile",
+      "57": "🇨🇴 Colombia", "58": "🇻🇪 Venezuela", "591": "🇧🇴 Bolivia",
+      "593": "🇪🇨 Ecuador", "595": "🇵🇾 Paraguay", "598": "🇺🇾 Uruguay",
+      "502": "🇬🇹 Guatemala", "503": "🇸🇻 El Salvador", "504": "🇭🇳 Honduras",
+      "505": "🇳🇮 Nicaragua", "506": "🇨🇷 Costa Rica", "507": "🇵🇦 Panamá",
+      "51": "🇵🇪 Perú", "53": "🇨🇺 Cuba", "91": "🇮🇳 India"
     }
+    for (let i = 1; i <= 3; i++) {
+      const prefijo = numero.slice(0, i)
+      if (paises[prefijo]) return paises[prefijo]
+    }
+    return "🌎 Desconocido"
   }
-};
+
+  const usuarioJid = m.messageStubParameters?.[0] || m.key.participant
+  const numeroUsuario = usuarioJid.split('@')[0]
+  const pais = getPais(numeroUsuario)
+
+  const fechaObj = new Date()
+  const hora = fechaObj.toLocaleTimeString('es-PE', { timeZone: 'America/Lima' })
+  const fecha = fechaObj.toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Lima' })
+  const dia = fechaObj.toLocaleDateString('es-PE', { weekday: 'long', timeZone: 'America/Lima' })
+
+  const groupSize = participants.length + ((m.messageStubType === 27) ? 1 : ((m.messageStubType === 28 || m.messageStubType === 32) ? -1 : 0))
+
+  const welcomeMessage = `👋 ¡Hola @${numeroUsuario}!\nBienvenido/a al grupo *${groupMetadata.subject}*.\nMiembros: ${groupSize}\nPaís: ${pais}\nFecha: ${dia}, ${fecha} | ${hora}`
+  const byeMessage = `💔 Adiós @${numeroUsuario}\nSe ha ido del grupo *${groupMetadata.subject}*.\nMiembros restantes: ${groupSize}\nPaís: ${pais}\nFecha: ${dia}, ${fecha} | ${hora}`
+
+  const defaultImage = 'https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg'
+
+  if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+    await conn.sendMessage(m.chat, { 
+      image: { url: defaultImage }, 
+      caption: welcomeMessage 
+    })
+  }
+
+  if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
+    await conn.sendMessage(m.chat, { 
+      image: { url: defaultImage }, 
+      caption: byeMessage 
+    })
+  }
+
+  return true
+}
