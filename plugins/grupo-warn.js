@@ -1,5 +1,5 @@
 // plugins/grupo-warn.js
-const handler = async (m, { conn, text, usedPrefix, command, groupMetadata, isAdmin, isBotAdmin }) => {
+const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin }) => {
     if (!m.isGroup) return m.reply('✦ Este comando solo se puede usar en grupos.')
     if (!isAdmin) return m.reply('✦ Solo los administradores pueden usar este comando.')
     if (!isBotAdmin) return m.reply('✦ Necesito ser administrador para poder eliminar usuarios.')
@@ -11,7 +11,6 @@ const handler = async (m, { conn, text, usedPrefix, command, groupMetadata, isAd
 
     const date = new Date().toLocaleDateString('es-ES')
 
-    // Inicializar sistema de advertencias
     const chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
     if (!chat.warns) chat.warns = {}
     const warns = chat.warns
@@ -20,11 +19,9 @@ const handler = async (m, { conn, text, usedPrefix, command, groupMetadata, isAd
     const currentCount = Number(currentWarns.count) || 0
     const newWarnCount = currentCount + 1
 
-    // Guardar advertencia
     warns[user] = { count: newWarnCount, date: date }
     await global.db.write()
 
-    // Nombres sin .catch()
     let senderName = userName = user.split('@')[0]
     try { senderName = await conn.getName(m.sender) } catch {}
     try { userName = await conn.getName(user) } catch {}
