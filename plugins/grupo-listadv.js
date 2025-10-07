@@ -1,31 +1,28 @@
 // plugins/grupo-warnlist.js
 const handler = async (m, { conn, groupMetadata, isAdmin }) => {
-  if (!m.isGroup) return m.reply('✦ Este comando solo se puede usar en grupos.')
-  if (!isAdmin) return m.reply('✦ Solo los administradores pueden usar este comando.')
+  if (!m.isGroup) return m.reply('❌ Este comando solo se puede usar en grupos.')
+  if (!isAdmin) return m.reply('⚠️ Solo los administradores pueden usar este comando.')
 
   const chatData = global.db.data.chats[m.chat] || {}
   const warns = chatData.warns || {}
   const warnedUsers = Object.keys(warns).filter(jid => warns[jid]?.count > 0)
 
-  if (warnedUsers.length === 0) return m.reply('📋 *No hay usuarios con advertencias en este grupo.*')
+  if (warnedUsers.length === 0) return m.reply('📭 No hay usuarios con advertencias en este grupo.')
 
-  let listaTexto = `📋 *LISTA DE ADVERTENCIAS*\n\n🔰 *Grupo:* ${groupMetadata.subject || 'Desconocido'}\n\n`
+  let listaTexto = `📋 *Lista de Advertencias* 📋\n\n`
   const mentionedUsers = []
 
-  warnedUsers.forEach((jid, i) => {
+  for (let i = 0; i < warnedUsers.length; i++) {
+    const jid = warnedUsers[i]
     const warnData = warns[jid]
     const count = warnData.count || 0
-    const lastDate = warnData.date || 'Sin fecha'
-    const name = conn.getName ? conn.getName(jid) : jid.split('@')[0]
+    const name = conn.getName ? await conn.getName(jid) : jid.split('@')[0]
 
-    listaTexto += `${i + 1}. ${name} (@${jid.split('@')[0]})\n`
-    listaTexto += `   ⚠️ Advertencias: ${count}/5\n`
-    listaTexto += `   📅 Última: ${lastDate}\n\n`
-
+    listaTexto += `${i + 1}. ${name} (@${jid.split('@')[0]}) - ⚠️ ${count}/3\n`
     mentionedUsers.push(jid)
-  })
+  }
 
-  listaTexto += `📊 Total de usuarios advertidos: ${mentionedUsers.length}`
+  listaTexto += `\n📊 Total de usuarios advertidos: ${mentionedUsers.length}`
 
   try {
     await conn.sendMessage(m.chat, { text: listaTexto, mentions: mentionedUsers }, { quoted: m })
