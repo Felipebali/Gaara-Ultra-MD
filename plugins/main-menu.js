@@ -20,23 +20,20 @@ let tags = {
 
 let comandosPorCategoria = {
   'serbot': {'.qr':'🔗', '.code':'💻'},
-  'info': {'.creador':'👑', '.dash':'📊', '.status':'📈', '.estado':'📉', '.ping':'📶', '.infobot':'🤖', '.info':'ℹ️', '.lid':'🆔'},
-  'main': {'.menu':'📜', '.ping':'📶', '.info':'ℹ️'},
+  'info': {'.creador':'👑', '.dash':'📊', '.status':'📈', '.estado':'📉', '.ping':'📶', '.infobot':'🤖', '.lid':'🆔'},
+  'main': {'.menu':'📜'},
   'nable': {
-    '.welcome':'👋', '.bv':'🎉', '.bienvenida':'🎊', '.antiprivado':'🚫', '.antipriv':'🚫', '.antiprivate':'🚫',
-    '.restrict':'🔒', '.restringir':'🔐', '.autolevelup':'⬆️', '.autonivel':'⬆️', '.antibot':'🤖', '.antibots':'🤖',
-    '.autoaceptar':'✅', '.aceptarauto':'✅', '.autorechazar':'❌', '.rechazarauto':'❌', '.autoresponder':'💬',
-    '.autorespond':'💬', '.antisubbots':'🚫', '.antisub':'🚫', '.antisubot':'🚫', '.antibot2':'🤖',
-    '.modoadmin':'🛡️', '.soloadmin':'🛡️', '.autoread':'👀', '.autoleer':'👀', '.autover':'📝', '.antiver':'📝',
-    '.antiocultar':'❌', '.antiviewonce':'👁️', '.reaction':'❤️', '.reaccion':'❤️', '.emojis':'😺',
-    '.nsfw':'🔞', '.nsfwhot':'🔥', '.nsfwhorny':'💦', '.antispam':'🚫', '.antiSpam':'🚫', '.antispamosos':'🚫',
-    '.antidelete':'❌', '.antieliminar':'❌', '.delete':'🗑️', '.jadibotmd':'🤖', '.modejadibot':'🤖', '.subbots':'🔎',
-    '.detect':'🕵️‍♂️', '.configuraciones':'⚙️', '.avisodegp':'📢', '.simi':'💬', '.autosimi':'💬', '.simsimi':'💬',
-    '.antilink':'🔗', '.antitoxic':'☣️', '.antitoxicos':'☣️', '.antitraba':'🚫', '.antitrabas':'🚫', '.antifake':'❌',
-    '.antivirtuales':'👻'
+    '.welcome':'👋', '.bv':'🎉', '.bienvenida':'🎊', '.antiprivado':'🚫', '.restrict':'🔒',
+    '.autolevelup':'⬆️', '.autonivel':'⬆️', '.antibot':'🤖', '.autoaceptar':'✅', '.autorechazar':'❌',
+    '.autoresponder':'💬', '.antisubbots':'🚫', '.modoadmin':'🛡️', '.soloadmin':'🛡️', '.autoread':'👀',
+    '.autover':'📝', '.antiver':'📝', '.antiviewonce':'👁️', '.reaction':'❤️', '.emojis':'😺',
+    '.nsfw':'🔞', '.antispam':'🚫', '.antidelete':'❌', '.delete':'🗑️', '.jadibotmd':'🤖', '.detect':'🕵️‍♂️',
+    '.configuraciones':'⚙️', '.avisodegp':'📢', '.simi':'💬', '.antilink':'🔗', '.antitoxic':'☣️',
+    '.antitraba':'🚫', '.antifake':'❌', '.antivirtuales':'👻'
   },
   'game': {
-    '.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃', '.delttt':'❌', '.ppt':'✂️', '.adivinanza':'❓'
+    '.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃',
+    '.delttt':'❌', '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.ttt':'❌'
   },
   'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
   'downloader': {'.play <nombre de la canción>':'🎵'},
@@ -54,11 +51,7 @@ let comandosPorCategoria = {
     '.sexo/sex @tag':'🔥', '.tetas':'👙'
   },
   'especiales': {
-    '.menuj':'🎮',
-    '.menuhot':'🔥',
-    '.menugp':'📚',
-    '.menuow':'👑', 
-    '.menudl':'📥'
+    '.menuj':'🎮', '.menuhot':'🔥', '.menugp':'📚', '.menuow':'👑', '.menudl':'📥'
   }
 };
 
@@ -73,7 +66,6 @@ let handler = async (m, { conn }) => {
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 `;
 
-    // Itera todas las categorías incluyendo especiales
     for (let tag of ['serbot','info','main','nable','game','group','downloader','sticker','tools','gacha','nsfw','especiales']) {
       let comandos = comandosPorCategoria[tag];
       if (!comandos) continue;
