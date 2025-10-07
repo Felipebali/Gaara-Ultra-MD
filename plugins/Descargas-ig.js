@@ -1,53 +1,45 @@
 import fetch from 'node-fetch';
 
 let handler = async (m, { conn, args, usedPrefix }) => {
-    if (!args[0]) return m.reply(`⚠️ Ingresa el usuario de Instagram.\nEjemplo: ${usedPrefix}ig felixcat`);
+  if (!args[0]) return m.reply(`⚠️ Ingresa el usuario de Instagram.\nEjemplo: ${usedPrefix}ig felixcat`);
 
-    const username = args[0].replace('@', '').trim();
-    await m.react('⌛');
+  const username = args[0].replace('@', '').trim();
+  await m.react('⌛');
 
-    try {
-        const apiURL = `https://api.siputzx.my.id/api/instagram/profile?username=${username}`;
-        const res = await fetch(apiURL);
+  try {
+    // Usar endpoint público de Instagram + ?__a=1 para datos JSON
+    const res = await fetch(`https://www.instagram.com/${username}/?__a=1&__d=dis`);
+    if (!res.ok) throw new Error('Usuario no encontrado o privado');
 
-        // Validar que la respuesta sea JSON
-        let data;
-        try { data = await res.json(); } 
-        catch { throw new Error('API no devolvió datos válidos'); }
+    const json = await res.json();
+    const user = json.graphql.user;
 
-        if (!data?.user) throw new Error('Usuario no encontrado');
+    const profilePic = user.profile_pic_url_hd || user.profile_pic_url;
 
-        const user = data.user;
-        const profilePic = user.profile_pic_url || '';
-
-        const mensaje = `
+    const mensaje = `
 ╭━━〔 ⚡ FelixCat-Bot ⚡ 〕━━⬣
 ┃ 👤 Usuario: @${user.username}
 ┃ 📝 Nombre: ${user.full_name || 'No disponible'}
 ┃ 💬 Bio: ${user.biography || 'No disponible'}
-┃ 👥 Seguidores: ${user.followers || 'No disponible'}
-┃ 👣 Siguiendo: ${user.following || 'No disponible'}
+┃ 👥 Seguidores: ${user.edge_followed_by.count || 'No disponible'}
+┃ 👣 Siguiendo: ${user.edge_follow.count || 'No disponible'}
 ┃ 🔗 Link: https://www.instagram.com/${user.username}/
 ╰━━━━━━━━━━━━━━━━⬣
 `.trim();
 
-        if (profilePic) {
-            await conn.sendMessage(
-                m.chat,
-                { image: { url: profilePic }, caption: mensaje },
-                { quoted: m }
-            );
-        } else {
-            await conn.sendMessage(m.chat, { text: mensaje }, { quoted: m });
-        }
-
-        await m.react('✅');
-
-    } catch (err) {
-        console.error(err);
-        await m.reply(`❌ Error: ${err.message}`, m);
-        await m.react('❌');
+    if (profilePic) {
+      await conn.sendMessage(m.chat, { image: { url: profilePic }, caption: mensaje });
+    } else {
+      await conn.sendMessage(m.chat, { text: mensaje });
     }
+
+    await m.react('✅');
+
+  } catch (err) {
+    console.error(err);
+    await m.reply(`❌ Error: ${err.message}`);
+    await m.react('❌');
+  }
 };
 
 handler.help = ['ig <usuario>'];
