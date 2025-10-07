@@ -3,12 +3,13 @@ let handler = async (m, { conn, usedPrefix }) => {
     const chatId = m.chat;
     const groupMetadata = await conn.groupMetadata(chatId).catch(() => null);
     if (!groupMetadata) return m.reply('❌ Este comando solo funciona en grupos.');
-    
+
     const participants = groupMetadata.participants || [];
     const sender = m.sender;
 
-    // Verifica si es admin
-    const isAdmin = participants.find(p => p.id === sender)?.admin || false;
+    // Verifica si es admin correctamente
+    const participant = participants.find(p => p.id === sender);
+    const isAdmin = participant && (participant.admin === 'admin' || participant.admin === 'superadmin');
     if (!isAdmin) return m.reply('❌ Solo admins pueden usar este comando.');
 
     // Asegurarse de que exista la configuración del chat
