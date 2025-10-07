@@ -1,35 +1,24 @@
 // plugins/tagall.js
 let handler = async function (m, { conn, groupMetadata }) {
-  if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
+  if (!m.isGroup) return;
 
   const participantes = groupMetadata?.participants || [];
   const mencionados = participantes.map(p => p.id).filter(Boolean);
 
-  // Mensaje con @all
-  let listaUsuarios = mencionados.map(jid => `┃ ⚡ @${jid.split('@')[0]}`).join('\n');
+  // Crear lista de usuarios mencionados
+  const listaUsuarios = mencionados.map(jid => `@${jid.split('@')[0]}`).join(' ');
 
-  const mensaje = [
-    '╭━━━〔 𝗙𝗲𝗹𝗶𝘅𝗖𝗮𝘁-𝗕𝗼𝘁 〕━━━⬣',
-    '┃ *🔥 ¡Invocación completada! 🔥*',
-    '┃ 📌 Todos los usuarios del chat han sido invocados:',
-    listaUsuarios,
-    '╰━━━━━━━━━━━━━━━━━━━━⬣'
-  ].join('\n');
+  // Mensaje minimalista con hidetag
+  const mensaje = `📢 ¡Atención a todos!\n${listaUsuarios}`;
 
-  await conn.sendMessage(
-    m.chat,
-    { 
-      text: mensaje,
-      mentions: mencionados
-    }
-  );
-
-  // Reacción al mensaje
-  await conn.sendMessage(m.chat, { react: { text: '📢', key: m.key } });
+  await conn.sendMessage(m.chat, { 
+    text: mensaje,
+    mentions: mencionados
+  });
 };
 
-handler.command = ['invocar', 'tag', 'tagall'];
-handler.help = ['invocar', 'tagall'];
+handler.command = ['tagall', 'invocar', 'tag'];
+handler.help = ['tagall'];
 handler.tags = ['grupos'];
 handler.group = true;
 handler.admin = false; // cualquiera puede usarlo
