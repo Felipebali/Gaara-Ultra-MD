@@ -1,5 +1,8 @@
 /**
- * Anti-Link unificado para FelixCat-Bot
+ * Anti-Link FelixCat-Bot
+ * Admins: solo se borra el link
+ * Usuarios normales: se borra mensaje y se expulsa
+ * No elimina canales
  */
 
 const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
@@ -11,8 +14,8 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     if (!m.isGroup) return false
     if (!isBotAdmin) return true
 
-    let chatData = global.db?.data?.chats?.[m.chat]
-    if (!chatData || !chatData.antiLink) return true
+    let chat = global.db?.data?.chats?.[m.chat]
+    if (!chat || !chat.antiLink) return true
 
     const isGroupLink = groupLinkRegex.test(m.text)
     const isChannelLink = channelLinkRegex.test(m.text)
@@ -20,23 +23,12 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     // Ignorar links de canales
     if (isChannelLink) return true
 
-    // Ignorar links del mismo grupo
-    let linkThisGroup = ''
-    try {
-        linkThisGroup = `https://chat.whatsapp.com/${await conn.groupInviteCode(m.chat)}`
-        if (m.text.includes(linkThisGroup)) return true
-    } catch (e) {
-        console.error("[Anti-Link] No se pudo obtener código del grupo:", e)
-    }
-
-    const name = m.pushName || m.name || m.sender.split('@')[0]
-
-    // Admin: solo borrar mensaje
+    // Si es admin
     if (isAdmin && isGroupLink) {
         try {
-            await conn.sendMessage(m.chat, { delete: m.key })
+            await conn.sendMessage(m.chat, { delete: m.key }) // borrar solo el link
+            const name = m.pushName || m.name || m.sender.split('@')[0]
             await conn.sendMessage(m.chat, { text: `⚠️ El administrador *${name}* envió un link de grupo. Solo se eliminó el mensaje, las reglas son iguales para todos.` })
-            await conn.sendMessage(m.chat, { react: { text: '🐱', key: m.key } })
             console.log(`Mensaje de admin ${name} eliminado por Anti-Link`)
         } catch (err) {
             console.error("Error borrando mensaje de admin:", err)
@@ -44,18 +36,17 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
         return true
     }
 
-    // Usuario normal: borrar mensaje y expulsar
+    // Si es usuario normal
     if (!isAdmin && isGroupLink) {
         try {
-            await conn.sendMessage(m.chat, { delete: m.key })
-            await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-            await conn.sendMessage(m.chat, { text: `> ⚠️ El usuario *${name}* fue expulsado por enviar un link de grupo. ¡No se permiten links de otros grupos!` })
-            await conn.sendMessage(m.chat, { react: { text: '🐶', key: m.key } })
+            const name = m.pushName || m.name || m.sender.split('@')[0]
+            await conn.sendMessage(m.chat, { delete: m.key }) // borrar mensaje
+            await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove') // expulsar
+            await conn.sendMessage(m.chat, { text: `> ⚠️ El usuario *${name}* fue expulsado por enviar un link de grupo.` })
             console.log(`Usuario ${name} eliminado del grupo ${m.chat} por Anti-Link`)
         } catch (err) {
             console.error("Error eliminando usuario:", err)
         }
-        return true
     }
 
     return true
