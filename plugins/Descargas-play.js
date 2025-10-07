@@ -1,4 +1,4 @@
-// plugins/play.js
+// plugins/playaudio.js
 import yts from 'yt-search';
 import fetch from 'node-fetch';
 
@@ -13,26 +13,19 @@ const handler = async (m, { conn, args, usedPrefix }) => {
     if (!videos.length) throw new Error('No se encontraron resultados.');
 
     const video = videos[0];
-    const thumbnailBuffer = await (await fetch(video.thumbnail)).buffer();
 
-    // Mensaje minimalista
-    const messageText = 
-      `🎬 *${video.title}*\n` +
-      `> 📺 Canal: ${video.channel}\n` +
-      `> ⏱ Duración: ${video.duration}\n` +
-      `> 👁 Vistas: ${video.views}\n` +
-      `> 🔗 ${video.url}`;
+    // Llamada a API de descarga de audio
+    const apiUrl = `https://dark-core-api.vercel.app/api/download/YTMP3?key=api&url=${encodeURIComponent(video.url)}`;
+    const res = await fetch(apiUrl);
+    const json = await res.json();
 
+    if (!json.status || !json.download) throw new Error('No se pudo obtener el audio.');
+
+    // Enviar audio directo
     await conn.sendMessage(m.chat, {
-      image: thumbnailBuffer,
-      caption: messageText,
-      footer: 'FelixCat-Bot',
-      contextInfo: { mentionedJid: [m.sender] },
-      buttons: [
-        { buttonId: `${usedPrefix}ytmp3 ${video.url}`, buttonText: { displayText: '🎧 Audio' }, type: 1 },
-        { buttonId: `${usedPrefix}ytmp4 ${video.url}`, buttonText: { displayText: '📹 Video' }, type: 1 }
-      ],
-      headerType: 1
+      audio: { url: json.download },
+      mimetype: 'audio/mpeg',
+      fileName: `${json.title || video.title}.mp3`
     }, { quoted: m });
 
     await m.react('✅');
@@ -40,26 +33,22 @@ const handler = async (m, { conn, args, usedPrefix }) => {
   } catch (e) {
     console.error(e);
     await m.react('✖️');
-    return conn.reply(m.chat, '⚠ No se encontró el video.', m);
+    return conn.reply(m.chat, '⚠ No se pudo enviar el audio.', m);
   }
 };
 
 handler.help = ['play'];
 handler.tags = ['descargas'];
-handler.command = ['play', 'play2'];
+handler.command = ['play', 'playaudio'];
 export default handler;
 
-// Función de búsqueda
+// Función de búsqueda en YouTube
 async function searchVideos(query) {
   try {
     const res = await yts(query);
-    return res.videos.slice(0, 10).map(v => ({
+    return res.videos.slice(0, 1).map(v => ({
       title: v.title,
-      url: v.url,
-      thumbnail: v.thumbnail,
-      channel: v.author.name,
-      duration: v.duration.timestamp || 'No disponible',
-      views: v.views?.toLocaleString() || 'No disponible'
+      url: v.url
     }));
   } catch (err) {
     console.error('Error en yt-search:', err.message);
