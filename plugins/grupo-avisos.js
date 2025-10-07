@@ -5,7 +5,7 @@ export async function before(m, { conn, groupMetadata }) {
   if (!m.isGroup) return true
 
   const chat = global.db.data.chats[m.chat] || {}
-  if (!chat.avisos) return true // si avisos desactivados, no hace nada
+  if (!chat.avisos) return true // Si avisos desactivados, no hace nada
 
   try {
     // -------------------- CAMBIO DE NOMBRE --------------------
