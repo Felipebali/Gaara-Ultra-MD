@@ -1,195 +1,39 @@
-const handler = async (m, { conn, text, usedPrefix, command, participants, groupMetadata, isAdmin, isBotAdmin }) => {
-  const channelRD = global.channelRD || { id: '120363386229166956@newsletter', name: 'Canal Oficial' }
+// plugins/grupo-warn.js
+const handler = async (m, { conn, text, usedPrefix, command, groupMetadata, isAdmin, isBotAdmin }) => {
+  if (!m.isGroup) return m.reply('❌ Este comando solo se puede usar en grupos.')
+  if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.')
+  if (!isBotAdmin) return m.reply('❌ Necesito ser administrador para poder eliminar usuarios.')
 
-  if (!m.isGroup) return conn.sendMessage(m.chat, {
-    text: '✦ Este comando solo se puede usar en grupos.',
-    contextInfo: {
-      mentionedJid: [m.sender],
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: channelRD.id,
-        serverMessageId: 100,
-        newsletterName: channelRD.name
-      }
-    }
-  }, { quoted: m })
+  const user = (m.quoted && m.quoted.sender) || (m.mentionedJid && m.mentionedJid[0])
+  const reason = text.split(" ").slice(1).join(" ")
 
-  if (!isAdmin) return conn.sendMessage(m.chat, {
-    text: '✦ Solo los administradores pueden usar este comando.',
-    contextInfo: {
-      mentionedJid: [m.sender],
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: channelRD.id,
-        serverMessageId: 100,
-        newsletterName: channelRD.name
-      }
-    }
-  }, { quoted: m })
-
-  if (!isBotAdmin) return conn.sendMessage(m.chat, {
-    text: '✦ Necesito ser administrador para poder eliminar usuarios.',
-    contextInfo: {
-      mentionedJid: [m.sender],
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: channelRD.id,
-        serverMessageId: 100,
-        newsletterName: channelRD.name
-      }
-    }
-  }, { quoted: m })
-
-  const user = m.mentionedJid?.[0]
-  const mensaje = text.split(" ").slice(1).join(" ")
-
-  if (!user) return conn.sendMessage(m.chat, {
-    text: `✦ Debes mencionar a alguien.\nEjemplo: *${usedPrefix}${command} @usuario razón*`,
-    contextInfo: {
-      mentionedJid: [m.sender],
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: channelRD.id,
-        serverMessageId: 100,
-        newsletterName: channelRD.name
-      }
-    }
-  }, { quoted: m })
-
-  if (!mensaje) return conn.sendMessage(m.chat, {
-    text: '✦ Debes escribir el motivo de la advertencia.',
-    contextInfo: {
-      mentionedJid: [m.sender],
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: channelRD.id,
-        serverMessageId: 100,
-        newsletterName: channelRD.name
-      }
-    }
-  }, { quoted: m })
+  if (!user) return m.reply(`❗ Debes mencionar a alguien.\nEjemplo: *${usedPrefix}${command} @usuario razón*`)
+  if (!reason) return m.reply('❗ Debes escribir el motivo de la advertencia.')
 
   const date = new Date().toLocaleDateString('es-ES')
 
-  // Inicializar el sistema de advertencias si no existe
-  if (!global.db.data.chats[m.chat].warns) {
-    global.db.data.chats[m.chat].warns = {}
-  }
-
-  // Obtener advertencias actuales del usuario
-  const currentWarns = global.db.data.chats[m.chat].warns[user] || { count: 0, date: null }
+  // Inicializar advertencias
+  if (!global.db.data.chats[m.chat].warns) global.db.data.chats[m.chat].warns = {}
+  const currentWarns = global.db.data.chats[m.chat].warns[user] || { count: 0 }
   const newWarnCount = currentWarns.count + 1
+  global.db.data.chats[m.chat].warns[user] = { count: newWarnCount, date }
 
-  // Actualizar el contador de advertencias con fecha
-  global.db.data.chats[m.chat].warns[user] = {
-    count: newWarnCount,
-    date: date,
-    jid: user
-  }
+  // Nombres seguros
+  const senderName = conn.getName ? conn.getName(m.sender) : m.sender.split('@')[0]
+  const userName = conn.getName ? conn.getName(user) : user.split('@')[0]
 
-  const groupName = groupMetadata.subject
-  const senderName = await conn.getName(m.sender)
-  const userName = await conn.getName(user)
-
-  // Verificar si es la tercera advertencia
   if (newWarnCount >= 3) {
-    const eliminarTexto = `🚫 *USUARIO ELIMINADO* 🚫
-
-👤 *Usuario:* @${user.split('@')[0]}
-👮‍♂️ *Moderador:* ${senderName}
-📅 *Fecha:* ${date}
-⚠️ *Advertencias:* ${newWarnCount}/3
-
-📝 *Última razón:*
-${mensaje}
-
-❌ *El usuario ha sido eliminado del grupo por acumular 3 advertencias.*`
-
     try {
       await conn.sendMessage(m.chat, {
-        text: eliminarTexto,
-        mentions: [user],
-        contextInfo: {
-          mentionedJid: [user, m.sender],
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: channelRD.id,
-            serverMessageId: 100,
-            newsletterName: channelRD.name
-          }
-        }
-      }, { quoted: m })
-
+        text: `🚫 *USUARIO ELIMINADO* 🚫\n\n👤 *Usuario:* @${user.split('@')[0]}\n👮‍♂️ *Moderador:* ${senderName}\n📅 *Fecha:* ${date}\n⚠️ *Advertencias:* ${newWarnCount}/3\n\n📝 *Motivo:*\n${reason}\n\n❌ *El usuario ha sido eliminado del grupo por acumular 3 advertencias.*`,
+        mentions: [user]
+      })
       await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
       delete global.db.data.chats[m.chat].warns[user]
-
     } catch (e) {
       console.error(e)
-      await conn.sendMessage(m.chat, {
-        text: '❌ No se pudo eliminar al usuario. Verifica que el bot tenga permisos de administrador.',
-        contextInfo: {
-          mentionedJid: [m.sender],
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: channelRD.id,
-            serverMessageId: 100,
-            newsletterName: channelRD.name
-          }
-        }
-      }, { quoted: m })
+      return m.reply('❌ No se pudo eliminar al usuario. Verifica que el bot tenga permisos de administrador.')
     }
-
   } else {
-    const advertenciaTexto = `⚠️ *ADVERTENCIA ${newWarnCount}/3* ⚠️
-
-👤 *Usuario:* @${user.split('@')[0]}
-👮‍♂️ *Moderador:* ${senderName}
-📅 *Fecha:* ${date}
-
-📝 *Motivo:*
-${mensaje}
-
-${newWarnCount === 2 ?
-  '🔥 *¡ÚLTIMA ADVERTENCIA!* La próxima advertencia resultará en eliminación del grupo.' :
-  '❗ Por favor, evita futuras faltas. Te quedan ' + (3 - newWarnCount) + ' advertencias.'}`
-
-    try {
-      await conn.sendMessage(m.chat, {
-        text: advertenciaTexto,
-        mentions: [user],
-        contextInfo: {
-          mentionedJid: [user, m.sender],
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: channelRD.id,
-            serverMessageId: 100,
-            newsletterName: channelRD.name
-          }
-        }
-      }, { quoted: m })
-
-    } catch (e) {
-      console.error(e)
-      await conn.sendMessage(m.chat, {
-        text: '❌ No se pudo enviar la advertencia.',
-        contextInfo: {
-          mentionedJid: [m.sender],
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: channelRD.id,
-            serverMessageId: 100,
-            newsletterName: channelRD.name
-          }
-        }
-      }, { quoted: m })
-    }
-  }
-}
-
-handler.command = ['advertencia', 'ad', 'daradvertencia', 'advertir', 'warn']
-handler.tags = ['grupo']
-handler.group = true
-handler.admin = true
-handler.botAdmin = false
-
-export default handler
+    await conn.sendMessage(m.chat, {
+      text: `⚠️ *ADVERTENCIA ${newWarnCount}/3* ⚠️\n\n👤 *Usuario:* @${user.split('@')[0]}\n👮‍♂️ *Moderador:* ${senderName}\n📅 *Fecha:* ${date}\n\n📝 *Motivo:*\n${reason}\n\n${newWarnCount === 2 ? '🔥 *¡ÚLTIMA ADVERTENCIA!* La próxima resultará en eliminación
