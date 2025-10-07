@@ -39,7 +39,7 @@ Ni lo sueñes...`, m);
   try {
     await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
     conn.reply(m.chat, `💥 *Eliminado.*  
-Gaara ha decidido que ya no pertenezcas aquí.`, m);
+He decidido que ya no pertenezcas aquí.`, m);
   } catch (e) {
     console.error(e);
     conn.reply(m.chat, `❌ No pude sacarlo…  
