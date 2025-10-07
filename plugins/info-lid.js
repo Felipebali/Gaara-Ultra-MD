@@ -13,22 +13,22 @@ let handler = async function (m, { conn, groupMetadata }) {
                    p.admin === 'admin' ? '🛡️ Admin' : '👤 Miembro'
 
     return [
-      '┆ ┏━━━━━━━━━━━━━━━⌬',
-      `┆ ┃  *Participante ${index + 1}*`,
-      `┆ ┃  *Usuario:* @${user}`,
-      `┆ ┃  *LID:* ${lid}`,
-      `┆ ┃  *Estado:* ${estado}`,
-      '┆ ┗━━━━━━━━━━━━━━━━━━⌬'
+      '╭─❑─━━━━━━━❑─╮',
+      `│ 🌟 *Participante ${index + 1}*`,
+      `│ 🙍‍♂️ Usuario: @${user}`,
+      `│ 🔑 LID: ${lid}`,
+      `│ 🏷️ Estado: ${estado}`,
+      '╰─❑─━━━━━━━❑─╯'
     ].join('\n')
   })
 
-  const contenido = tarjetas.join('\n┆\n')
+  const contenido = tarjetas.join('\n')
   const salida = [
-    '╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄⑆',
-    '┆',
+    '╔══════════════════╗',
+    '║      🎀 FelixCat-Bot 🎀     ║',
+    '╠══════════════════╣',
     contenido,
-    '┆',
-    '╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄⑆'
+    '╚══════════════════╝'
   ].join('\n')
 
   const mencionados = participantes.map(p => p.id).filter(Boolean)
