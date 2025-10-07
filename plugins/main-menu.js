@@ -1,89 +1,96 @@
 // plugins/menu.js
-// Créditos: BrayanOFC / Modificado por xzzys26 / Adaptado para FelixCat-Bot
-
-const botname = global.botname || '🌪️ FelixCat-Bot 🌪️'
-const creador = 'Felipe' 
-const versionBot = '10.5.0'
+const botname = global.botname || '😸 FelixCat-Bot 😸';
+const creador = 'Felipe';
+const versionBot = '10.5.0';
 
 let tags = {
-  'serbot': '🤖 SUB-BOTS',
-  'info': '🌀 INFOS',
-  'main': '📜 MENÚ',
-  'nable': '⚡ MODO AVANZADO',
-  'cmd': '📝 COMANDOS',
-  'advanced': '🌟 FUNCIONES AVANZADAS',
-  'game': '🎮 JUEGOS',
-  'group': '📚 GRUPOS',
-  'downloader': '📥 DESCARGAS',
-  'sticker': '🖼️ STICKER',
-  'audio': '🔊 AUDIO',
-  'search': '🔎 BÚSQUEDA',
-  'tools': '🧰 HERRAMIENTAS',
-  'fun': '🎉 DIVERSIÓN',
-  'gacha': '🧧 ANIME',
-  'nsfw': '🔞 NSFW',
-  'premium': '💎 PREMIUM'
-}
+  'serbot': '🤖 SUB-BOTS 🐾',
+  'info': '🌀 INFOS 🐱',
+  'main': '📜 MENÚ FELINO 🐾',
+  'nable': '⚡ MODO AVANZADO 🐾',
+  'game': '🎮 JUEGOS GATUNOS 🐱',
+  'group': '📚 GRUPOS 🐾',
+  'downloader': '📥 DESCARGAS 😺',
+  'sticker': '🖼️ STICKERS 🐾',
+  'tools': '🧰 HERRAMIENTAS 😼',
+  'gacha': '🧧 ANIME 🐱',
+  'nsfw': '🔞 NSFW 🐾'
+};
 
-let handler = async (m, { conn, usedPrefix: _p }) => {
+let comandosPorCategoria = {
+  'serbot': {'.qr':'🔗', '.code':'💻'},
+  'info': {'.creador':'👑', '.dash':'📊', '.status':'📈', '.estado':'📉', '.ping':'📶', '.infobot':'🤖', '.info':'ℹ️', '.lid':'🆔'},
+  'main': {'.menu':'📜', '.ping':'📶', '.info':'ℹ️'},
+  'nable': {
+    '.welcome':'👋', '.bv':'🎉', '.bienvenida':'🎊', '.antiprivado':'🚫', '.antipriv':'🚫', '.antiprivate':'🚫',
+    '.restrict':'🔒', '.restringir':'🔐', '.autolevelup':'⬆️', '.autonivel':'⬆️', '.antibot':'🤖', '.antibots':'🤖',
+    '.autoaceptar':'✅', '.aceptarauto':'✅', '.autorechazar':'❌', '.rechazarauto':'❌', '.autoresponder':'💬',
+    '.autorespond':'💬', '.antisubbots':'🚫', '.antisub':'🚫', '.antisubot':'🚫', '.antibot2':'🤖',
+    '.modoadmin':'🛡️', '.soloadmin':'🛡️', '.autoread':'👀', '.autoleer':'👀', '.autover':'📝', '.antiver':'📝',
+    '.antiocultar':'❌', '.antiviewonce':'👁️', '.reaction':'❤️', '.reaccion':'❤️', '.emojis':'😺',
+    '.nsfw':'🔞', '.nsfwhot':'🔥', '.nsfwhorny':'💦', '.antispam':'🚫', '.antiSpam':'🚫', '.antispamosos':'🚫',
+    '.antidelete':'❌', '.antieliminar':'❌', '.delete':'🗑️', '.jadibotmd':'🤖', '.modejadibot':'🤖', '.subbots':'🔎',
+    '.detect':'🕵️‍♂️', '.configuraciones':'⚙️', '.avisodegp':'📢', '.simi':'💬', '.autosimi':'💬', '.simsimi':'💬',
+    '.antilink':'🔗', '.antitoxic':'☣️', '.antitoxicos':'☣️', '.antitraba':'🚫', '.antitrabas':'🚫', '.antifake':'❌',
+    '.antivirtuales':'👻'
+  },
+  'game': {'.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃', '.delttt':'❌', '.ppt':'✂️'},
+  'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
+  'downloader': {'.play <nombre de la canción>':'🎵'},
+  'sticker': {'.stiker <img>':'🖼️', '.sticker <url>':'🖼️'},
+  'tools': {'.invite':'📩', '.superinspect':'🔎', '.inspect':'🔍'},
+  'gacha': {
+    '.toanime':'🎨', '.toghibli':'🏞️', '.robawaifu <id>':'💖', '.desbloquear @usuario':'🔓', '.claim':'📥',
+    '.harem [@usuario] [pagina]':'👑', '.miswaifus':'🧧', '.resetwaifus':'♻️', '.ver':'👀', '.rw':'🔄',
+    '.rollwaifu':'🎲', '.topwaifus [página]':'🏆', '.wvideo <nombre>':'🎬', '.wimage <nombre>':'🖼️',
+    '.charinfo <nombre>':'📖', '.winfo <nombre>':'ℹ️', '.waifuinfo <nombre>':'ℹ️'
+  },
+  'nsfw': {
+    '.PeneBrayanOFC/35 @tag':'🍆', '.anal/culiar @tag':'🍑', '.blowjob/mamada @tag':'💦', '.follar @tag':'🔥',
+    '.grabboobs/agarrartetas @tag':'👙', '.searchhentai':'🔞', '.hentaisearch':'🔎', '.penetrar @user':'🍑',
+    '.sexo/sex @tag':'🔥', '.tetas':'👙'
+  }
+};
+
+let handler = async (m, { conn }) => {
   try {
-    // Plugins activos
-    let help = Object.values(global.plugins)
-      .filter(plugin => !plugin.disabled)
-      .map(plugin => ({
-        help: Array.isArray(plugin.help) ? plugin.help : (plugin.help ? [plugin.help] : []),
-        tags: Array.isArray(plugin.tags) ? plugin.tags : (plugin.tags ? [plugin.tags] : []),
-        limit: plugin.limit,
-        premium: plugin.premium
-      }))
-
-    // Saludo corto
-    let saludo = getSaludoCorto()
-
-    // Bloque inicial
+    let saludo = getSaludoGatuno();
     let menuText = `
-╭━━━〔 ⚡️ *MENÚ ${botname}* ⚡️ 〕━━━⬣
-┃ ❒ *Creador*: ${creador}
-┃ ❒ *Versión*: ${versionBot}
-┃ ❒ *Saludo*: ${saludo}
+╭━━━〔 😸 *MENÚ FELIXCAT-BOT* 😸 〕━━━⬣
+┃ ❒ *Creador*: ${creador} 🐾
+┃ ❒ *Versión*: ${versionBot} 😺
+┃ ❒ *Saludo*: ${saludo} 🐱
 ╰━━━━━━━━━━━━━━━━━━━━⬣
-`
+`;
 
-    // Recorremos categorías
     for (let tag in tags) {
-      let comandos = help.filter(menu => menu.tags.includes(tag))
-      if (!comandos.length) continue
+      let comandos = comandosPorCategoria[tag];
+      if (!comandos) continue;
 
       menuText += `
 ╭━━━〔 ${tags[tag]} 〕━━━⬣
-${comandos.map(menu => menu.help.map(help =>
-  `┃ ➟ ${_p}${help}${menu.limit ? ' 🟡' : ''}${menu.premium ? ' 🔒' : ''}`
-).join('\n')).join('\n')}
+${Object.entries(comandos).map(([cmd, emoji]) => `┃ 🐾 ${cmd} ${emoji}`).join('\n')}
 ╰━━━━━━━━━━━━━━━━━━━━⬣
-`
+`;
     }
 
-    menuText += `\n> 👑 Powered by FelixCat 🥷🏽`
-
-    // Enviar mensaje solo con texto, sin botones ni medios
-    await conn.sendMessage(m.chat, { text: menuText }, { quoted: m })
-
+    menuText += `\n> 😸 Powered by FelixCat 🥷🏽`;
+    await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
   } catch (e) {
-    conn.reply(m.chat, `✖️ Error al mostrar el menú.\n\n${e}`, m)
-    console.error(e)
+    console.error(e);
+    await conn.sendMessage(m.chat, { text: `✖️ Error mostrando el menú\n\n${e}` }, { quoted: m });
   }
-}
+};
 
-handler.help = ['menu']
-handler.tags = ['main']
-handler.command = ['menu', 'allmenu', 'menú']
+handler.help = ['menu'];
+handler.tags = ['main'];
+handler.command = ['menu','allmenu','menú'];
 
-export default handler
+export default handler;
 
-// Saludo corto sin depender de registro
-function getSaludoCorto() {
-  let hour = new Date().getHours()
-  if (hour >= 5 && hour < 12) return "🌅 Buenos días"
-  if (hour >= 12 && hour < 18) return "☀️ Buenas tardes"
-  return "🌙 Buenas noches"
+function getSaludoGatuno() {
+  let hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "🌅 Maullidos buenos días!";
+  if (hour >= 12 && hour < 18) return "☀️ Maullidos buenas tardes!";
+  return "🌙 Maullidos buenas noches!";
 }
