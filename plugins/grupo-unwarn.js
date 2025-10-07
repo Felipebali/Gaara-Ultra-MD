@@ -9,19 +9,16 @@ let handler = async (m, { conn, isAdmin, isROwner }) => {
   const chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
   const warns = chat.warns || (chat.warns = {})
 
-  if (!warns[target] || !warns[target].count) return conn.reply(m.chat, '✅ Ese usuario no tiene advertencias.', m)
+  if (!warns[target] || !warns[target].count) 
+    return conn.reply(m.chat, '✅ Ese usuario no tiene advertencias.', m)
 
-  // Reducir la advertencia y mantener fecha/jid
-  warns[target].count = Math.max(0, warns[target].count)
-  warns[target].count -= 1
+  // Restar 1 al count sin eliminar el objeto
+  warns[target].count = Math.max(0, warns[target].count - 1)
+
   await global.db.write()
 
-  const name = conn.getName(target) || target.split('@')[0]
-
-  return conn.sendMessage(m.chat, { 
-    text: `🟢 ${name} ahora tiene ${warns[target].count}/3 advertencias.`, 
-    mentions: [target] 
-  }, { quoted: m })
+  const name = await conn.getName(target).catch(() => target.split('@')[0])
+  return conn.sendMessage(m.chat, { text: `🟢 ${name} ahora tiene ${warns[target].count}/3 advertencias.`, mentions: [target] }, { quoted: m })
 }
 
 handler.command = ['unwarn', 'quitarwarn', 'sacarwarn']
