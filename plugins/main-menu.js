@@ -8,7 +8,7 @@ let tags = {
   'info': '🌀 INFOS 🐱',
   'main': '📜 MENÚ FELINO 🐾',
   'nable': '⚡ MODO AVANZADO 🐾',
-  'game': '🎮 JUEGOS GATUNOS 🐱',
+  'game': '🎮 JUEGOS GATUNOS 😸',
   'group': '📚 GRUPOS 🐾',
   'downloader': '📥 DESCARGAS 😺',
   'sticker': '🖼️ STICKERS 🐾',
@@ -34,8 +34,11 @@ let comandosPorCategoria = {
     '.antilink':'🔗', '.antitoxic':'☣️', '.antitoxicos':'☣️', '.antitraba':'🚫', '.antitrabas':'🚫', '.antifake':'❌',
     '.antivirtuales':'👻'
   },
-  'game': {'.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃', '.delttt':'❌', '.ppt':'✂️'},
-  'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
+  'game': {
+    '.acertijo':'❓', '.adivinanza':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance <@user>':'💃', 
+    '.ttt':'❌', '.delttt':'🔄', '.ppt':'✂️', '.bandera':'🚩'
+  },
+  'group': {'.enable <opción>':'✅', '.disable <opción>':'❌', '.kick <@user>':'✂️', '.banuser <@user>':'🚫', '.unbanuser <@user>':'✅', '.warn <@user>':'⚠️', '.unwarn <@user>':'🟢', '.listadv':'📋'},
   'downloader': {'.play <nombre de la canción>':'🎵'},
   'sticker': {'.stiker <img>':'🖼️', '.sticker <url>':'🖼️'},
   'tools': {'.invite':'📩', '.superinspect':'🔎', '.inspect':'🔍'},
