@@ -4,20 +4,14 @@ let handler = async (m, { conn }) => {
 
     const chatConfig = global.db.data.chats[m.chat];
 
-    // Lista completa de módulos disponibles
+    // Lista de módulos disponibles simplificada
     const modulos = {
         Juegos: chatConfig.games !== false,
         Antilink: chatConfig.antilink !== false,
         Bienvenida: chatConfig.welcome !== false,
         Despedida: chatConfig.bye !== false,
-        Antipalabras: chatConfig.antipalabras !== false,
-        Antispam: chatConfig.antispam !== false,
-        Anuncios: chatConfig.anuncios !== false,
         NSFW: chatConfig.nsfw !== false,
-        Registro: chatConfig.registro !== false,
-        AutoRespuestas: chatConfig.autorespond !== false,
-        Logs: chatConfig.logs !== false,
-        Moderación: chatConfig.moderacion !== false
+        modoadmin: chatConfig.modoadmin !== false
     };
 
     // Crear mensaje visual
