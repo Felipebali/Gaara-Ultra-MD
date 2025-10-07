@@ -16,16 +16,12 @@ let handler = async function (m, { conn, groupMetadata }) {
     '╰━━━━━━━━━━━━━━━━━━━━⬣'
   ].join('\n');
 
-  const imagenURL = 'https://files.catbox.moe/cnl455.jpg';
-
   await conn.sendMessage(
     m.chat,
     { 
-      image: { url: imagenURL },
-      caption: mensaje,
+      text: mensaje,
       mentions: mencionados
-    },
-    { quoted: m }
+    }
   );
 
   // Reacción al mensaje
