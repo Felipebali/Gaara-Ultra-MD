@@ -2,7 +2,7 @@
 // Créditos: BrayanOFC / Modificado por xzzys26 / Adaptado para FelixCat-Bot
 
 const botname = global.botname || '🌪️ FelixCat-Bot 🌪️'
-const creador = 'https://xzys-ultra.vercel.app'
+const creador = 'Felipe' 
 const versionBot = '10.5.0'
 
 let tags = {
