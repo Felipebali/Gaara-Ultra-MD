@@ -1,43 +1,61 @@
 // plugins/warn.js
-let handler = async (m, { conn, text }) => {
-    if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
-    if (!m.mentionedJid || m.mentionedJid.length === 0) return conn.reply(m.chat, '❌ Menciona al usuario con *@user*', m);
+let handler = async (m, { conn, isAdmin, isROwner, isBotAdmin }) => {
+  if (!m.isGroup) return conn.reply(m.chat, '❌ Solo en grupos.', m)
+  if (!isAdmin && !isROwner) return conn.reply(m.chat, '❌ Solo administradores pueden advertir.', m)
 
-    const chatId = m.chat;
-    if (!global.db.data.chats[chatId]) global.db.data.chats[chatId] = {};
-    if (!global.db.data.chats[chatId].warns) global.db.data.chats[chatId].warns = {};
+  let target = (m.quoted && m.quoted.sender) || (m.mentionedJid && m.mentionedJid[0])
+  if (!target) return conn.reply(m.chat, '❗ Menciona o responde el mensaje del usuario a advertir.', m)
 
-    const warnedUser = m.mentionedJid[0];
-    const reason = text ? text : 'Sin motivo';
+  // init estructura
+  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
+  if (!global.db.data.chats[m.chat].warns) global.db.data.chats[m.chat].warns = {}
+  const warns = global.db.data.chats[m.chat].warns
 
-    // Inicializar advertencias
-    if (!global.db.data.chats[chatId].warns[warnedUser]) {
-        global.db.data.chats[chatId].warns[warnedUser] = 0;
+  warns[target] = (warns[target] || 0) + 1
+  await global.db.write()
+
+  const count = warns[target]
+  const name = await conn.getName(target).catch(()=> target.split('@')[0])
+
+  // obtener participantes para verificar si target es admin
+  let metadata = {}
+  try { metadata = await conn.groupMetadata(m.chat) } catch(e) { metadata = { participants: [] } }
+  const participants = metadata.participants || []
+  const tp = participants.find(p => p.id === target || p.jid === target || p.participant === target) || {}
+  const isTargetAdmin = !!(tp.admin === 'admin' || tp.admin === 'superadmin' || tp.admin === true)
+
+  if (count >= 5) {
+    if (isTargetAdmin) {
+      // no expulsar admins: avisar y dejar en 4 para no reiniciar el bucle
+      warns[target] = 4
+      await global.db.write()
+      return conn.sendMessage(m.chat, { text: `⚠️ ${name} alcanzó 5 advertencias pero es administrador. Contacta a los owners para acciones.` }, { quoted: m })
     }
-
-    // Aumentar advertencia
-    global.db.data.chats[chatId].warns[warnedUser] += 1;
-    const warns = global.db.data.chats[chatId].warns[warnedUser];
-
-    if (warns >= 5) {
-        // Eliminar usuario y resetear advertencias
-        try {
-            await conn.groupParticipantsUpdate(chatId, [warnedUser], 'remove');
-            global.db.data.chats[chatId].warns[warnedUser] = 0;
-            return conn.reply(chatId, `❌ El usuario @${warnedUser.split('@')[0]} ha sido eliminado por llegar a 5 advertencias.`, m, { mentions: [warnedUser] });
-        } catch (e) {
-            return conn.reply(chatId, `⚠️ No se pudo eliminar al usuario @${warnedUser.split('@')[0]}.`, m, { mentions: [warnedUser] });
-        }
-    } else {
-        return conn.reply(chatId, `⚠️ Usuario @${warnedUser.split('@')[0]} advertido.\nMotivo: ${reason}\nAdvertencias: ${warns}/5`, m, { mentions: [warnedUser] });
+    // intentar expulsar
+    if (!isBotAdmin) {
+      return conn.sendMessage(m.chat, { text: `⚠️ Necesito ser administrador para expulsar usuarios.` }, { quoted: m })
     }
-};
+    try {
+      await conn.groupParticipantsUpdate(m.chat, [target], 'remove')
+      delete warns[target]
+      await global.db.write()
+      // notificación breve (minimal)
+      return conn.sendMessage(m.chat, { text: `✅ Usuario eliminado por alcanzar 5 advertencias.` }, { quoted: m })
+    } catch (e) {
+      console.error(e)
+      return conn.sendMessage(m.chat, { text: `❌ No pude eliminar al usuario. Comprueba permisos.` }, { quoted: m })
+    }
+  } else {
+    // notificación mínima
+    return conn.sendMessage(m.chat, { text: `⚠️ ${name} tiene ${count}/5 advertencias.`, mentions: [target] }, { quoted: m })
+  }
+}
 
-handler.help = ['warn @user [motivo]'];
-handler.tags = ['admin'];
-handler.command = ['warn', 'advertir'];
-handler.group = true;
-handler.admin = true;
-handler.register = true;
+handler.help = ['warn','advertir']
+handler.tags = ['admin']
+handler.command = ['warn','advertir']
+handler.group = true
+handler.admin = true
+handler.register = true
 
-export default handler;
+export default handler
