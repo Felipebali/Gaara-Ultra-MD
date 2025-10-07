@@ -1,38 +1,38 @@
-let handler = async (m, { conn }) => {
-    if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
+const handler = async (m, { conn, isAdmin, isBotAdmin }) => {
+  if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❗ Este comando solo se puede usar en grupos.' });
+  if (!isAdmin) return conn.sendMessage(m.chat, { text: '🛡️ Solo los administradores pueden usar este comando.' });
+  if (!isBotAdmin) return conn.sendMessage(m.chat, { text: '🤖 Necesito ser administrador para cambiar la configuración del grupo.' });
 
-    try {
-        // Obtenemos la metadata actual del grupo
-        const groupMetadata = await conn.groupMetadata(m.chat);
-        const isClosed = groupMetadata.announcement; // true = cerrado, false = abierto
+  try {
+    // Obtener información actual del grupo
+    const groupInfo = await conn.groupMetadata(m.chat);
+    const isAnnouncement = groupInfo.announcement; // true = cerrado, false = abierto
+    let text = '';
 
-        let newSetting;
-        let mensaje;
-
-        if (isClosed) {
-            // Grupo cerrado → abrir
-            newSetting = 'not_announcement';
-            mensaje = '👑 *El grupo ahora está abierto, todos pueden escribir.*';
-        } else {
-            // Grupo abierto → cerrar
-            newSetting = 'announcement';
-            mensaje = '⚡️ *El grupo ahora está cerrado, solo los admins pueden escribir.*';
-        }
-
-        // Actualizamos la configuración del grupo
-        await conn.groupSettingUpdate(m.chat, newSetting);
-        await conn.sendMessage(m.chat, { text: mensaje });
-
-    } catch (e) {
-        console.error(e);
-        await conn.reply(m.chat, '❌ Ocurrió un error al cambiar la configuración del grupo.', m);
+    if (isAnnouncement) {
+      // El grupo está cerrado, abrirlo
+      await conn.groupSettingUpdate(m.chat, 'not_announcement');
+      text = '🔓 *El grupo ha sido abierto.*\nAhora todos pueden enviar mensajes.';
+    } else {
+      // El grupo está abierto, cerrarlo
+      await conn.groupSettingUpdate(m.chat, 'announcement');
+      text = '🔒 *El grupo ha sido cerrado.*\nSolo los administradores pueden enviar mensajes.';
     }
-};
+
+    // Enviar mensaje normal sin citar
+    await conn.sendMessage(m.chat, { text });
+
+  } catch (error) {
+    console.error('Error al obtener info del grupo:', error);
+    return conn.sendMessage(m.chat, { text: '❌ Error al cambiar la configuración del grupo.' });
+  }
+}
 
 handler.help = ['g'];
 handler.tags = ['grupo'];
 handler.command = ['g'];
+handler.group = true;
+handler.botAdmin = true; // debe ser true para poder cerrar/abrir el grupo
 handler.admin = true;
-handler.botAdmin = true;
 
 export default handler;
