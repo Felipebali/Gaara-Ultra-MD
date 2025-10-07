@@ -22,6 +22,7 @@ let handler = async (m, { conn }) => {
 🎁 .acertijo       → Resolver acertijos
 😵 .ahorcado       → Adivina antes de perder
 😸 .adivinanza     → Resuelve adivinanzas
+🏛️ .capital       → Adivina la capital de un país
 `;
         } else {
             menuText += `⚠️ Mini-juegos desactivados. Usa .juegos para activarlos 🔴\n`;
