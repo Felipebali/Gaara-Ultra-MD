@@ -46,7 +46,7 @@ let comandosPorCategoria = {
     '.charinfo <nombre>':'📖', '.winfo <nombre>':'ℹ️', '.waifuinfo <nombre>':'ℹ️'
   },
   'nsfw': {
-    '.PeneBrayanOFC/35 @tag':'🍆', '.anal/culiar @tag':'🍑', '.blowjob/mamada @tag':'💦', '.follar @tag':'🔥',
+    '.sixnine/69 @tag':'🍆', '.anal/culiar @tag':'🍑', '.blowjob/mamada @tag':'💦', '.follar @tag':'🔥',
     '.grabboobs/agarrartetas @tag':'👙', '.searchhentai':'🔞', '.hentaisearch':'🔎', '.penetrar @user':'🍑',
     '.sexo/sex @tag':'🔥', '.tetas':'👙'
   }
