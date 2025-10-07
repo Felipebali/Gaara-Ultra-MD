@@ -1,9 +1,11 @@
-let handler = async (m, { conn, groupMetadata }) => {
+let handler = async (m, { conn }) => {
     if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
 
     try {
-        // Detectamos el estado actual del grupo
-        const isClosed = groupMetadata?.announcement; // true = cerrado, false = abierto
+        // Obtenemos la metadata actual del grupo
+        const groupMetadata = await conn.groupMetadata(m.chat);
+        const isClosed = groupMetadata.announcement; // true = cerrado, false = abierto
+
         let newSetting;
         let mensaje;
 
@@ -17,13 +19,13 @@ let handler = async (m, { conn, groupMetadata }) => {
             mensaje = '⚡️ *El grupo ahora está cerrado, solo los admins pueden escribir.*';
         }
 
-        // Actualizamos la configuración
+        // Actualizamos la configuración del grupo
         await conn.groupSettingUpdate(m.chat, newSetting);
-        await m.reply(mensaje);
+        await conn.sendMessage(m.chat, { text: mensaje });
 
     } catch (e) {
         console.error(e);
-        await m.reply('❌ Ocurrió un error al cambiar la configuración del grupo.', m);
+        await conn.reply(m.chat, '❌ Ocurrió un error al cambiar la configuración del grupo.', m);
     }
 };
 
