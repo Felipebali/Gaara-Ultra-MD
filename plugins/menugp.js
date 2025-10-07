@@ -1,13 +1,9 @@
 // plugins/menugp.js
-export default {
-    name: 'menugp',
-    description: 'Menú de comandos de administración de grupo 🐾',
-    group: true,
-    all: async function (m, { conn }) {
-        try {
-            const menuText = `
+let handler = async (m) => {
+    try {
+        let menuText = `
 ╭━━━〔 📚 MENÚ GRUPO 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐱 〕━━━⬣
-┃ ❒ *Comandos para administración de grupos*
+┃ ❒ *Comandos de administración de grupo*
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 🐾 PROMOVER / DEGRADAR 〕━━━⬣
@@ -21,7 +17,7 @@ export default {
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 ❌ ELIMINAR USUARIOS 〕━━━⬣
-┃ 🐱 .k <@user> - Eliminar usuario del grupo
+┃ 🐱 .k <@user> - Eliminar usuario
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 🚪 CERRAR / ABRIR GRUPO 〕━━━⬣
@@ -29,24 +25,23 @@ export default {
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 📢 MENCIÓN GENERAL 〕━━━⬣
-┃ 🐱 .tagall - Mencionar a todos los usuarios
+┃ 🐱 .tagall - Mencionar a todos
 ┃ 🐱 .hidetag - Mención oculta
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 > 👑 Powered by FelixCat 🐾
-`;
+        `;
 
-            await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
+        await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 
-        } catch (e) {
-            console.error(e);
-            conn.reply(m.chat, '✖️ Error al mostrar el menú de grupo.', m);
-        }
+    } catch (e) {
+        console.error(e);
+        await m.reply('✖️ Error al mostrar el menú de grupo.');
     }
-};
+}
 
-export const handler = {
-    command: ['menugp'], // comando para activar el menú
-    group: true,         // solo en grupos
-    admin: true          // solo admins pueden usarlo
-};
+handler.command = ['menugp'];
+handler.group = true;
+handler.admin = true;
+
+export default handler;
