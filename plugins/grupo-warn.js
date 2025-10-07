@@ -35,7 +35,7 @@ let handler = async (m, { conn, text }) => {
 
 handler.help = ['warn @user [motivo]'];
 handler.tags = ['admin'];
-handler.command = ['warn'];
+handler.command = ['warn', 'advertir'];
 handler.group = true;
 handler.admin = true;
 handler.register = true;
