@@ -3,13 +3,14 @@ export default {
   name: 'despedida',
   description: 'Mensaje de despedida simple con activación/desactivación',
   group: true,
+
+  // Evento que se ejecuta cuando un usuario se va del grupo
   all: async function (m, { conn }) {
     if (!m.isGroup) return;
 
-    // Revisar si la despedida está activada
     const chatSettings = global.db.data.chats[m.chat];
-    if (!chatSettings?.despedida) return;
-    if (!m.removed || m.removed.length === 0) return;
+    if (!chatSettings?.despedida) return; // Si despedida no está activada
+    if (!m.removed || m.removed.length === 0) return; // Si no hay usuarios eliminados
 
     try {
       const groupMetadata = await conn.groupMetadata(m.chat);
@@ -40,6 +41,6 @@ export default {
     }
 
     await global.db.write();
-    conn.reply(m.chat, `✅ Mensaje de despedida ahora está ${chatSettings.despedida ? 'activado' : 'desactivado'} en este grupo.`, m);
+    conn.reply(m.chat, `✅ Mensaje de despedida ahora está ${chatSettings.despedida ? 'activado' : 'desactivado'} en este grupo. Usa *${global.prefijo || '.'}despedida* para cambiarlo.`, m);
   }
 };
