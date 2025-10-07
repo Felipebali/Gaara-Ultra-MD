@@ -1,37 +1,35 @@
 // plugins/report.js
-let handler = async (m, { conn, text }) => {
-    if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
+let handler = async (m, { conn, args }) => {
+  if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m)
 
-    if (!text) return conn.reply(m.chat, '❌ Debes escribir el motivo del reporte.\nEjemplo: *.report Spam en el grupo*', m);
+  // usuario reportado (mención o respuesta)
+  let target = (m.quoted && m.quoted.sender) || (m.mentionedJid && m.mentionedJid[0])
+  if (!target) return conn.reply(m.chat, '⚠️ Debes *responder al mensaje* o *mencionar al usuario* que quieres reportar.\n\nEjemplo:\n.responder + .report Insultos\n.report @usuario Spam', m)
 
-    // Obtener admins del grupo
-    let groupMetadata = await conn.groupMetadata(m.chat);
-    let admins = groupMetadata.participants.filter(p => p.admin).map(p => p.id);
+  // motivo
+  const reason = args.length ? args.join(' ') : 'Sin motivo especificado'
 
-    if (admins.length === 0) return conn.reply(m.chat, '❌ No se encontraron administradores en el grupo.', m);
+  // obtener info del grupo y admins
+  let metadata = {}
+  try { metadata = await conn.groupMetadata(m.chat) } catch (e) { metadata = { participants: [] } }
+  const admins = (metadata.participants || []).filter(p => p.admin).map(p => p.id)
 
-    // Crear mensaje de reporte
-    let reportMessage = `
-📢 *Reporte de miembro* 📢
-• Usuario: @${m.sender.split('@')[0]}
-• Motivo: ${text}
-• Grupo: ${groupMetadata.subject}
-    `.trim();
+  if (admins.length === 0) return conn.reply(m.chat, '⚠️ No se encontraron administradores en este grupo.', m)
 
-    // Enviar reporte a los admins mencionándolos
-    await conn.sendMessage(m.chat, { 
-        text: reportMessage, 
-        mentions: admins.concat(m.sender) 
-    }, { quoted: m });
+  const reporter = m.sender
+  const targetName = await conn.getName(target).catch(() => target.split('@')[0])
+  const reporterName = await conn.getName(reporter).catch(() => reporter.split('@')[0])
 
-    // Confirmación al usuario
-    conn.reply(m.chat, '✅ Tu reporte ha sido enviado a los administradores del grupo.', m);
-};
+  const text = `🚨 *REPORTE EN EL GRUPO*\n\n👤 *Reportado:* @${target.split('@')[0]} (${targetName})\n🙋‍♂️ *Reportado por:* @${reporter.split('@')[0]} (${reporterName})\n📝 *Motivo:* ${reason}\n\n⚠️ *Atención administradores:* por favor revisen este caso.`
 
-handler.help = ['report <motivo>'];
-handler.tags = ['group'];
-handler.command = ['report', 'reporte', 'reportar'];
-handler.group = true; // solo grupos
-handler.register = true; // usuarios registrados
+  const mentions = [target, reporter, ...admins]
+  await conn.sendMessage(m.chat, { text, mentions }, { quoted: m })
+}
 
-export default handler;
+handler.help = ['report', 'reportar']
+handler.tags = ['group']
+handler.command = ['report', 'reportar']
+handler.group = true
+handler.register = true
+
+export default handler
