@@ -15,7 +15,12 @@ let tags = {
   'tools': '🧰 HERRAMIENTAS 😼',
   'gacha': '🧧 ANIME 🐱',
   'nsfw': '🔞 NSFW 🐾',
-  'especiales': '📂 MENÚS ESPECIALES 🐾', .menuj':'🎮', '.menuhot':'🔥', '.menugp':'📚', '.menuow':'👑'}
+  'especiales': '📂 MENÚS ESPECIALES 🐾'
+  'especiales': {
+  '.menuj':'🎮',
+  '.menuhot':'🔥',
+  '.menugp':'📚',
+  '.menuow':'👑'
 }; 
 
 let comandosPorCategoria = {
