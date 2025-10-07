@@ -9,7 +9,6 @@ let handler = async (m, { conn }) => {
         Juegos: chatConfig.games !== false,
         Antilink: chatConfig.antilink !== false,
         Antimención: chatConfig.antimencion !== false,
-        Antitagall: chatConfig.antitagall !== false, // <-- reemplazado
         Bienvenida: chatConfig.welcome !== false,
         NSFW: chatConfig.nsfw !== false,
         modoadmin: chatConfig.modoadmin !== false
