@@ -1,57 +1,57 @@
 // plugins/grupo-warn.js
-const handler = async (m, { conn, text, usedPrefix, command, groupMetadata, isAdmin, isBotAdmin }) => {
-  if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❌ Solo en grupos.' }, { quoted: m })
-  if (!isAdmin) return conn.sendMessage(m.chat, { text: '❌ Solo admins pueden advertir.' }, { quoted: m })
-  if (!isBotAdmin) return conn.sendMessage(m.chat, { text: '❌ Necesito ser admin para eliminar usuarios.' }, { quoted: m })
+const handler = async (m, { conn, isAdmin, isROwner, isBotAdmin, groupMetadata }) => {
+  if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
+  if (!isAdmin && !isROwner) return m.reply('❌ Solo los administradores pueden advertir.')
 
-  const user = m.mentionedJid?.[0] || (m.quoted && m.quoted.sender)
-  if (!user) return conn.sendMessage(m.chat, { text: `❗ Menciona a alguien.\nEj: *${usedPrefix}${command} @usuario razón*` }, { quoted: m })
-  const reason = text.split(" ").slice(1).join(" ")
-  if (!reason) return conn.sendMessage(m.chat, { text: '❗ Debes escribir el motivo de la advertencia.' }, { quoted: m })
+  // Obtener objetivo: mencionado o mensaje citado
+  const target = (m.quoted && m.quoted.sender) || (m.mentionedJid && m.mentionedJid[0])
+  if (!target) return m.reply('❗ Menciona o responde al mensaje del usuario que quieres advertir.')
 
-  // inicializar warn
-  const chatData = global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {}
-  chatData.warns = chatData.warns || {}
+  // Inicializar advertencias
+  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
+  if (!global.db.data.chats[m.chat].warns) global.db.data.chats[m.chat].warns = {}
+  const warns = global.db.data.chats[m.chat].warns
 
-  const current = chatData.warns[user] || { count: 0, date: null }
-  const newCount = current.count + 1
-  const date = new Date().toLocaleDateString('es-ES')
+  warns[target] = (warns[target] || 0) + 1
+  const count = warns[target]
 
-  chatData.warns[user] = { count: newCount, date, jid: user }
-  await global.db.write()
+  // Nombre seguro sin promesas
+  const targetName = conn.getName ? conn.getName(target) : target.split('@')[0]
 
-  const senderName = conn.getName(m.sender)
-  const userName = conn.getName(user)
+  // Obtener participantes y verificar si target es admin
+  const participants = (groupMetadata?.participants || [])
+  const targetData = participants.find(p => p.id === target || p.jid === target || p.participant === target)
+  const isTargetAdmin = targetData?.admin === 'admin' || targetData?.admin === 'superadmin' || targetData?.admin === true
 
-  if (newCount >= 5) {
-    // eliminar usuario si no es admin
-    const participants = (groupMetadata?.participants || [])
-    const targetData = participants.find(p => p.id === user)
-    const isTargetAdmin = targetData?.admin === 'admin' || targetData?.admin === 'superadmin'
-
+  // Eliminar usuario al llegar a 5 advertencias
+  if (count >= 5) {
     if (isTargetAdmin) {
-      chatData.warns[user].count = 4
-      await global.db.write()
-      return conn.sendMessage(m.chat, { text: `⚠️ ${userName} alcanzó 5 advertencias pero es admin. Notifica a los owners.` }, { quoted: m })
+      warns[target] = 4
+      return conn.sendMessage(m.chat, { text: `⚠️ ${targetName} alcanzó 5 advertencias, pero es admin. Contacta a los owners.` })
     }
+
+    if (!isBotAdmin) return conn.sendMessage(m.chat, { text: '⚠️ Necesito ser admin para expulsar usuarios.' })
 
     try {
-      await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
-      delete chatData.warns[user]
+      await conn.groupParticipantsUpdate(m.chat, [target], 'remove')
+      delete warns[target]
       await global.db.write()
-      return conn.sendMessage(m.chat, { text: `✅ ${userName} eliminado por alcanzar 5 advertencias.` }, { quoted: m })
-    } catch {
-      return conn.sendMessage(m.chat, { text: '❌ No pude eliminar al usuario. Revisa mis permisos.' }, { quoted: m })
+      return conn.sendMessage(m.chat, { text: `✅ ${targetName} fue eliminado por alcanzar 5 advertencias.` })
+    } catch (e) {
+      console.error(e)
+      return conn.sendMessage(m.chat, { text: '❌ No pude eliminar al usuario. Comprueba mis permisos.' })
     }
-  } else {
-    return conn.sendMessage(m.chat, { text: `⚠️ ${userName} tiene ${newCount}/5 advertencias.\nMotivo: ${reason}`, mentions: [user] }, { quoted: m })
   }
+
+  await global.db.write()
+  return conn.sendMessage(m.chat, { text: `⚠️ ${targetName} tiene ${count}/5 advertencias.` })
 }
 
-handler.command = ['warn','advertir','ad','daradvertencia']
+handler.help = ['warn', 'advertir']
 handler.tags = ['admin']
+handler.command = ['warn', 'advertir']
 handler.group = true
 handler.admin = true
-handler.botAdmin = true
+handler.register = true
 
 export default handler
