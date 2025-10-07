@@ -1,5 +1,10 @@
 // plugins/banderas.js
 let handler = async (m, { conn }) => {
+    const chatSettings = global.db.data.chats[m.chat] || {};
+    if (chatSettings.games === false) {
+        return conn.sendMessage(m.chat, { text: '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.' }, { quoted: m });
+    }
+
     const flags = [
         { name: "Uruguay", emoji: "🇺🇾" },
         { name: "Argentina", emoji: "🇦🇷" },
@@ -82,6 +87,9 @@ handler.tags = ['juegos'];
 handler.group = false;
 
 handler.before = async (m, { conn }) => {
+    const chatSettings = global.db.data.chats[m.chat] || {};
+    if (chatSettings.games === false) return; // Desactivado
+
     if (!m.text) return;
     const answer = global.flagGame?.[m.chat];
     if (!answer) return;
