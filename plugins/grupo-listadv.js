@@ -3,18 +3,26 @@ let handler = async (m, { conn }) => {
     if (!m.isGroup) return conn.reply(m.chat, '❌ Solo en grupos.', m);
 
     const chatId = m.chat;
-    const warns = global.db.data.chats[chatId]?.warns || {};
+
+    // Asegurar que exista la estructura
+    if (!global.db.data.chats[chatId]) global.db.data.chats[chatId] = {};
+    if (!global.db.data.chats[chatId].warns) global.db.data.chats[chatId].warns = {};
+
+    const warns = global.db.data.chats[chatId].warns;
 
     if (Object.keys(warns).length === 0) {
         return conn.reply(chatId, 'ℹ️ No hay advertencias.', m);
     }
 
     let text = '⚠️ *Advertencias actuales:*\n';
+    const mentions = [];
     for (let jid in warns) {
-        text += `• ${conn.getName(jid)}: ${warns[jid]}/5\n`;
+        mentions.push(jid);
+        const nombre = conn.getName(jid);
+        text += `• ${nombre}: ${warns[jid]}/5\n`;
     }
 
-    await conn.sendMessage(chatId, { text, mentions: Object.keys(warns) }, { quoted: m });
+    await conn.sendMessage(chatId, { text, mentions }, { quoted: m });
 };
 
 handler.help = ['warnlist'];
