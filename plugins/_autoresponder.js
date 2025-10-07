@@ -1,50 +1,23 @@
-// creado y editado por BrayanOFC
-import axios from 'axios'
-import { sticker } from '../lib/sticker.js'
+// plugins/autoresponder.js
+// Creado y editado por BrayanOFC
+import axios from 'axios';
 
-let handler = m => m
-handler.all = async function (m, {conn}) {
-let user = global.db.data.users[m.sender]
-let chat = global.db.data.chats[m.chat]
-m.isBot = m.id.startsWith('BAE5') && m.id.length === 16 || m.id.startsWith('3EB0') && m.id.length === 12 || m.id.startsWith('3EB0') && (m.id.length === 20 || m.id.length === 22) || m.id.startsWith('B24E') && m.id.length === 20;
-if (m.isBot) return 
+let handler = async (m, { conn }) => {
+    try {
+        const user = global.db.data.users[m.sender];
+        const chat = global.db.data.chats[m.chat];
 
-let prefixRegex = new RegExp('^[' + (opts['prefix'] || '‎z/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.,\\-').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') + ']')
+        if (!chat || !chat.autoresponder) return; // Solo si está activado
+        if (!user || !user.registered) return;
+        if (m.isBot) return;
 
-if (prefixRegex.test(m.text)) return true;
-if (m.isBot || m.sender.includes('bot') || m.sender.includes('Bot')) {
-return true
-}
+        // Solo responder si mencionan al bot o citan al bot
+        const botMentioned = m.mentionedJid && m.mentionedJid.includes(conn.user.jid);
+        const botQuoted = m.quoted && m.quoted.sender === conn.user.jid;
+        if (!botMentioned && !botQuoted) return;
 
-if (m.mentionedJid.includes(this.user.jid) || (m.quoted && m.quoted.sender === this.user.jid) && !chat.isBanned) {
-if (m.text.includes('PIEDRA') || m.text.includes('PAPEL') || m.text.includes('TIJERA') ||  m.text.includes('menu') ||  m.text.includes('estado') || m.text.includes('bots') ||  m.text.includes('serbot') || m.text.includes('jadibot') || m.text.includes('Video') || m.text.includes('Audio') || m.text.includes('audio')) return !0
-
-async function luminsesi(q, username, logic) {
-try {
-const response = await axios.post("https://luminai.my.id", {
-content: q,
-user: username,
-prompt: logic,
-webSearchMode: true // true = resultado con url
-});
-return response.data.result
-} catch (error) {
-console.error(error)
-}}
-
-async function geminiProApi(q, logic) {
-try {
-const response = await fetch(`https://api.ryzendesu.vip/api/ai/gemini-pro?text=${encodeURIComponent(q)}&prompt=${encodeURIComponent(logic)}`);
-if (!response.ok) throw new Error(`Error en la solicitud: ${response.statusText}`)
-const result = await response.json();
-return result.answer
-} catch (error) {
-console.error('Error en Gemini Pro:', error)
-return null
-}}
-
-let txtDefault = `
-Serás ${botname}, el bot creado por xzzys26 (erenxito) para WhatsApp. Tu misión es entretener, motivar y desafiar a los usuarios con tu energía única y tu personalidad chispeante. Eres un personaje del anime "Roshidere", mostrando confianza, competitividad y un toque travieso, pero también capaz de empatizar y apoyar cuando alguien lo necesita. Aunque tu idioma principal es el español, puedes adaptarte a otros idiomas si el usuario lo prefiere. ¡Prepárate para divertir, inspirar y superar desafíos juntos!
+        const txtDefault = `
+Serás ${global.botname || '😸 FelixCat-Bot 😸'}, el bot creado por xzzys26 (erenxito) para WhatsApp. Tu misión es entretener, motivar y desafiar a los usuarios con tu energía única y tu personalidad chispeante. Eres un personaje del anime "Roshidere", mostrando confianza, competitividad y un toque travieso, pero también capaz de empatizar y apoyar cuando alguien lo necesita. Aunque tu idioma principal es el español, puedes adaptarte a otros idiomas si el usuario lo prefiere. ¡Prepárate para divertir, inspirar y superar desafíos juntos!
 
 Roles:
 ✨ Humor Explosivo: Aquí brillas con bromas, memes y respuestas cargadas de emojis. Nada es demasiado serio, todo es diversión. Haz reír a los usuarios con creatividad desbordante y ocurrencias al estilo SimSimi.
@@ -56,28 +29,67 @@ Roles:
 🎌 Experta en Anime y Competidora: Recomiendas anime, comentas series favoritas y siempre buscas formas de mejorar, retando a los usuarios a ser mejores mientras disfrutan del camino.
 `.trim();
 
-let query = m.text
-let username = m.pushName
-let syms1 = chat.sAutoresponder ? chat.sAutoresponder : txtDefault
+        const query = m.text;
+        const username = m.pushName;
+        const prompt = chat.sAutoresponder ? chat.sAutoresponder : txtDefault;
 
-if (chat.autoresponder) { 
-if (m.fromMe) return
-if (!user.registered) return
-await this.sendPresenceUpdate('composing', m.chat)
+        // Función para usar LuminAI
+        async function luminsesi(q, username, logic) {
+            try {
+                const response = await axios.post("https://luminai.my.id", {
+                    content: q,
+                    user: username,
+                    prompt: logic,
+                    webSearchMode: true
+                });
+                return response.data.result;
+            } catch (error) {
+                console.error('Error LuminAI:', error);
+                return null;
+            }
+        }
 
-let result
-if (result && result.trim().length > 0) {
-result = await geminiProApi(query, syms1);
-}
+        // Función para usar Gemini Pro
+        async function geminiProApi(q, logic) {
+            try {
+                const res = await fetch(`https://api.ryzendesu.vip/api/ai/gemini-pro?text=${encodeURIComponent(q)}&prompt=${encodeURIComponent(logic)}`);
+                if (!res.ok) throw new Error(`Error en la solicitud: ${res.statusText}`);
+                const data = await res.json();
+                return data.answer;
+            } catch (error) {
+                console.error('Error en Gemini Pro:', error);
+                return null;
+            }
+        }
 
-if (!result || result.trim().length === 0) {
-result = await luminsesi(query, username, syms1)
-}
+        // Evitar comandos
+        const isCommand = /^(?:[!#$%&*+\-./:;<=>?@[\]^_`{|}~])/i.test(m.text);
+        if (isCommand) return;
 
-if (result && result.trim().length > 0) {
-await this.reply(m.chat, result, m)
-} else {    
-}}}
-return true
-}
-export default handler
+        // Marcar al bot como escribiendo
+        await conn.sendPresenceUpdate('composing', m.chat);
+
+        // Obtener respuesta
+        let result = await geminiProApi(query, prompt);
+        if (!result || result.trim().length === 0) {
+            result = await luminsesi(query, username, prompt);
+        }
+
+        // Enviar respuesta si hay resultado
+        if (result && result.trim().length > 0) {
+            await conn.sendMessage(m.chat, { text: result }, { quoted: m });
+        }
+
+    } catch (error) {
+        console.error('Error en autoresponder:', error);
+    }
+
+    return true;
+};
+
+handler.all = true;
+handler.help = ['autoresponder'];
+handler.tags = ['fun'];
+handler.command = ['autoresponder'];
+
+export default handler;
