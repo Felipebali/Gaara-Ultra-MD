@@ -57,7 +57,8 @@ let comandosPorCategoria = {
     '.menuj':'🎮',
     '.menuhot':'🔥',
     '.menugp':'📚',
-    '.menuow':'👑'
+    '.menuow':'👑', 
+    '.menudl':'📥'
   }
 };
 
