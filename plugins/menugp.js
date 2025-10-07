@@ -2,31 +2,36 @@
 let handler = async (m) => {
     try {
         let menuText = `
-╭━━━〔 📚 MENÚ GRUPO 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐱 〕━━━⬣
-┃ ❒ *Comandos de administración de grupo*
+╭━━━〔 🐾 MENÚ DE GRUPO 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐾 〕━━━⬣
+┃ ❒ *Comandos de administración de grupo* 🐱
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
-╭━━━〔 🐾 PROMOVER / DEGRADAR 〕━━━⬣
-┃ 🐱 .p <@user> - Promover a admin
-┃ 🐱 .d <@user> - Degradar admin
+╭━━━〔 🐱 PROMOVER / DEGRADAR 〕━━━⬣
+┃ 🐾 .p <@user> - Promover a admin 😺
+┃ 🐾 .d <@user> - Degradar admin 😿
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 🔨 BAN / UNBAN CHAT 〕━━━⬣
-┃ 🐱 .banchat - Banear grupo
-┃ 🐱 .unbanchat - Desbanear grupo
+┃ 🐾 .banchat - Banear grupo 🚫
+┃ 🐾 .unbanchat - Desbanear grupo ✅
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 ❌ ELIMINAR USUARIOS 〕━━━⬣
-┃ 🐱 .k <@user> - Eliminar usuario
+┃ 🐾 .k <@user> - Eliminar usuario ✂️
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 🚪 CERRAR / ABRIR GRUPO 〕━━━⬣
-┃ 🐱 .g - Cerrar / Abrir grupo
+┃ 🐾 .g - Cerrar / Abrir grupo 🔒🔓
+╰━━━━━━━━━━━━━━━━━━━━⬣
+
+╭━━━〔 🔇 SILENCIAR / DESILENCIAR 〕━━━⬣
+┃ 🐾 .mute <@user> - Silenciar usuario 🤫
+┃ 🐾 .unmute <@user> - Desilenciar usuario 🗣️
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 📢 MENCIÓN GENERAL 〕━━━⬣
-┃ 🐱 .tagall - Mencionar a todos
-┃ 🐱 .hidetag - Mención oculta
+┃ 🐾 .tagall - Mencionar a todos 📣
+┃ 🐾 .hidetag - Mención oculta 👻
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 > 👑 Powered by FelixCat 🐾
