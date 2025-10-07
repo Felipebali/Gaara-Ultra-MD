@@ -43,6 +43,6 @@ const handler = async (m, {conn, usedPrefix}) => {
 
 handler.help = ['acertijo'];
 handler.tags = ['game'];
-handler.command = ['acertijo', 'acert', 'adivinanza', 'tekateki'];
+handler.command = ['acertijo', 'acert', 'tekateki'];
 
 export default handler;
