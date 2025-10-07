@@ -1,28 +1,30 @@
-let handler = async (m, { conn, args, usedPrefix, command }) => {
-const pp = await conn.profilePictureUrl(m.chat, 'image').catch(_ => icono) 
-let isClose = { // Switch Case Like :v
-'open': 'not_announcement',
-'close': 'announcement',
-'abierto': 'not_announcement',
-'cerrado': 'announcement',
-'on': 'not_announcement',
-'off': 'announcement',
-}[(args[0] || '')]
-if (isClose === undefined)
-return conn.reply(m.chat, `🚀*Elija una opción para configurar el grupo*\n\nEjemplo:\n*✰ #${command} on*\n*✰ #${command} off*\n*✰ #${command} close*\n*✰ #${command} open*`, m)
-await conn.groupSettingUpdate(m.chat, isClose)
+let handler = async (m, { conn, groupMetadata }) => {
+    if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
 
-if (isClose === 'not_announcement'){
-m.reply(`👑 *Ya pueden escribir en este grupo.*`)
-}
+    try {
+        // Obtenemos el estado actual del grupo
+        const currentSetting = groupMetadata?.announcement; // true = cerrado, false = abierto
+        const newSetting = currentSetting ? 'not_announcement' : 'announcement';
 
-if (isClose === 'announcement'){
-m.reply(`⚡️ *Solos los admins pueden escribir en este grupo.*`)
-}}
-handler.help = ['grupo on / off', 'grupo open / close']
-handler.tags = ['grupo']
-handler.command = ['group', 'grupo']
-handler.admin = true
-handler.botAdmin = true
+        // Cambiamos el estado
+        await conn.groupSettingUpdate(m.chat, newSetting);
 
-export default handler
+        if (newSetting === 'not_announcement') {
+            m.reply(`👑 *El grupo ahora está abierto, todos pueden escribir.*`);
+        } else {
+            m.reply(`⚡️ *El grupo ahora está cerrado, solo los admins pueden escribir.*`);
+        }
+
+    } catch (e) {
+        console.error(e);
+        m.reply('❌ Ocurrió un error al intentar cambiar la configuración del grupo.', m);
+    }
+};
+
+handler.help = ['g'];
+handler.tags = ['grupo'];
+handler.command = ['g'];
+handler.admin = true;
+handler.botAdmin = true;
+
+export default handler;
