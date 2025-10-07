@@ -4,7 +4,7 @@ let handler = async (m, { conn }) => {
 
     const menuText = `
 ╭━━━〔 🔞 NSFW 🐾 〕━━━⬣
-┃ 🐾 .PeneBrayanOFC/35 @tag 🍆
+┃ 🐾 .sixnine/69 @tag 🍆
 ┃ 🐾 .anal/culiar @tag 🍑
 ┃ 🐾 .blowjob/mamada @tag 💦
 ┃ 🐾 .follar @tag 🔥
