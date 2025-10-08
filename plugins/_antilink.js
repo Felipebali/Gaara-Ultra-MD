@@ -20,9 +20,8 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
 
     const isGroupLink = groupLinkRegex.test(m.text)
     const isChannelLink = channelLinkRegex.test(m.text)
-    const isTagallLink = m.text.includes(tagallLink) // Detecta el link de tagall
+    const isTagallLink = m.text.includes(tagallLink)
 
-    // Ignorar links de canales
     if (isChannelLink) return true
 
     const name = m.pushName || m.name || m.sender.split('@')[0]
@@ -30,7 +29,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     // === Admin ===
     if (isAdmin && (isGroupLink || isTagallLink)) {
         try {
-            await conn.sendMessage(m.chat, { delete: m.key }) // borrar solo el mensaje
+            await conn.sendMessage(m.chat, { delete: m.key })
             await conn.sendMessage(m.chat, { 
                 text: `⚠️ El admin *${name}* envió un link prohibido o de Tagall. Solo se eliminó el mensaje.` 
             })
@@ -44,15 +43,13 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     // === Usuario normal ===
     if (!isAdmin && (isGroupLink || isTagallLink)) {
         try {
-            await conn.sendMessage(m.chat, { delete: m.key }) // borrar mensaje
+            await conn.sendMessage(m.chat, { delete: m.key })
 
             if (isGroupLink) {
-                // Expulsar solo por link de grupo
                 await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
                 await conn.sendMessage(m.chat, { text: `🚫 El usuario *${name}* fue expulsado por enviar link de grupo.` })
                 console.log(`Usuario ${name} eliminado del grupo por Anti-Link`)
             } else if (isTagallLink) {
-                // Solo borrar mensaje si es link de tagall
                 await conn.sendMessage(m.chat, { text: `⚠️ ${name} envió un link de Tagall. Solo se eliminó el mensaje.` })
                 console.log(`Mensaje de ${name} eliminado por Tagall`)
             }
@@ -65,16 +62,16 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     return true
 }
 
-// Comando para activar/desactivar Anti-Link
+// Comando para activar/desactivar Anti-Link (sin citar mensaje)
 export async function antilinkCommand(m, { conn, isAdmin }) {
-    if (!m.isGroup) return conn.sendMessage(m.chat, { text: "Este comando solo funciona en grupos." })
-    if (!isAdmin) return conn.sendMessage(m.chat, { text: "Solo administradores pueden activar/desactivar Anti-Link." })
+    if (!m.isGroup) return
+    if (!isAdmin) return
 
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = { antiLink: true }
     let chat = global.db.data.chats[m.chat]
     chat.antiLink = !chat.antiLink
 
     await global.db.write()
-    // No citar el mensaje
+    // Mensaje independiente, sin responder al comando original
     await conn.sendMessage(m.chat, { text: `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.` })
 }
