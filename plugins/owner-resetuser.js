@@ -1,23 +1,36 @@
-// plugins/resetuser.js
-export default async function handler(m, { conn, text }) {
-    // Solo owner
-    if (!global.owner.includes(m.sender)) return;
+const handler = async (m, { conn, text }) => {
+    const emoji = '⚠️';
+    const done = '✅';
+    const numberPattern = /\d+/g;
+    let user = '';
 
-    // Tomamos el primer argumento como número o JID
-    let target = text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : m.quoted?.sender;
-    if (!target) return conn.sendMessage(m.chat, '❌ Especifica un usuario o responde a su mensaje', { quoted: m });
+    // Detectar usuario por número o mensaje citado
+    const numberMatches = text?.match(numberPattern);
+    if (numberMatches) {
+        const number = numberMatches.join('');
+        user = number + '@s.whatsapp.net';
+    } else if (m.quoted && m.quoted.sender) {
+        user = m.quoted.sender;
+    } else {
+        return conn.sendMessage(m.chat, {text: `${emoji} Formato de usuario no reconocido. Responda a un mensaje, etiquete a un usuario o escriba su número de usuario.`}, {quoted: m});
+    }
 
-    // Inicializamos la base de datos
-    if (!global.db) global.db = { data: { users: {} } };
-    if (!global.db.data.users[target]) global.db.data.users[target] = {};
+    const userNumber = user.split('@')[0];
 
-    // Reseteamos datos
-    global.db.data.users[target].warn = 0;
-    global.db.data.users[target].banned = false;
-    // aquí podés agregar más campos a resetear
+    // Verificar que el usuario exista en la base de datos
+    if (!global.db.data.users[user]) {
+        return conn.sendMessage(m.chat, {text: `${emoji} El usuario @${userNumber} no se encuentra en mi base de datos.`, mentions: [user]}, {quoted: m});
+    }
 
-    await conn.sendMessage(m.chat, `✅ Usuario @${target.split('@')[0]} reseteado correctamente`, { quoted: m });
-}
+    // Eliminar todos los datos del usuario
+    delete global.db.data.users[user];
 
-handler.command = ['resetuser'];
-handler.owner = true;
+    // Mensaje de éxito
+    conn.sendMessage(m.chat, {text: `${done} Éxito. Todos los datos del usuario @${userNumber} fueron eliminados de mi base de datos.`, mentions: [user]}, {quoted: m});
+};
+
+handler.tags = ['owner'];
+handler.command = ['restablecerdatos','deletedatauser','resetuser','borrardatos'];
+handler.owner = true; // SOLO owner
+
+export default handler;
