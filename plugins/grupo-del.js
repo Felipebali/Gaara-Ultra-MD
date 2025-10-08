@@ -4,7 +4,7 @@ let handler = async (m, { conn }) => {
         if (!m.quoted) 
             return conn.reply(m.chat, '⚠️ Responde al mensaje que quieres borrar usando `.del`', m);
 
-        const quotedKey = m.quoted.key; // clave completa del mensaje citado
+        const quotedKey = m.quoted.key;
         if (!quotedKey) return conn.reply(m.chat, '✖️ No se pudo identificar el mensaje a eliminar.', m);
 
         // Borrar mensaje usando la clave completa
@@ -19,9 +19,9 @@ let handler = async (m, { conn }) => {
 
 handler.help = ['del'];
 handler.tags = ['admin'];
-handler.command = ['del', 'delete'];
-handler.group = true;      // solo funciona en grupos
-handler.admin = true;      // solo admins pueden usarlo
-handler.botAdmin = true;   // el bot debe ser admin
+handler.command = ['del','delete'];
+handler.group = true;
+handler.admin = true;
+handler.botAdmin = true;
 
 export default handler;
