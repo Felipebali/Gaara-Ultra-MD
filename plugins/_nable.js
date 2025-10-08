@@ -169,21 +169,6 @@ const handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, i
       isEnable = chat.reaction = !chat.reaction;
       break;
 
-    case 'nsfw':
-    case 'nsfwhot':
-    case 'nsfwhorny':
-      if (!m.isGroup) {
-        if (!isOwner) {
-          global.dfail('group', m, conn);
-          throw false;
-        }
-      } else if (!isAdmin) {
-        global.dfail('admin', m, conn);
-        throw false;
-      }
-      isEnable = chat.nsfw = !chat.nsfw;
-      break;
-
     case 'antispam':
     case 'antiSpam':
     case 'antispamosos':
