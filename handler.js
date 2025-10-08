@@ -19,6 +19,7 @@ export async function handler(chatUpdate) {
   this.pushMessage(chatUpdate.messages).catch(console.error);
   let m = chatUpdate.messages[chatUpdate.messages.length - 1];
   if (!m) return;
+  if (!m.isGroup) return; // ✅ Solo grupos
   if (global.db.data == null) await global.loadDatabase();
 
   try {
@@ -28,6 +29,7 @@ export async function handler(chatUpdate) {
     m.exp = 0;
     m.monedas = false;
 
+    // === Inicialización de usuario y chat ===
     try {
       let user = global.db.data.users[m.sender];
       if (typeof user !== 'object') global.db.data.users[m.sender] = {};
@@ -116,6 +118,9 @@ export async function handler(chatUpdate) {
     const isRAdmin = (user && user.admin) === 'superadmin';
     const isAdmin = isRAdmin || ((user && user.admin) === 'admin');
     const isBotAdmin = !!(bot && bot.admin);
+
+    // === MOSTRAR MENSAJES EN CONSOLA ===
+    console.log(chalk.blue(`[GRUPO] ${m.chat} | ${m.sender}: ${m.text}`));
 
     const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins');
 
