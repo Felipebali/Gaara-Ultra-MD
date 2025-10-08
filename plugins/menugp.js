@@ -47,7 +47,6 @@ let handler = async (m, { conn, isAdmin, chat }) => {
 
 ╭━━━〔 ✨ FRASES AUTOMÁTICAS 〕━━━⬣
 ┃ 🐾 .autofrase - Activar / Desactivar sistema
-┃ Estado actual: ${autoFraseEstado}
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 > 👑 Powered by FelixCat 🐾
