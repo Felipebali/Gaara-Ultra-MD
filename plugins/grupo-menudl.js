@@ -13,7 +13,7 @@ let handler = async (m, { conn }) => {
 ┃ • .ytmp3
 ┃ • .ytmp4
 ┃ • .mediafire
-┃ • .apkmedia
+┃ • .apk2
 ╰━━━━━━━━━━━━━━━━⬣
 `.trim();
 
