@@ -33,7 +33,7 @@ let comandosPorCategoria = {
   },
   'game': {
     '.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃',
-    '.delttt':'❌', '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.ttt':'❌', '.capital':'🏛️', '.trivia':'🎯' 
+    '.delttt':'❌', '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.ttt':'❌', '.capital':'🏛️', '.trivia':'🎯','.miau':'🐈‍⬛' 
   },
   'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
   'downloader': {'.play <nombre de la canción>':'🎵'},
