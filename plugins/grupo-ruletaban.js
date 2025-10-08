@@ -5,30 +5,38 @@ export async function ruletabanCommand(m, { conn, isAdmin }) {
 
     try {
         const groupMetadata = await conn.groupMetadata(m.chat)
+
+        // Verificar que el bot sea admin
+        const botId = conn.user.id
+        const botIsAdmin = groupMetadata.participants.find(p => p.id === botId)?.admin
+        if (!botIsAdmin) return await conn.sendMessage(m.chat, { text: "No puedo expulsar usuarios porque no soy admin." })
+
+        // Filtrar solo usuarios normales
         const participantes = groupMetadata.participants
-            .filter(p => !p.admin) // solo usuarios normales
+            .filter(p => !p.admin)
             .map(p => p.id)
 
         if (participantes.length === 0) {
             return await conn.sendMessage(m.chat, { text: "No hay usuarios normales para expulsar." })
         }
 
-        // Elegir un usuario al azar
+        // Elegir usuario al azar
         const randomIndex = Math.floor(Math.random() * participantes.length)
         const usuarioExpulsar = participantes[randomIndex]
 
         // Expulsar al usuario
         await conn.groupParticipantsUpdate(m.chat, [usuarioExpulsar], 'remove')
 
-        // Obtener nombre del usuario (pushName o fallback)
-        const name = groupMetadata.participants.find(p => p.id === usuarioExpulsar)?.name || usuarioExpulsar.split('@')[0]
+        // Obtener nombre del usuario
+        const name = groupMetadata.participants.find(p => p.id === usuarioExpulsar)?.pushName || usuarioExpulsar.split('@')[0]
 
+        // Avisar en el grupo con mención
         await conn.sendMessage(m.chat, {
             text: `🚨 ${name} fue expulsado al azar.`,
             mentions: [usuarioExpulsar]
         })
 
-        console.log(`Usuario ${name} expulsado al azar por .ruletaban`)
+        console.log(`Usuario ${name} expulsado al azar`)
 
     } catch (err) {
         console.error("Error en .ruletaban:", err)
