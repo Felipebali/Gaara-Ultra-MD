@@ -1,37 +1,43 @@
 // plugins/nsfw-cum.js
-import fetch from 'node-fetch';
+import axios from 'axios';
 
 let handler = async (m, { conn }) => {
+    // Verifica si NSFW está activado en el grupo
     if (m.isGroup && !db.data.chats[m.chat].nsfw) {
-        return m.reply('❌ El contenido NSFW está desactivado en este grupo.\n> Solo un owner puede activarlo con *.nsfw*');
+        return m.reply('❌ El contenido NSFW está desactivado en este grupo.\n> Solo un owner o admin puede activarlo con *.nsfw*');
     }
 
+    // Lista de respaldo si falla la API
+    const backups = [
+        'https://files.catbox.moe/abc123.mp4',
+        'https://files.catbox.moe/def456.mp4',
+        'https://files.catbox.moe/ghi789.mp4',
+        'https://telegra.ph/file/12345abcde.mp4'
+    ];
+
+    let videoUrl = null;
+
     try {
-        const res = await fetch('https://api.waifu.pics/nsfw/cum');
-        const json = await res.json();
-        const url = json?.url;
+        // Intentamos obtener un gif de la API
+        const response = await axios.get('https://api.waifu.pics/nsfw/cum');
+        if (response.data && response.data.url) videoUrl = response.data.url;
+    } catch (e) {
+        console.log('[NSFW] Falló la API, usando backup');
+        videoUrl = backups[Math.floor(Math.random() * backups.length)];
+    }
 
-        if (!url) {
-            return m.reply('❌ No se pudo obtener el contenido NSFW. Intenta de nuevo más tarde.');
-        }
+    // Si no hay video (por cualquier razón), usar backup
+    if (!videoUrl) videoUrl = backups[Math.floor(Math.random() * backups.length)];
 
-        // Comprobamos la extensión
-        if (url.endsWith('.mp4') || url.endsWith('.gif')) {
-            await conn.sendMessage(m.chat, {
-                video: { url },
-                gifPlayback: true,
-                caption: '💦 Aquí tienes tu gif de cum!'
-            }, { quoted: m });
-        } else {
-            await conn.sendMessage(m.chat, {
-                image: { url },
-                caption: '💦 Aquí tienes tu imagen NSFW cum!'
-            }, { quoted: m });
-        }
-
+    try {
+        await conn.sendMessage(m.chat, {
+            video: { url: videoUrl },
+            gifPlayback: true,
+            caption: '💦 Aquí tienes tu gif de cum!'
+        }, { quoted: m });
     } catch (e) {
         console.error(e);
-        m.reply('❌ Error al obtener el contenido NSFW. Intenta de nuevo más tarde.');
+        m.reply('❌ No se pudo enviar el contenido NSFW. Intenta de nuevo más tarde.');
     }
 };
 
