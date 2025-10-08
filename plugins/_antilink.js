@@ -20,8 +20,9 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
 
     const isGroupLink = groupLinkRegex.test(m.text)
     const isChannelLink = channelLinkRegex.test(m.text)
-    const isTagallLink = m.text.includes(tagallLink)
+    const isTagallLink = m.text.includes(tagallLink) // Detecta el link de tagall
 
+    // Ignorar links de canales
     if (isChannelLink) return true
 
     const name = m.pushName || m.name || m.sender.split('@')[0]
@@ -29,9 +30,10 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     // === Admin ===
     if (isAdmin && (isGroupLink || isTagallLink)) {
         try {
-            await conn.sendMessage(m.chat, { delete: m.key })
+            await conn.sendMessage(m.chat, { delete: m.key }) // borrar solo el mensaje
             await conn.sendMessage(m.chat, { 
-                text: `⚠️ El admin *${name}* envió un link prohibido o de Tagall. Solo se eliminó el mensaje.` 
+                text: `⚠️ El admin *${name}* envió un link prohibido o de Tagall. Solo se eliminó el mensaje.`,
+                contextInfo: {} // evita citar
             })
             console.log(`Mensaje de admin ${name} eliminado por Anti-Link/Tagall`)
         } catch (err) {
@@ -43,14 +45,22 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     // === Usuario normal ===
     if (!isAdmin && (isGroupLink || isTagallLink)) {
         try {
-            await conn.sendMessage(m.chat, { delete: m.key })
+            await conn.sendMessage(m.chat, { delete: m.key }) // borrar mensaje
 
             if (isGroupLink) {
+                // Expulsar solo por link de grupo
                 await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-                await conn.sendMessage(m.chat, { text: `🚫 El usuario *${name}* fue expulsado por enviar link de grupo.` })
+                await conn.sendMessage(m.chat, { 
+                    text: `🚫 El usuario *${name}* fue expulsado por enviar link de grupo.`,
+                    contextInfo: {} // evita citar
+                })
                 console.log(`Usuario ${name} eliminado del grupo por Anti-Link`)
             } else if (isTagallLink) {
-                await conn.sendMessage(m.chat, { text: `⚠️ ${name} envió un link de Tagall. Solo se eliminó el mensaje.` })
+                // Solo borrar mensaje si es link de tagall
+                await conn.sendMessage(m.chat, { 
+                    text: `⚠️ ${name} envió un link de Tagall. Solo se eliminó el mensaje.`,
+                    contextInfo: {} // evita citar
+                })
                 console.log(`Mensaje de ${name} eliminado por Tagall`)
             }
 
@@ -72,6 +82,10 @@ export async function antilinkCommand(m, { conn, isAdmin }) {
     chat.antiLink = !chat.antiLink
 
     await global.db.write()
-    // Mensaje independiente, sin responder al comando original
-    await conn.sendMessage(m.chat, { text: `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.` })
+
+    // Mensaje independiente, sin citar ni responder
+    await conn.sendMessage(m.chat, { 
+        text: `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.`,
+        contextInfo: {} // esto evita referencias o citas
+    })
 }
