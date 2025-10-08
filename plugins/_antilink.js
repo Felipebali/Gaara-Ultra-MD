@@ -1,6 +1,7 @@
 const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
 const channelLinkRegex = /whatsapp\.com\/channel\/([0-9A-Za-z]+)/i
-const linkRegex = /https?:\/\/[^\s/$.?#].[^\s]*/gi
+// Regex seguro que detecta cualquier link http/https
+const linkRegex = /https?:\/\/[^\s]+/gi
 const excepciones = ['instagram.com', 'youtu.be', 'youtube.com', 'tiktok.com']
 
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
@@ -19,12 +20,17 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     const isGroupLink = groupLinkRegex.test(m.text)
     const isChannelLink = channelLinkRegex.test(m.text)
 
+    // Detectar links reales
     const enlaces = m.text.match(linkRegex) || []
+    if (enlaces.length === 0) return true // Si no hay links, no hacer nada
+
+    // Revisar si hay links prohibidos
     const linkBloqueado = enlaces.some(link => {
         const linkLower = link.toLowerCase()
         return !excepciones.some(dom => linkLower.includes(dom))
     })
 
+    // Ignorar links de canales permitidos
     if (isChannelLink) return true
 
     // === Admin ===
