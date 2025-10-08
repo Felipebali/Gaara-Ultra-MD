@@ -6,7 +6,7 @@ let handler = async (m, { conn }) => {
   let chat = global.db.data.chats[m.chat];
   chat.antitemu = !chat.antitemu;
 
-  m.reply(`✅ El *antitemu* ha sido ${chat.antitemu ? '🟢 activado' : '🔴 desactivado'}.`);
+  await m.reply(`✅ *Antitemu* ha sido ${chat.antitemu ? '🟢 activado' : '🔴 desactivado'} en este grupo.`);
 };
 
 handler.command = ['antitemu'];
@@ -14,45 +14,42 @@ handler.admin = true;
 handler.group = true;
 export default handler;
 
-// === DETECTOR AUTOMÁTICO ===
-export async function before(m, { conn, isAdmin, isBotAdmin }) {
+// === DETECTOR UNIVERSAL DE "temu" ===
+export async function all(m, { conn, isBotAdmin }) {
   try {
-    if (!m.isGroup) return true;
+    if (!m.isGroup) return;
     const chat = global.db.data.chats[m.chat];
-    if (!chat?.antitemu) return true;
-    if (!isBotAdmin) return true;
+    if (!chat?.antitemu) return;
+    if (!isBotAdmin) return;
 
-    // Capturar TODO tipo de texto posible
-    const text =
-      (m.text ||
-        m.message?.conversation ||
-        m.message?.extendedTextMessage?.text ||
-        m.message?.imageMessage?.caption ||
-        m.message?.videoMessage?.caption ||
-        m.message?.buttonsResponseMessage?.selectedButtonId ||
-        m.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
-        '')?.toLowerCase();
+    // Captura absolutamente todos los posibles tipos de texto
+    let text = '';
+    if (typeof m.text === 'string') text = m.text;
+    else if (m.message?.conversation) text = m.message.conversation;
+    else if (m.message?.extendedTextMessage?.text) text = m.message.extendedTextMessage.text;
+    else if (m.message?.imageMessage?.caption) text = m.message.imageMessage.caption;
+    else if (m.message?.videoMessage?.caption) text = m.message.videoMessage.caption;
+    else if (m.message?.buttonsResponseMessage?.selectedButtonId) text = m.message.buttonsResponseMessage.selectedButtonId;
+    else if (m.message?.listResponseMessage?.singleSelectReply?.selectedRowId) text = m.message.listResponseMessage.singleSelectReply.selectedRowId;
 
-    if (!text) return true;
+    text = (text || '').toLowerCase();
 
-    // Mostrar en consola qué texto detectó
-    console.log(`[ANTITEMU] Mensaje detectado: "${text}"`);
+    // Mostrar lo que detecta (para confirmar)
+    if (text) console.log(`[ANTITEMU DEBUG] Texto detectado: ${text}`);
 
-    // Si contiene "temu" o links de temu
-    if (text.includes('temu.com') || text.includes('share.temu.com') || text.includes('temu')) {
-      console.log(`[ANTITEMU] Coincidencia TEMU detectada en ${m.sender}`);
-      if (m.isBaileys || m.fromMe) return true;
+    if (text.includes('temu')) {
+      console.log(`[ANTITEMU] 🔥 Coincidencia "temu" detectada en ${m.sender}`);
 
-      // Intentar borrar
+      // Eliminar el mensaje
       await conn.sendMessage(m.chat, { delete: m.key });
-      console.log(`[ANTITEMU] Mensaje borrado de ${m.sender}`);
+      console.log(`[ANTITEMU] 🗑️ Mensaje eliminado en ${m.chat}`);
 
+      // Avisar al grupo
       await conn.sendMessage(m.chat, {
-        text: `🚫 Mensaje eliminado automáticamente (palabra o link *"temu"* detectado).`,
+        text: `🚫 Mensaje eliminado automáticamente (se detectó la palabra o link *temu*).`
       });
     }
   } catch (e) {
     console.error('[ANTITEMU ERROR]', e);
   }
-  return true;
 }
