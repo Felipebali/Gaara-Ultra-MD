@@ -6,7 +6,7 @@ let handler = async (m, { conn }) => {
   let chat = global.db.data.chats[m.chat];
   chat.antitemu = !chat.antitemu;
 
-  await m.reply(`✅ El *antitemu* ha sido ${chat.antitemu ? '🟢 activado' : '🔴 desactivado'} en este grupo.`);
+  m.reply(`✅ El *antitemu* ha sido ${chat.antitemu ? '🟢 activado' : '🔴 desactivado'}.`);
 };
 
 handler.command = ['antitemu'];
@@ -14,39 +14,45 @@ handler.admin = true;
 handler.group = true;
 export default handler;
 
-// === Detector automático ===
+// === DETECTOR AUTOMÁTICO ===
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
   try {
     if (!m.isGroup) return true;
     const chat = global.db.data.chats[m.chat];
-    if (!chat?.antitemu) return true; // no activado
-    if (!isBotAdmin) return true; // sin permisos no puede borrar
+    if (!chat?.antitemu) return true;
+    if (!isBotAdmin) return true;
 
-    // extraer texto de cualquier tipo de mensaje
+    // Capturar TODO tipo de texto posible
     const text =
-      m.text ||
-      m.message?.conversation ||
-      m.message?.extendedTextMessage?.text ||
-      m.message?.imageMessage?.caption ||
-      m.message?.videoMessage?.caption ||
-      '';
+      (m.text ||
+        m.message?.conversation ||
+        m.message?.extendedTextMessage?.text ||
+        m.message?.imageMessage?.caption ||
+        m.message?.videoMessage?.caption ||
+        m.message?.buttonsResponseMessage?.selectedButtonId ||
+        m.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
+        '')?.toLowerCase();
 
     if (!text) return true;
 
-    // detectar palabra o link de temu
-    if (/temu\.com|share\.temu\.com|temu/i.test(text)) {
-      // ignorar si el mensaje es del propio bot
+    // Mostrar en consola qué texto detectó
+    console.log(`[ANTITEMU] Mensaje detectado: "${text}"`);
+
+    // Si contiene "temu" o links de temu
+    if (text.includes('temu.com') || text.includes('share.temu.com') || text.includes('temu')) {
+      console.log(`[ANTITEMU] Coincidencia TEMU detectada en ${m.sender}`);
       if (m.isBaileys || m.fromMe) return true;
 
+      // Intentar borrar
       await conn.sendMessage(m.chat, { delete: m.key });
-      console.log(`[antitemu] Mensaje borrado de ${m.sender} → "${text}"`);
+      console.log(`[ANTITEMU] Mensaje borrado de ${m.sender}`);
 
       await conn.sendMessage(m.chat, {
-        text: `🚫 *Mensaje eliminado:* se detectó la palabra "temu".`,
+        text: `🚫 Mensaje eliminado automáticamente (palabra o link *"temu"* detectado).`,
       });
     }
   } catch (e) {
-    console.error('[antitemu error]', e);
+    console.error('[ANTITEMU ERROR]', e);
   }
   return true;
 }
