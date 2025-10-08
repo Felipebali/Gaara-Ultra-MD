@@ -29,7 +29,8 @@ let comandosPorCategoria = {
     '.autover':'📝', '.antiver':'📝', '.antiviewonce':'👁️', '.reaction':'❤️', '.emojis':'😺',
     '.nsfw':'🔞', '.antispam':'🚫', '.antidelete':'❌', '.delete':'🗑️', '.jadibotmd':'🤖', '.detect':'🕵️‍♂️',
     '.configuraciones':'⚙️', '.avisodegp':'📢', '.simi':'💬', '.antilink':'🔗', '.antitoxic':'☣️',
-    '.antitraba':'🚫', '.antifake':'❌', '.antivirtuales':'👻'
+    '.antitraba':'🚫', '.antifake':'❌', '.antivirtuales':'👻',
+    '.ruletaban':'🎯' // <-- agregado aquí
   },
   'game': {
     '.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃',
