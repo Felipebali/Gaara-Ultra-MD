@@ -45,10 +45,6 @@ let handler = async (m, { conn, isAdmin, chat }) => {
 ┃ 🐾 .listadv - Lista de usuarios advertidos 📋
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
-╭━━━〔 ✨ FRASES AUTOMÁTICAS 〕━━━⬣
-┃ 🐾 .autofrase - Activar / Desactivar sistema
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
 > 👑 Powered by FelixCat 🐾
         `;
 
