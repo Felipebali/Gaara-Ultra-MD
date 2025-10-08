@@ -26,12 +26,24 @@ async function startBot() {
         if (!messages || !messages[0]) return
         const m = messages[0]
 
-        // Mostrar mensaje en consola solo si es grupo
+        // Mostrar mensaje en consola SOLO GRUPOS
         try {
             if (m.message && m.key.remoteJid?.endsWith('@g.us')) {
-                let text = m.message.conversation || m.message.extendedTextMessage?.text || '[Tipo especial]'
+                const msgType = Object.keys(m.message)[0]  // tipo real del mensaje
+                let content = ''
+                
+                // Detectar contenido
+                if (msgType === 'conversation') content = m.message.conversation
+                else if (msgType === 'extendedTextMessage') content = m.message.extendedTextMessage.text
+                else if (msgType === 'imageMessage') content = '[Imagen]'
+                else if (msgType === 'videoMessage') content = '[Video]'
+                else if (msgType === 'stickerMessage') content = '[Sticker]'
+                else if (msgType === 'documentMessage') content = '[Documento]'
+                else if (msgType === 'audioMessage') content = '[Audio]'
+                else content = `[${msgType}]`
+
                 let sender = m.key.participant || m.key.remoteJid
-                console.log(`[GRUPO] ${m.key.remoteJid} | ${sender}: ${text}`)
+                console.log(`[GRUPO] ${m.key.remoteJid} | ${sender}: ${content}`)
             }
         } catch (err) {
             console.error('Error al mostrar mensaje:', err)
