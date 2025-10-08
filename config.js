@@ -13,8 +13,8 @@ import moment from 'moment-timezone'
 global.botNumber = '' //Número del bot opcional
 global.owner = [
   ['59898719147', 'Feli', true], // tu número como dueño
-  ['59896026646', 'G', true] 
-  ['119069730668723', 'FeliLID', true] // tu LID
+  ['59896026646', 'G', true], 
+  ['119069730668723', 'FeliLID', true], // tu LID
   ['262573496758272', 'GerLID', true] 
 ]
 
