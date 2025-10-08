@@ -123,7 +123,10 @@ export async function handler(chatUpdate) {
     try {
       if (m.message) {
         let type = Object.keys(m.message)[0]; // tipo de mensaje
-        let text = m.text || (type !== 'conversation' ? `[${type}]` : '');
+        let text = m.message.conversation || 
+                   (m.message[type]?.text || '') || 
+                   (m.message.extendedTextMessage?.text || '') || 
+                   (type !== 'conversation' ? `[${type}]` : '');
         console.log(chalk.cyan(`[GRUPO] ${m.chat} | ${m.sender} | tipo: ${type} | mensaje: ${text}`));
       }
     } catch (e) {
