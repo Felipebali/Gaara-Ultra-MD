@@ -1,52 +1,34 @@
 // plugins/ruletaban.js
-let handler = async function (m, { conn }) {
-    if (!m.isGroup) return await conn.sendMessage(m.chat, { text: "Este comando solo funciona en grupos." })
-
+let handler = async (m, { conn, groupMetadata, isAdmin }) => {
     try {
-        const groupMetadata = await conn.groupMetadata(m.chat)
+        if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
+        if (!isAdmin) return m.reply('❌ Solo administradores pueden usar este comando.');
 
-        // Filtrar solo usuarios normales
-        const participantes = groupMetadata.participants
-            .filter(p => !p.admin) // solo usuarios normales
-            .map(p => p.id)
-
-        if (participantes.length === 0) {
-            return await conn.sendMessage(m.chat, { text: "No hay usuarios normales para expulsar." })
-        }
+        const participantes = groupMetadata.participants.filter(p => !p.admin && !p.bot); // filtra usuarios normales
+        if (participantes.length === 0) return m.reply('❌ No hay usuarios para expulsar.');
 
         // Elegir usuario al azar
-        const randomIndex = Math.floor(Math.random() * participantes.length)
-        const usuarioExpulsar = participantes[randomIndex]
+        const elegido = participantes[Math.floor(Math.random() * participantes.length)];
+        const userJid = elegido.id;
+        const userName = elegido.notify || elegido.name || userJid.split('@')[0];
 
-        // Intentar expulsar al usuario
-        try {
-            await conn.groupParticipantsUpdate(m.chat, [usuarioExpulsar], 'remove')
+        // Expulsar del grupo
+        await conn.groupParticipantsUpdate(m.chat, [userJid], 'remove');
 
-            // Obtener nombre del usuario
-            const name = groupMetadata.participants.find(p => p.id === usuarioExpulsar)?.pushName || usuarioExpulsar.split('@')[0]
+        // Avisar al grupo mencionando al usuario expulsado
+        await conn.sendMessage(m.chat, {
+            text: `🎯 ¡Ruleta Ban! El usuario @${userJid.split('@')[0]} ha sido expulsado.`,
+            mentions: [userJid]
+        });
 
-            // Avisar en el grupo con mención
-            await conn.sendMessage(m.chat, {
-                text: `🚨 ${name} fue expulsado al azar.`,
-                mentions: [usuarioExpulsar]
-            })
-
-            console.log(`Usuario ${name} expulsado al azar por .ruletaban`)
-        } catch {
-            // Si no puede expulsar (bot no admin)
-            return await conn.sendMessage(m.chat, { text: "No puedo expulsar usuarios porque no soy admin." })
-        }
-
-    } catch (err) {
-        console.error("Error en .ruletaban:", err)
-        await conn.sendMessage(m.chat, { text: "Ocurrió un error al intentar expulsar al usuario." })
+    } catch (e) {
+        console.error(e);
+        await m.reply('❌ Ocurrió un error ejecutando la ruleta ban.');
     }
 }
 
-handler.command = ['ruletaban']
-handler.group = true
-handler.botAdmin = true
-handler.admin = false // no hace falta que el bot verifique si el usuario es admin
-handler.fail = null
+handler.command = ['ruletaban'];
+handler.group = true;
+handler.admin = true;
 
-export default handler
+export default handler;
