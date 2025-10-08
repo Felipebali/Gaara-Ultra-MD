@@ -1,26 +1,35 @@
-// plugins/handlerNoExiste.js
+// plugins/_handlerNoExiste.js
+import fs from 'fs';
+import path from 'path';
+
 let handler = async (m, { conn, usedPrefix, command }) => {
     try {
-        const fs = require('fs');
-        const path = require('path');
+        // Solo ejecuta si empieza con el prefijo
+        if (!m.text.startsWith(usedPrefix)) return;
+
+        // Carpeta de plugins
         const pluginsDir = './plugins';
 
-        // Inicializa la base de datos si no existe
-        if (!global.db) global.db = { data: { chats: {} } };
-        if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = { noExiste: true }; // ACTIVADO POR DEFECTO
+        // Lista de comandos válidos
+        let comandosValidos = [];
 
-        // Recolectamos todos los comandos válidos
+        // Recorremos los archivos de plugins
         const archivos = fs.readdirSync(pluginsDir).filter(file => file.endsWith('.js'));
-        const comandosValidos = [];
         for (let file of archivos) {
-            let plugin = require(path.join(__dirname, file));
-            if (plugin && plugin.command) {
-                if (Array.isArray(plugin.command)) comandosValidos.push(...plugin.command);
-                else comandosValidos.push(plugin.command);
+            const pluginPath = path.join(process.cwd(), pluginsDir, file);
+            try {
+                const plugin = await import(`file://${pluginPath}`);
+                if (plugin.command) {
+                    if (Array.isArray(plugin.command)) comandosValidos.push(...plugin.command);
+                    else comandosValidos.push(plugin.command);
+                }
+            } catch (e) {
+                // Si algún plugin falla, lo ignoramos para no romper todo
+                continue;
             }
         }
 
-        // Si el comando no existe, envía el mensaje
+        // Si el comando no existe, enviamos mensaje
         if (!comandosValidos.includes(command)) {
             await conn.sendMessage(
                 m.chat,
@@ -28,12 +37,13 @@ let handler = async (m, { conn, usedPrefix, command }) => {
                 { quoted: m }
             );
         }
+
     } catch (e) {
-        console.error(e);
+        console.error('Error en _handlerNoExiste:', e);
     }
 };
 
 handler.command = ['']; // Se ejecuta para cualquier comando
 handler.register = true;
 
-module.exports = handler;
+export default handler;
