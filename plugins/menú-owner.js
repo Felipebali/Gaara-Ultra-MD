@@ -2,11 +2,11 @@
 let handler = async (m, { conn }) => {
     try {
         let menuText = `
-╭━━━〔 👑 MENÚ OWNER 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐾 〕━━━⬣
+╭━━━〔 👑 MENÚ OWNER 👑 〕━━━⬣
 ┃ ❒ *Comandos exclusivos del dueño*
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
-╭━━━〔 👑 JEFES / DIOSES 〕━━━⬣
+╭━━━〔 👑JEFES / DIOSES👑〕━━━⬣
 ┃ 🐾 .autoadmin - Activar autoadmin
 ┃ 🐾 .banuser <@user> - Banear usuario
 ┃ 🐾 .unbanuser <@user> - Desbanear usuario
