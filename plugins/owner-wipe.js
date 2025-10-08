@@ -1,40 +1,44 @@
-// plugins/wipe.js
+// plugins/wipe2.js
 let handler = async (m, { conn }) => {
   try {
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
-    // Obtener metadata del grupo más actual
+    // Metadata actualizada
     const groupMetadata = await conn.groupMetadata(m.chat);
     const participants = groupMetadata.participants || [];
 
-    // Obtener JID del bot
+    // JID del bot
     const botJid = conn.user?.id?.split(':')[0] + '@s.whatsapp.net';
 
-    // Verificar si el bot es admin
-    const botIsAdmin = participants.some(p => p.id === botJid && p.admin);
-    if (!botIsAdmin) return m.reply('❌ No puedo ejecutar esto: debo ser *admin* del grupo.');
+    // Verificar admin real del bot
+    const botData = participants.find(p => p.id === botJid);
+    if (!botData || !botData.admin) 
+      return m.reply('❌ No puedo ejecutar esto: debo ser *admin* del grupo en WhatsApp.');
 
-    // Expulsar a todos los participantes (sin excepciones)
-    for (let p of participants) {
+    // Opcional: proteger a los owners
+    const owners = Array.isArray(global.owner) ? global.owner.map(o => o.replace(/[^0-9]/g, '') + '@s.whatsapp.net') : [];
+    const toRemove = participants.map(p => p.id).filter(id => !owners.includes(id) && id !== botJid);
+
+    if (toRemove.length === 0) return m.reply('⚠️ No hay miembros que expulsar.');
+
+    // Expulsar a todos silenciosamente
+    for (let jid of toRemove) {
       try {
-        await conn.groupParticipantsUpdate(m.chat, [p.id], 'remove');
-        await new Promise(res => setTimeout(res, 300)); // evitar rate limit
+        await conn.groupParticipantsUpdate(m.chat, [jid], 'remove');
+        await new Promise(res => setTimeout(res, 300));
       } catch (e) {
-        console.error('wipe: no se pudo eliminar', p.id, e);
+        console.error('wipe2: error al eliminar', jid, e);
       }
     }
 
-    // No enviamos mensaje de confirmación
-    return;
-
   } catch (err) {
     console.error(err);
-    try { await m.reply('✖️ Ocurrió un error al ejecutar el wipe. Revisa la consola del bot.'); } catch(e){}
+    try { await m.reply('✖️ Error al ejecutar el wipe. Revisa la consola.'); } catch(e){}
   }
 };
 
 handler.command = ['wipe','killgroup','delall'];
 handler.group = true;
-handler.owner = true; // solo owner puede ejecutar
+handler.owner = true;
 
 export default handler;
