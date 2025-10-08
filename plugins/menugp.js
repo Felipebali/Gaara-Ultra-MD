@@ -19,6 +19,7 @@ let handler = async (m, { conn, isAdmin, chat }) => {
 
 ╭━━━〔 ❌ ELIMINAR USUARIOS 〕━━━⬣
 ┃ 🐾 .k <@user> - Eliminar usuario ✂️
+┃ 🐾 .ruletaban - Expulsar un usuario al azar 🎯
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 🚪 CERRAR / ABRIR GRUPO 〕━━━⬣
