@@ -3,7 +3,7 @@ let handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return;
 
   // LINK ÚNICO para que el antitagall detecte copias
-  const LINK_UNICO_TAGALL = 'https://miunicolink.local/tagall-xyz123'; // <-- link único inventado
+  const LINK_UNICO_TAGALL = 'https://miunicolink.local/tagall-FelixCat'; // <-- link único inventado
 
   // Verificar si está activado el tagall
   if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
