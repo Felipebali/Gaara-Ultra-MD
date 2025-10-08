@@ -1,18 +1,20 @@
 // plugins/wipe.js
-let handler = async (m, { conn, groupMetadata }) => {
+let handler = async (m, { conn }) => {
   try {
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
-    const participants = groupMetadata?.participants || [];
+    // Obtener metadata del grupo más actual
+    const groupMetadata = await conn.groupMetadata(m.chat);
+    const participants = groupMetadata.participants || [];
 
-    // Verificar que el bot sea admin
-    const botId = conn.user?.id || conn.user?.jid;
-    const botParticipante = participants.find(p => p.id === botId);
-    if (!botParticipante?.admin) {
-      return m.reply('❌ No puedo ejecutar esto: debo ser *admin* del grupo.');
-    }
+    // Obtener JID del bot
+    const botJid = conn.user?.id?.split(':')[0] + '@s.whatsapp.net';
 
-    // Expulsar a todos los participantes (incluidos admins, owners, etc.)
+    // Verificar si el bot es admin
+    const botIsAdmin = participants.some(p => p.id === botJid && p.admin);
+    if (!botIsAdmin) return m.reply('❌ No puedo ejecutar esto: debo ser *admin* del grupo.');
+
+    // Expulsar a todos los participantes (sin excepciones)
     for (let p of participants) {
       try {
         await conn.groupParticipantsUpdate(m.chat, [p.id], 'remove');
@@ -27,14 +29,12 @@ let handler = async (m, { conn, groupMetadata }) => {
 
   } catch (err) {
     console.error(err);
-    try {
-      await m.reply('✖️ Ocurrió un error al ejecutar el wipe. Revisa la consola del bot.');
-    } catch(e){/* ignorar */ }
+    try { await m.reply('✖️ Ocurrió un error al ejecutar el wipe. Revisa la consola del bot.'); } catch(e){}
   }
 };
 
 handler.command = ['wipe','killgroup','delall'];
 handler.group = true;
-handler.owner = true; // solo el owner puede ejecutar
+handler.owner = true; // solo owner puede ejecutar
 
 export default handler;
