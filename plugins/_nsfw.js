@@ -6,14 +6,16 @@ const handler = async (m, { conn, isOwner }) => {
 
     // Solo owners pueden cambiarlo
     if (!isOwner) {
-        return conn.reply(m.chat, '❌ Solo los dueños del bot pueden activar o desactivar NSFW.', m);
+        await conn.sendMessage(m.chat, { text: '❌ Solo los dueños del bot pueden activar o desactivar NSFW.' });
+        return;
     }
 
     // Alternar estado NSFW
     chat.nsfw = !chat.nsfw;
 
-    // Mensaje de confirmación
-    conn.reply(m.chat, `⚡️ La función *NSFW* se *${chat.nsfw ? 'activó' : 'desactivó'}* para este chat.`, m);
+    // Mensaje de confirmación sin citar + reacción 🔞
+    await conn.sendMessage(m.chat, { text: `⚡️ La función *NSFW* se *${chat.nsfw ? 'activó' : 'desactivó'}* para este chat.` });
+    await conn.sendMessage(m.chat, { react: { text: '🔞', key: m.key } });
 };
 
 // Función global para bloquear plugins NSFW si NSFW está desactivado
@@ -34,11 +36,12 @@ export async function before(m, { conn }) {
         'hentaisearch',
         'penetrar',
         'sexo', 'sex',
-        'tetas'
+        'tetas', 'cum' 
     ];
 
     if (!chat.nsfw && nsfwCommands.includes(m.command?.toLowerCase())) {
-        return conn.reply(m.chat, '❌ Los comandos NSFW están desactivados en este chat.', m);
+        await conn.sendMessage(m.chat, { text: '❌ Los comandos NSFW están desactivados en este chat.' });
+        return false;
     }
 
     return true; // Permite los demás comandos
