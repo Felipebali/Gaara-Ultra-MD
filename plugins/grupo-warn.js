@@ -39,7 +39,7 @@ ${mensaje ? mensaje : 'Sin motivo especificado'}
 ❌ El usuario ha sido eliminado por acumular 3 advertencias.`
 
         try {
-            await conn.sendMessage(m.chat, { text: texto, mentions: [user, m.sender] }, { quoted: m })
+            await conn.sendMessage(m.chat, { text: texto, mentions: [user, m.sender] })
             await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
             delete warns[user]
             await global.db.write()
@@ -61,7 +61,7 @@ ${newWarnCount === 2
             : `❗ Te quedan ${3 - newWarnCount} advertencias.`}`
 
         try {
-            await conn.sendMessage(m.chat, { text: texto, mentions: [user, m.sender] }, { quoted: m })
+            await conn.sendMessage(m.chat, { text: texto, mentions: [user, m.sender] })
         } catch (e) {
             console.error(e)
             m.reply('❌ No se pudo enviar la advertencia.')
