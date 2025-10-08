@@ -26,29 +26,30 @@ async function startBot() {
     }
 
     // Mensajes entrantes
-    conn.ev.on('messages.upsert', async ({ messages, type }) => {
-        if (!messages || !messages[0]) return
-        const m = messages[0]
+    conn.ev.on('messages.upsert', async (chatUpdate) => {
+        if (!chatUpdate.messages || !chatUpdate.messages[0]) return
 
-        // Mostrar cualquier tipo de mensaje en consola
+        // Mostrar mensajes en consola para debug
         try {
-            let sender = m.key.participant || m.key.remoteJid
-            let text = m.message?.conversation
-                    || m.message?.extendedTextMessage?.text
-                    || m.message?.imageMessage ? '[imagen]'
-                    : m.message?.videoMessage ? '[video]'
-                    : m.message?.stickerMessage ? '[sticker]'
-                    : m.message?.buttonsResponseMessage?.selectedButtonId ? `[botón: ${m.message.buttonsResponseMessage.selectedButtonId}]`
-                    : '[otro tipo]'
-            console.log(`[${sender}]: ${text}`)
+            chatUpdate.messages.forEach(m => {
+                let sender = m.key.participant || m.key.remoteJid
+                let text = m.message?.conversation
+                        || m.message?.extendedTextMessage?.text
+                        || m.message?.imageMessage ? '[imagen]'
+                        : m.message?.videoMessage ? '[video]'
+                        : m.message?.stickerMessage ? '[sticker]'
+                        : m.message?.buttonsResponseMessage?.selectedButtonId ? `[botón: ${m.message.buttonsResponseMessage.selectedButtonId}]`
+                        : '[otro tipo]'
+                console.log(`[${sender}]: ${text}`)
+            })
         } catch (err) {
             console.error('Error al mostrar mensaje:', err)
         }
 
-        // Llamar handler.js con la estructura correcta
-        import('./handler.js').then(mod => {
-            mod.handler({ messages: [m] }).catch(err => console.error('Error en handler:', err))
-        }).catch(err => console.error('Error al importar handler:', err))
+        // Pasar el chatUpdate completo al handler
+        import('./handler.js')
+            .then(mod => mod.handler(chatUpdate))
+            .catch(err => console.error('Error en handler:', err))
     })
 
     conn.ev.on('creds.update', saveState)
