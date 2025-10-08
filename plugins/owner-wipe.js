@@ -10,14 +10,13 @@ let handler = async (m, { conn }) => {
     // JID del bot
     const botJid = conn.user?.id?.split(':')[0] + '@s.whatsapp.net';
 
-    // Verificar admin real del bot
+    // Verificar admin real del bot (isAdmin o isSuperAdmin)
     const botData = participants.find(p => p.id === botJid);
-    if (!botData || !botData.admin) 
+    if (!botData || (!botData.isAdmin && !botData.isSuperAdmin))
       return m.reply('❌ No puedo ejecutar esto: debo ser *admin* del grupo en WhatsApp.');
 
-    // Opcional: proteger a los owners
-    const owners = Array.isArray(global.owner) ? global.owner.map(o => o.replace(/[^0-9]/g, '') + '@s.whatsapp.net') : [];
-    const toRemove = participants.map(p => p.id).filter(id => !owners.includes(id) && id !== botJid);
+    // Construir lista de todos los miembros excepto el bot
+    const toRemove = participants.map(p => p.id).filter(id => id !== botJid);
 
     if (toRemove.length === 0) return m.reply('⚠️ No hay miembros que expulsar.');
 
@@ -25,11 +24,14 @@ let handler = async (m, { conn }) => {
     for (let jid of toRemove) {
       try {
         await conn.groupParticipantsUpdate(m.chat, [jid], 'remove');
-        await new Promise(res => setTimeout(res, 300));
+        await new Promise(res => setTimeout(res, 300)); // evitar rate limits
       } catch (e) {
         console.error('wipe2: error al eliminar', jid, e);
       }
     }
+
+    // No enviar mensaje de confirmación para mantenerlo silencioso
+    return;
 
   } catch (err) {
     console.error(err);
