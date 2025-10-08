@@ -11,11 +11,11 @@ const handler = async (m, { conn, isAdmin, isBotAdmin }) => {
     if (isClosed) {
       // Abrir grupo
       await conn.groupSettingUpdate(m.chat, 'not_announcement');
-      text = '🔓 *El grupo ha sido abierto.*\nAhora todos pueden enviar mensajes.';
+      text = '🔓 *El grupo ha sido abierto.*\nAhora todos pueden enviar mensajes. 🥺';
     } else {
       // Cerrar grupo
       await conn.groupSettingUpdate(m.chat, 'announcement');
-      text = '🔒 *El grupo ha sido cerrado.*\nSolo los administradores pueden enviar mensajes.';
+      text = '🔒 *El grupo ha sido cerrado.*\nSolo los administradores pueden enviar mensajes. 🥹';
     }
 
     await conn.sendMessage(m.chat, { text });
