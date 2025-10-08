@@ -2,6 +2,11 @@
 let handler = async (m, { conn }) => {
     if (!m.isGroup) return;
 
+    // Verifica si NSFW está activado en el grupo
+    if (!db.data.chats[m.chat].nsfw) {
+        return m.reply('🐉 El contenido *NSFW* está desactivado en este grupo.\n> Un owner puede activarlo con el comando » *.enable nsfw*');
+    }
+
     const menuText = `
 ╭━━━〔 🔞 NSFW 🐾 〕━━━⬣
 ┃ 🐾 .sixnine/69 @tag 🍆
