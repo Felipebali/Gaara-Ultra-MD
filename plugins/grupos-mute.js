@@ -8,7 +8,7 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
     if (m.quoted) {
         user = m.quoted.sender;
     } else {
-        return conn.reply(m.chat, '⭐ Responde al mensaje del usuario que quieres mutear/desmutear.', m);
+        return conn.reply(m.chat, '😮‍💨 Qué inútil si no citaste o mencionaste a nadie para mutear/desmutear.😮‍💨', m);
     }
 
     if (["mute", "silenciar"].includes(command)) {
