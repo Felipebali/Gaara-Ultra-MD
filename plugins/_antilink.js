@@ -33,7 +33,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
         return !excepciones.some(dom => linkLower.includes(dom))
     })
 
-    // ⚡ Si es un canal permitido, solo ignorar
+    // ⚡ Ignorar canales permitidos
     if (isChannelLink) return true
 
     // === CASO 1: admin ===
@@ -43,7 +43,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
                 if (isBotAdmin) await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet } })
                 await conn.sendMessage(m.chat, {
                     text: `⚠️ El administrador *${name}* envió un enlace no permitido o de grupo. Solo se eliminó el mensaje.`,
-                    mentions: [m.sender]
+                    mentions: [m.sender] // Mención real
                 })
                 console.log(`Mensaje de admin ${name} eliminado por Anti-Link`)
             } catch (e) { console.error(e) }
@@ -61,14 +61,14 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
                 await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
                 await conn.sendMessage(m.chat, {
                     text: `🚫 El usuario *${name}* fue expulsado por enviar un link de grupo.`,
-                    mentions: [m.sender]
+                    mentions: [m.sender] // Mención real
                 })
                 console.log(`Usuario ${name} expulsado por link de grupo`)
             } else if (linkBloqueado) {
                 // Solo mensaje si es HTTP/HTTPS normal
                 await conn.sendMessage(m.chat, {
                     text: `⚠️ ${name} envió un enlace no permitido. Solo se eliminó el mensaje.`,
-                    mentions: [m.sender]
+                    mentions: [m.sender] // Mención real
                 })
                 console.log(`Mensaje de ${name} eliminado por link prohibido`)
             }
