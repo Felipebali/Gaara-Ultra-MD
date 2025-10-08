@@ -23,9 +23,18 @@ export async function before(m, { conn }) {
     // Inicializamos NSFW si no existe
     if (chat.nsfw === undefined) chat.nsfw = false;
 
-    // Lista de comandos NSFW que no se pueden usar si está desactivado
+    // Lista de comandos NSFW
     const nsfwCommands = [
-        'porn', 'hentai', 'nsfwhot', 'nsfwhorny', 'randomnsfw', 'gifnsfw' // <-- ajustá según tus plugins NSFW
+        'sixnine', '69',
+        'anal', 'culiar',
+        'blowjob', 'mamada',
+        'follar',
+        'grabboobs', 'agarrartetas',
+        'searchhentai',
+        'hentaisearch',
+        'penetrar',
+        'sexo', 'sex',
+        'tetas'
     ];
 
     if (!chat.nsfw && nsfwCommands.includes(m.command?.toLowerCase())) {
