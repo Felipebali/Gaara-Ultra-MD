@@ -23,6 +23,7 @@ let handler = async (m, { conn }) => {
 😵 *.ahorcado* → Adivina antes de perder
 😸 *.adivinanza* → Resuelve adivinanzas
 🏛️ *.capital* → Adivina la capital de un país
+🎯 *.trivia* → Preguntas de cultura general
 `;
         } else {
             menuText += `⚠️ *Mini-juegos desactivados.* Usa *.juegos* para activarlos 🔴\n`;
@@ -34,7 +35,7 @@ let handler = async (m, { conn }) => {
 
     } catch (e) {
         console.error(e);
-        await conn.reply(m.chat, '✖️ Error al mostrar el menú de mini-juegos.');
+        await conn.reply(m.chat, '✖️ Error al mostrar el menú de mini-juegos.', m);
     }
 }
 
