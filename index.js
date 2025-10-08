@@ -26,31 +26,22 @@ async function startBot() {
         if (!messages || !messages[0]) return
         const m = messages[0]
 
-        // Mostrar mensaje en consola SOLO GRUPOS
+        // Mostrar mensaje en consola
         try {
-            if (m.message && m.key.remoteJid?.endsWith('@g.us')) {
-                const msgType = Object.keys(m.message)[0]  // tipo real del mensaje
-                let content = ''
-                
-                // Detectar contenido
-                if (msgType === 'conversation') content = m.message.conversation
-                else if (msgType === 'extendedTextMessage') content = m.message.extendedTextMessage.text
-                else if (msgType === 'imageMessage') content = '[Imagen]'
-                else if (msgType === 'videoMessage') content = '[Video]'
-                else if (msgType === 'stickerMessage') content = '[Sticker]'
-                else if (msgType === 'documentMessage') content = '[Documento]'
-                else if (msgType === 'audioMessage') content = '[Audio]'
-                else content = `[${msgType}]`
-
+            if (m.message) {
+                let text = m.message.conversation || m.message.extendedTextMessage?.text
                 let sender = m.key.participant || m.key.remoteJid
-                console.log(`[GRUPO] ${m.key.remoteJid} | ${sender}: ${content}`)
+                if(text) console.log(`[${sender}]: ${text}`)
             }
         } catch (err) {
             console.error('Error al mostrar mensaje:', err)
         }
 
-        // Pasar mensaje al handler
-        import('./handler.js').then(mod => mod.default(m, { conn }))
+        // Pasar mensaje al handler correctamente
+        import('./handler.js').then(mod => {
+            // Enviamos un chatUpdate con la misma estructura que el handler espera
+            mod.default({ messages: [m] }, { conn })
+        }).catch(err => console.error('Error al cargar handler:', err))
     })
 
     // Guardar credenciales
