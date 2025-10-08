@@ -9,9 +9,13 @@ let handler = async (m, { conn }) => {
     try {
         const res = await fetch('https://api.waifu.pics/nsfw/cum');
         const json = await res.json();
-        const url = json.url;
+        const url = json?.url;
 
-        // Comprobamos extensión
+        if (!url) {
+            return m.reply('❌ No se pudo obtener el contenido NSFW. Intenta de nuevo más tarde.');
+        }
+
+        // Comprobamos la extensión
         if (url.endsWith('.mp4') || url.endsWith('.gif')) {
             await conn.sendMessage(m.chat, {
                 video: { url },
@@ -19,7 +23,6 @@ let handler = async (m, { conn }) => {
                 caption: '💦 Aquí tienes tu gif de cum!'
             }, { quoted: m });
         } else {
-            // Si no es video/gif, lo enviamos como imagen
             await conn.sendMessage(m.chat, {
                 image: { url },
                 caption: '💦 Aquí tienes tu imagen NSFW cum!'
