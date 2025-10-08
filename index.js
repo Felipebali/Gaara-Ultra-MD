@@ -7,7 +7,6 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Estado de sesión
 const { state, saveState } = useSingleFileAuthState('./session.json')
 
 async function startBot() {
@@ -21,33 +20,36 @@ async function startBot() {
         version
     })
 
+    // Definir pushMessage para que el handler funcione
+    conn.pushMessage = async function(messages) {
+        // Esta función no necesita hacer nada real, solo evitar errores
+        return messages
+    }
+
     // Mensajes entrantes
     conn.ev.on('messages.upsert', async ({ messages, type }) => {
         if (!messages || !messages[0]) return
         const m = messages[0]
 
-        // Mostrar mensaje en consola
+        // Mostrar mensaje en consola directamente (solo para debug)
         try {
             if (m.message) {
-                let text = m.message.conversation || m.message.extendedTextMessage?.text
+                let text = m.message.conversation || m.message.extendedTextMessage?.text || '[no text]'
                 let sender = m.key.participant || m.key.remoteJid
-                if(text) console.log(`[${sender}]: ${text}`)
+                console.log(`[${sender}]: ${text}`)
             }
         } catch (err) {
             console.error('Error al mostrar mensaje:', err)
         }
 
-        // Pasar mensaje al handler correctamente
+        // Llamar handler.js con la estructura correcta
         import('./handler.js').then(mod => {
-            // Enviamos un chatUpdate con la misma estructura que el handler espera
-            mod.default({ messages: [m] }, { conn })
-        }).catch(err => console.error('Error al cargar handler:', err))
+            mod.handler({ messages: [m] }).catch(err => console.error('Error en handler:', err))
+        }).catch(err => console.error('Error al importar handler:', err))
     })
 
-    // Guardar credenciales
     conn.ev.on('creds.update', saveState)
 
-    // Estado de conexión
     conn.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update
         if(connection === 'close') {
