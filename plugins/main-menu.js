@@ -30,7 +30,7 @@ let comandosPorCategoria = {
     '.nsfw':'🔞', '.antispam':'🚫', '.antidelete':'❌', '.delete':'🗑️', '.jadibotmd':'🤖', '.detect':'🕵️‍♂️',
     '.configuraciones':'⚙️', '.avisodegp':'📢', '.simi':'💬', '.antilink':'🔗', '.antitoxic':'☣️',
     '.antitraba':'🚫', '.antifake':'❌', '.antivirtuales':'👻',
-    '.ruletaban':'🎯' // <-- agregado aquí
+    '.ruletaban':'🎯'
   },
   'game': {
     '.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃',
@@ -39,7 +39,7 @@ let comandosPorCategoria = {
   'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
   'downloader': {'.play <nombre de la canción>':'🎵'},
   'sticker': {'.stiker <img>':'🖼️', '.sticker <url>':'🖼️'},
-  'tools': {'.invite':'📩', '.superinspect':'🔎', '.inspect':'🔍'},
+  'tools': {'.invite':'📩', '.superinspect':'🔎', '.inspect':'🔍', '.reportar <mensaje>':'🚨'}, // <-- agregado
   'gacha': {
     '.toanime':'🎨', '.toghibli':'🏞️', '.robawaifu <id>':'💖', '.desbloquear @usuario':'🔓', '.claim':'📥',
     '.harem [@usuario] [pagina]':'👑', '.miswaifus':'🧧', '.resetwaifus':'♻️', '.ver':'👀', '.rw':'🔄',
