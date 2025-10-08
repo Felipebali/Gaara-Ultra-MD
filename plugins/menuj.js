@@ -26,7 +26,7 @@ let handler = async (m, { conn }) => {
 🎯 *.trivia* → Preguntas de cultura general
 `;
         } else {
-            menuText += `⚠️ *Mini-juegos desactivados.* *Llama a un admin* para que los activé 🔴\n`;
+            menuText += `⚠️ *Mini-juegos desactivados.* *Menciona a un admin* para que los activé 🔴\n`;
         }
 
         menuText += `\n👑 *Powered by FelixCat 🐾*`;
