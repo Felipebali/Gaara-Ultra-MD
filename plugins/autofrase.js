@@ -115,44 +115,46 @@ const frases = [
   "🌞 Empieza cada día con energía positiva."
 ];
 
-let handler = async (m, { conn }) => {
-  if (!m.isGroup) return m.reply('⚠️ Este comando solo funciona en grupos.')
-  if (!m.isAdmin) return m.reply('⚠️ Solo administradores pueden usar este comando.')
+let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
+  if (!m.isGroup) return m.reply('⚠️ Este comando solo funciona en grupos.');
+  
+  // Verifica si el usuario es admin o el bot es admin
+  if (!isAdmin) return m.reply('⚠️ Solo los administradores pueden activar o desactivar.');
 
-  const chatId = m.chat
-  const chatData = global.db.data.chats[chatId] || {}
-  chatData.autoFrase = chatData.autoFrase || false
+  const chatId = m.chat;
+  const chatData = global.db.data.chats[chatId] || {};
+  chatData.autoFrase = chatData.autoFrase || false;
 
   if (!chatData.autoFrase) {
     // Activar
-    chatData.autoFrase = true
-    global.db.data.chats[chatId] = chatData
-    m.reply('✅ Sistema de *frases automáticas* activado. El bot enviará mensajes cada 15 minutos entre las 09:00 y las 23:59.')
+    chatData.autoFrase = true;
+    global.db.data.chats[chatId] = chatData;
+    m.reply('✅ Sistema de *frases automáticas* activado. El bot enviará mensajes cada 15 minutos entre las 09:00 y las 23:59.');
 
+    // Intervalo
     autoFrases[chatId] = setInterval(async () => {
-      const now = new Date()
-      const hora = now.getHours()
+      const now = new Date();
+      const hora = now.getHours();
       if (hora >= 9 && hora <= 23 && chatData.autoFrase) {
-        const frase = frases[Math.floor(Math.random() * frases.length)]
+        const frase = frases[Math.floor(Math.random() * frases.length)];
         try {
-          const groupMetadata = await conn.groupMetadata(chatId)
-          const mentions = groupMetadata.participants.map(p => p.id)
-          await conn.sendMessage(chatId, { text: frase, mentions })
+          const groupMetadata = await conn.groupMetadata(chatId);
+          const mentions = groupMetadata.participants.map(p => p.id);
+          await conn.sendMessage(chatId, { text: frase, mentions });
         } catch (err) {
-          console.error('Error enviando frase automática:', err)
+          console.error('Error enviando frase automática:', err);
         }
       }
-    }, 15 * 60 * 1000) // 15 minutos
+    }, 15 * 60 * 1000);
   } else {
     // Desactivar
-    chatData.autoFrase = false
-    global.db.data.chats[chatId] = chatData
-    if (autoFrases[chatId]) clearInterval(autoFrases[chatId])
-    m.reply('🛑 Sistema de *frases automáticas* desactivado para este grupo.')
+    chatData.autoFrase = false;
+    global.db.data.chats[chatId] = chatData;
+    if (autoFrases[chatId]) clearInterval(autoFrases[chatId]);
+    m.reply('🛑 Sistema de *frases automáticas* desactivado para este grupo.');
   }
-}
+};
 
-handler.command = ['autofrase']
-handler.group = true
-handler.admin = true
-export default handler
+handler.command = ['autofrase'];
+handler.group = true;
+export default handler;
