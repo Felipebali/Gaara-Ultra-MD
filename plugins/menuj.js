@@ -11,24 +11,24 @@ let handler = async (m, { conn }) => {
 
         if (gamesEnabled) {
             menuText += `
-🎲 Juegos Disponibles:
+🎲 *Juegos Disponibles:*
 
-🧠 .math           → Operaciones matemáticas
-✖️⭕ .ttt           → Tic-Tac-Toe
-🔄 .delttt         → Reiniciar Tic-Tac-Toe
-✊✋✌️ .ppt <@user>  → Piedra, papel o tijera
-💃🕺 .dance <@user> → Bailar con amigo
-🌍 .bandera        → Adivina la bandera
-🎁 .acertijo       → Resolver acertijos
-😵 .ahorcado       → Adivina antes de perder
-😸 .adivinanza     → Resuelve adivinanzas
-🏛️ .capital       → Adivina la capital de un país
+🧠 *.math* → Operaciones matemáticas
+✖️⭕ *.ttt* → Tic-Tac-Toe
+🔄 *.delttt* → Reiniciar Tic-Tac-Toe
+✊✋✌️ *.ppt <@user>* → Piedra, papel o tijera
+💃🕺 *.dance <@user>* → Bailar con amigo
+🌍 *.bandera* → Adivina la bandera
+🎁 *.acertijo* → Resolver acertijos
+😵 *.ahorcado* → Adivina antes de perder
+😸 *.adivinanza* → Resuelve adivinanzas
+🏛️ *.capital* → Adivina la capital de un país
 `;
         } else {
-            menuText += `⚠️ Mini-juegos desactivados. Usa .juegos para activarlos 🔴\n`;
+            menuText += `⚠️ *Mini-juegos desactivados.* Usa *.juegos* para activarlos 🔴\n`;
         }
 
-        menuText += `\n👑 Powered by FelixCat 🐾`;
+        menuText += `\n👑 *Powered by FelixCat 🐾*`;
 
         await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 
