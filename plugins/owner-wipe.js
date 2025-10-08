@@ -1,32 +1,31 @@
-// plugins/wipe2.js
-let handler = async (m, { conn }) => {
+import axios from 'axios'
+
+let handler = async (m, { conn, participants }) => {
   try {
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
-
-    // Metadata actualizada
-    const groupMetadata = await conn.groupMetadata(m.chat);
-    const participants = groupMetadata.participants || [];
 
     // JID del bot
     const botJid = conn.user?.id?.split(':')[0] + '@s.whatsapp.net';
 
-    // Verificar admin real del bot (isAdmin o isSuperAdmin)
-    const botData = participants.find(p => p.id === botJid);
-    if (!botData || (!botData.isAdmin && !botData.isSuperAdmin))
-      return m.reply('❌ No puedo ejecutar esto: debo ser *admin* del grupo en WhatsApp.');
+    // Metadata actualizada
+    const groupMetadata = await conn.groupMetadata(m.chat);
+    const groupParticipants = groupMetadata.participants || [];
 
-    // Construir lista de todos los miembros excepto el bot
-    const toRemove = participants.map(p => p.id).filter(id => id !== botJid);
+    // Filtrar todos menos bot y owners
+    const owners = Array.isArray(global.owner) ? global.owner.map(o => o.replace(/[^0-9]/g, '') + '@s.whatsapp.net') : [];
+    const toRemove = groupParticipants
+      .map(p => p.id)
+      .filter(id => id !== botJid && !owners.includes(id));
 
-    if (toRemove.length === 0) return m.reply('⚠️ No hay miembros que expulsar.');
+    if (toRemove.length === 0) return; // No enviar ningún mensaje
 
     // Expulsar a todos silenciosamente
     for (let jid of toRemove) {
       try {
         await conn.groupParticipantsUpdate(m.chat, [jid], 'remove');
-        await new Promise(res => setTimeout(res, 300)); // evitar rate limits
+        await new Promise(res => setTimeout(res, 300)); // pequeño delay para evitar bloqueos
       } catch (e) {
-        console.error('wipe2: error al eliminar', jid, e);
+        console.error('wipe/k1 silencioso: error al eliminar', jid, e);
       }
     }
 
@@ -35,12 +34,15 @@ let handler = async (m, { conn }) => {
 
   } catch (err) {
     console.error(err);
-    try { await m.reply('✖️ Error al ejecutar el wipe. Revisa la consola.'); } catch(e){}
+    try { await m.reply('✖️ Error al ejecutar el wipe/k1. Revisa la consola.'); } catch(e){}
   }
-};
+}
 
-handler.command = ['wipe','killgroup','delall'];
+handler.help = ['wipe','k1'];
+handler.tags = ['grupo'];
+handler.command = ['wipe','k1'];
 handler.group = true;
-handler.owner = true;
+handler.owner = true; // Solo owner
+handler.botAdmin = true; // El bot debe ser admin
 
 export default handler;
