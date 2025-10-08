@@ -1,10 +1,11 @@
 // plugins/menugp.js
-let handler = async (m, { conn }) => {
+let handler = async (m, { conn, isAdmin, chat }) => {
     try {
+        const chatData = global.db.data.chats[chat] || {};
+        const autoFraseEstado = chatData.autoFrase ? '🟢 Activado' : '🔴 Desactivado';
+
         let menuText = `
 ╭━━━〔 🐾 MENÚ DE GRUPO 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐾 〕━━━⬣
-┃ ❒ *Comandos de administración de grupo* 🐱
-╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 🐱 PROMOVER / DEGRADAR 〕━━━⬣
 ┃ 🐾 .p <@user> - Promover a admin 😺
@@ -44,6 +45,11 @@ let handler = async (m, { conn }) => {
 ┃ 🐾 .listadv - Lista de usuarios advertidos 📋
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
+╭━━━〔 ✨ FRASES AUTOMÁTICAS 〕━━━⬣
+┃ 🐾 .autofrase - Activar / Desactivar sistema
+┃ Estado actual: ${autoFraseEstado}
+╰━━━━━━━━━━━━━━━━━━━━⬣
+
 > 👑 Powered by FelixCat 🐾
         `;
 
@@ -57,6 +63,5 @@ let handler = async (m, { conn }) => {
 
 handler.command = ['menugp'];
 handler.group = true;
-handler.admin = true;
 
 export default handler;
