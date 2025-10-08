@@ -13,7 +13,6 @@ let tags = {
   'downloader': '📥 DESCARGAS 😺',
   'sticker': '🖼️ STICKERS 🐾',
   'tools': '🧰 HERRAMIENTAS 😼',
-  'gacha': '🧧 ANIME 🐱',
   'nsfw': '🔞 NSFW 🐾',
   'especiales': '📂 MENÚS ESPECIALES 🐾'
 };
@@ -37,15 +36,21 @@ let comandosPorCategoria = {
     '.delttt':'❌', '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.ttt':'❌', '.capital':'🏛️', '.trivia':'🎯','.miau':'🐈‍⬛' 
   },
   'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
-  'downloader': {'.play <nombre de la canción>':'🎵'},
-  'sticker': {'.stiker <img>':'🖼️', '.sticker <url>':'🖼️'},
-  'tools': {'.invite':'📩', '.superinspect':'🔎', '.inspect':'🔍', '.reportar <mensaje>':'🚨'}, // <-- agregado
-  'gacha': {
-    '.toanime':'🎨', '.toghibli':'🏞️', '.robawaifu <id>':'💖', '.desbloquear @usuario':'🔓', '.claim':'📥',
-    '.harem [@usuario] [pagina]':'👑', '.miswaifus':'🧧', '.resetwaifus':'♻️', '.ver':'👀', '.rw':'🔄',
-    '.rollwaifu':'🎲', '.topwaifus [página]':'🏆', '.wvideo <nombre>':'🎬', '.wimage <nombre>':'🖼️',
-    '.charinfo <nombre>':'📖', '.winfo <nombre>':'ℹ️', '.waifuinfo <nombre>':'ℹ️'
+  'downloader': {
+    '.play <nombre de la canción>':'🎵',
+    '.apk2 <nombre de la app>':'📲',
+    '.facebook <url>':'📘',
+    '.ig <usuario>':'📸',
+    '.play2 <nombre>':'🎶',
+    '.ytmp3 <url>':'🎵',
+    '.ytmp4 <url>':'🎬',
+    '.mediafire <url>':'📥',
+    '.spotify <url>':'🎧',
+    '.tiktok <url>':'🎵',
+    '.tiktoksearch <texto>':'🔎'
   },
+  'sticker': {'.stiker <img>':'🖼️', '.sticker <url>':'🖼️'},
+  'tools': {'.invite':'📩', '.superinspect':'🔎', '.inspect':'🔍', '.reportar <mensaje>':'🚨'},
   'nsfw': {
     '.sixnine/69 @tag':'🍆', '.anal/culiar @tag':'🍑', '.blowjob/mamada @tag':'💦', '.follar @tag':'🔥',
     '.grabboobs/agarrartetas @tag':'👙', '.searchhentai':'🔞', '.hentaisearch':'🔎', '.penetrar @user':'🍑',
@@ -67,7 +72,7 @@ let handler = async (m, { conn }) => {
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 `;
 
-    for (let tag of ['serbot','info','main','nable','game','group','downloader','sticker','tools','gacha','nsfw','especiales']) {
+    for (let tag of ['serbot','info','main','nable','game','group','downloader','sticker','tools','nsfw','especiales']) {
       let comandos = comandosPorCategoria[tag];
       if (!comandos) continue;
 
