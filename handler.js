@@ -120,7 +120,15 @@ export async function handler(chatUpdate) {
     const isBotAdmin = !!(bot && bot.admin);
 
     // === MOSTRAR MENSAJES EN CONSOLA ===
-    console.log(chalk.blue(`[GRUPO] ${m.chat} | ${m.sender}: ${m.text}`));
+    try {
+      if (m.message) {
+        let type = Object.keys(m.message)[0]; // tipo de mensaje
+        let text = m.text || (type !== 'conversation' ? `[${type}]` : '');
+        console.log(chalk.cyan(`[GRUPO] ${m.chat} | ${m.sender} | tipo: ${type} | mensaje: ${text}`));
+      }
+    } catch (e) {
+      console.error(e);
+    }
 
     const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins');
 
