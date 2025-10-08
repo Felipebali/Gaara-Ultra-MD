@@ -1,3 +1,4 @@
+// plugins/configuracion-general.js
 const handler = async (m, { conn, command, args, isAdmin, isOwner, usedPrefix }) => {
   if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
   if (!global.db.data.settings[conn.user.jid]) global.db.data.settings[conn.user.jid] = {};
@@ -6,96 +7,109 @@ const handler = async (m, { conn, command, args, isAdmin, isOwner, usedPrefix })
   const bot = global.db.data.settings[conn.user.jid];
   const type = (args[0] || '').toLowerCase();
 
-  // 🔧 Lista de funciones configurables (chat o global)
+  // 📋 Opciones configurables
   const opciones = {
-    welcome: { key: 'welcome', tipo: 'chat' },
-    autoresponder: { key: 'autoresponder', tipo: 'chat' },
-    detect: { key: 'detect', tipo: 'chat' },
-    antilink: { key: 'antiLink', tipo: 'chat' },
-    antilink2: { key: 'antiLink2', tipo: 'chat' },
-    nsfw: { key: 'nsfw', tipo: 'chat' },
-    autolevelup: { key: 'autolevelup', tipo: 'chat' },
-    autosticker: { key: 'autosticker', tipo: 'chat' },
-    reaction: { key: 'reaction', tipo: 'chat' },
-    antitoxic: { key: 'antitoxic', tipo: 'chat' },
-    audios: { key: 'audios', tipo: 'chat' },
-    modoadmin: { key: 'modoadmin', tipo: 'chat' },
-    antifake: { key: 'antifake', tipo: 'chat' },
-    antibot: { key: 'antiBot', tipo: 'chat' },
-    frases: { key: 'frases', tipo: 'bot' },
-    autobio: { key: 'autobio', tipo: 'bot' },
-    antispam: { key: 'antiSpam', tipo: 'bot' },
-    antiprivado: { key: 'antiPrivate', tipo: 'bot' },
-    simi: { key: 'simi', tipo: 'chat' },
-    autoaceptar: { key: 'autoAceptar', tipo: 'chat' },
-    autorechazar: { key: 'autoRechazar', tipo: 'chat' },
-    autofrase: { key: 'autoFrase', tipo: 'chat' },
-    antidelete: { key: 'delete', tipo: 'chat' },
+    // Configuración del grupo
+    welcome: { key: 'welcome', tipo: 'chat', emoji: '👋', nombre: 'Bienvenida' },
+    autoresponder: { key: 'autoresponder', tipo: 'chat', emoji: '🤖', nombre: 'AutoResponder' },
+    detect: { key: 'detect', tipo: 'chat', emoji: '👁️', nombre: 'Avisos' },
+    antilink: { key: 'antiLink', tipo: 'chat', emoji: '🔗', nombre: 'Antilink' },
+    antilink2: { key: 'antiLink2', tipo: 'chat', emoji: '🧷', nombre: 'Antilink 2' },
+    nsfw: { key: 'nsfw', tipo: 'chat', emoji: '🔥', nombre: 'NSFW' },
+    autolevelup: { key: 'autolevelup', tipo: 'chat', emoji: '📈', nombre: 'Auto Level Up' },
+    autosticker: { key: 'autosticker', tipo: 'chat', emoji: '🎭', nombre: 'AutoSticker' },
+    reaction: { key: 'reaction', tipo: 'chat', emoji: '💬', nombre: 'Reacciones' },
+    antitoxic: { key: 'antitoxic', tipo: 'chat', emoji: '🚫', nombre: 'Anti Tóxico' },
+    audios: { key: 'audios', tipo: 'chat', emoji: '🎧', nombre: 'Audios' },
+    modoadmin: { key: 'modoadmin', tipo: 'chat', emoji: '🛡️', nombre: 'Modo Admin' },
+    antifake: { key: 'antifake', tipo: 'chat', emoji: '🕵️', nombre: 'AntiFake' },
+    antibot: { key: 'antiBot', tipo: 'chat', emoji: '🤖', nombre: 'AntiBot' },
+    simi: { key: 'simi', tipo: 'chat', emoji: '💬', nombre: 'ChatBot Simi' },
+    autoaceptar: { key: 'autoAceptar', tipo: 'chat', emoji: '✅', nombre: 'Auto Aceptar' },
+    autorechazar: { key: 'autoRechazar', tipo: 'chat', emoji: '❌', nombre: 'Auto Rechazar' },
+    autofrase: { key: 'autoFrase', tipo: 'chat', emoji: '💭', nombre: 'Auto Frase' },
+    antidelete: { key: 'delete', tipo: 'chat', emoji: '🗑️', nombre: 'AntiDelete' },
+
+    // Configuración del bot
+    frases: { key: 'frases', tipo: 'bot', emoji: '💬', nombre: 'Frases Aleatorias' },
+    autobio: { key: 'autobio', tipo: 'bot', emoji: '✏️', nombre: 'Auto Biografía' },
+    antispam: { key: 'antiSpam', tipo: 'bot', emoji: '🚷', nombre: 'AntiSpam' },
+    antiprivado: { key: 'antiPrivate', tipo: 'bot', emoji: '📵', nombre: 'AntiPrivado' }
   };
 
-  // ✅ Mostrar panel de configuración si solo ponen .config
-  if (!command || command === 'config') {
-    let msg = `📌 *Configuración del grupo*\n\n`;
+  // 🧾 Mostrar panel si solo se usa .config
+  if (command === 'config') {
+    let grupo = '╭━━━〔 ⚙️ *Configuración del Grupo* ⚙️ 〕━━━╮\n';
+    let botcfg = '\n╭━━━〔 🤖 *Configuración del Bot* 🤖 〕━━━╮\n';
+
     for (let [nombre, info] of Object.entries(opciones)) {
-      const valor =
-        info.tipo === 'chat'
-          ? chat[info.key] === true
-          : bot[info.key] === true;
-      msg += `• ${nombre.charAt(0).toUpperCase() + nombre.slice(1)}: ${
-        valor ? '✅ Activado' : '❌ Desactivado'
-      }\n`;
+      const valor = info.tipo === 'chat' ? chat[info.key] === true : bot[info.key] === true;
+      const estado = valor ? '✅ Activado' : '❌ Desactivado';
+      const linea = `┃ ${info.emoji} ${info.nombre}: ${estado}\n`;
+      if (info.tipo === 'chat') grupo += linea;
+      else botcfg += linea;
     }
-    msg += `\n⚙️ Usa *.nombre* (por ejemplo: *.welcome*) para activar o desactivar.`;
-    return conn.sendMessage(m.chat, { text: msg }, { quoted: m });
+
+    grupo += '╰━━━━━━━━━━━━━━━━━━━━━━━╯';
+    botcfg += '╰━━━━━━━━━━━━━━━━━━━━━━━╯';
+
+    const mensaje = `${grupo}\n${botcfg}\n\n💡 Usa *${usedPrefix}nombre* (ej: *${usedPrefix}welcome*) para activar o desactivar.`;
+
+    await conn.sendMessage(m.chat, { text: mensaje }, { quoted: m });
+    return;
   }
 
-  // ⚡ Si el comando coincide con una opción, alternar estado
+  // ⚙️ Alternar funciones
   const key = opciones[command]?.key;
   const tipo = opciones[command]?.tipo;
   if (!key) return;
 
-  // Solo admin o dueño puede modificar
+  // Solo admin o dueño
   if (!isAdmin && !isOwner)
-    return m.reply('🚫 Solo los administradores o el dueño pueden cambiar la configuración.');
+    return m.reply('🚫 Solo los administradores o el dueño del bot pueden cambiar configuraciones.');
 
-  if (tipo === 'chat') {
-    chat[key] = !chat[key];
-  } else {
-    bot[key] = !bot[key];
-  }
+  if (tipo === 'chat') chat[key] = !chat[key];
+  else bot[key] = !bot[key];
 
   const estado = tipo === 'chat' ? chat[key] : bot[key];
-  return m.reply(`🛠 *${command.toUpperCase()}* fue ${estado ? '✅ activado' : '❌ desactivado'}.`);
+  const emoji = opciones[command]?.emoji || '⚙️';
+  const nombre = opciones[command]?.nombre || command.toUpperCase();
+
+  await conn.sendMessage(
+    m.chat,
+    { text: `${emoji} *${nombre}* fue ${estado ? '✅ activado' : '❌ desactivado'}.` },
+    { quoted: m }
+  );
 };
 
-// 🔹 Los comandos se crean automáticamente a partir de las claves de opciones
+// 🔹 Generar comandos automáticamente
 handler.command = [
   'config',
-  ...[
-    'welcome',
-    'autoresponder',
-    'detect',
-    'antilink',
-    'antilink2',
-    'nsfw',
-    'autolevelup',
-    'autosticker',
-    'reaction',
-    'antitoxic',
-    'audios',
-    'modoadmin',
-    'antifake',
-    'antibot',
-    'frases',
-    'autobio',
-    'antispam',
-    'antiprivado',
-    'simi',
-    'autoaceptar',
-    'autorechazar',
-    'autofrase',
-    'antidelete'
-  ]
+  ...Object.keys({
+    welcome: 1,
+    autoresponder: 1,
+    detect: 1,
+    antilink: 1,
+    antilink2: 1,
+    nsfw: 1,
+    autolevelup: 1,
+    autosticker: 1,
+    reaction: 1,
+    antitoxic: 1,
+    audios: 1,
+    modoadmin: 1,
+    antifake: 1,
+    antibot: 1,
+    frases: 1,
+    autobio: 1,
+    antispam: 1,
+    antiprivado: 1,
+    simi: 1,
+    autoaceptar: 1,
+    autorechazar: 1,
+    autofrase: 1,
+    antidelete: 1
+  })
 ];
 
 handler.help = ['config'];
