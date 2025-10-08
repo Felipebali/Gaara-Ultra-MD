@@ -39,7 +39,7 @@ let comandosPorCategoria = {
   'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
   'downloader': {'.play <nombre de la canción>':'🎵'},
   'sticker': {'.stiker <img>':'🖼️', '.sticker <url>':'🖼️'},
-  'tools': {'.invite':'📩', '.superinspect':'🔎', '.inspect':'🔍', '.reportar <mensaje>':'🚨'}, // <-- agregado
+  'tools': {'.invite':'📩', '.superinspect':'🔎', '.inspect':'🔍', '.reportar <mensaje>':'🚨', '.apk2':'📱'}, // <-- agregado
   'gacha': {
     '.toanime':'🎨', '.toghibli':'🏞️', '.robawaifu <id>':'💖', '.desbloquear @usuario':'🔓', '.claim':'📥',
     '.harem [@usuario] [pagina]':'👑', '.miswaifus':'🧧', '.resetwaifus':'♻️', '.ver':'👀', '.rw':'🔄',
