@@ -42,10 +42,6 @@ let comandosPorCategoria = {
     '.trivia':'🎯',
     '.miau':'🐈‍⬛'
   },
-  'group': {
-    '.enable <opción>':'✅',
-    '.disable <opción>':'❌'
-  },
   'downloader': {
     '.play <nombre de la canción>':'🎵',
     '.ytmp3 <url>':'🎶',
