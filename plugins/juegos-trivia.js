@@ -6,7 +6,7 @@ let triviaHandler = async (m) => {
             return await m.client.sendMessage(m.chat, { text: '⚠️ Los mini-juegos están desactivados. Usa *.juegos* para activarlos.' }, { quoted: m });
         }
 
-        // Preguntas divididas por categorías
+        // Lista de preguntas
         const trivia = [
             { pregunta: "¿Cuál es la capital de Francia?", opciones: ["A. París","B. Londres","C. Berlín","D. Madrid"], correcta: "A", categoria: "General" },
             { pregunta: "¿Cuál es el río más largo del mundo?", opciones: ["A. Nilo","B. Amazonas","C. Misisipi","D. Yangtsé"], correcta: "B", categoria: "General" },
@@ -20,20 +20,20 @@ let triviaHandler = async (m) => {
 
         const pregunta = trivia[Math.floor(Math.random() * trivia.length)];
 
-        // Guarda respuesta y categoría temporal
+        // Guarda respuesta y categoría
         global.triviaAnswers = global.triviaAnswers || {};
         global.triviaAnswers[m.chat] = { correcta: pregunta.correcta, categoria: pregunta.categoria };
 
-        // Inicializa puntos por jugador en este chat
+        // Inicializa puntos
         global.triviaPuntos = global.triviaPuntos || {};
         global.triviaPuntos[m.chat] = global.triviaPuntos[m.chat] || {};
 
-        // Botones A/B/C/D
+        // Botones
         const botones = [
-            { buttonId: `trivia_${m.chat}_A`, buttonText: { displayText: "A" }, type: 1 },
-            { buttonId: `trivia_${m.chat}_B`, buttonText: { displayText: "B" }, type: 1 },
-            { buttonId: `trivia_${m.chat}_C`, buttonText: { displayText: "C" }, type: 1 },
-            { buttonId: `trivia_${m.chat}_D`, buttonText: { displayText: "D" }, type: 1 }
+            { buttonId: `trivia_A`, buttonText: { displayText: "A" }, type: 1 },
+            { buttonId: `trivia_B`, buttonText: { displayText: "B" }, type: 1 },
+            { buttonId: `trivia_C`, buttonText: { displayText: "C" }, type: 1 },
+            { buttonId: `trivia_D`, buttonText: { displayText: "D" }, type: 1 }
         ];
 
         const texto = `🎲 *FelixCat Trivia Pro* 🎲\n\n📂 Categoría: ${pregunta.categoria}\n\n❓ ${pregunta.pregunta}\n\n${pregunta.opciones.join("\n")}\n\nSelecciona tu respuesta usando los botones.`;
@@ -47,19 +47,18 @@ let triviaHandler = async (m) => {
 
     } catch (e) {
         console.error(e);
-        await m.client.sendMessage(m.chat, { text: '✖️ Error al iniciar la trivia.' }, { quoted: m });
+        try { await m.client.sendMessage(m.chat, { text: '✖️ Error al iniciar la trivia.' }, { quoted: m }); } catch {}
     }
 };
 
-// --- Handler global para respuestas con botones ---
-triviaHandler.all = async (m) => {
+// --- Handler global para botones ---
+triviaHandler.before = async (m) => {
     try {
-        if (!m.message?.buttonsResponseMessage) return; // Solo botones
+        if (!m.message?.buttonsResponseMessage) return;
         if (!global.triviaAnswers || !global.triviaAnswers[m.chat]) return;
 
         const correcta = global.triviaAnswers[m.chat].correcta.toUpperCase();
-        const buttonId = m.message.buttonsResponseMessage.selectedButtonId;
-        const respuesta = buttonId.split("_").pop().toUpperCase();
+        const respuesta = m.message.buttonsResponseMessage.selectedButtonId.split("_").pop().toUpperCase();
 
         if (!["A","B","C","D"].includes(respuesta)) return;
 
@@ -75,8 +74,7 @@ triviaHandler.all = async (m) => {
             await m.client.sendMessage(m.chat, { text: `❌ Incorrecto, ${m.pushName}. La respuesta correcta era *${correcta}*.` }, { quoted: m });
         }
 
-        delete global.triviaAnswers[m.chat]; // elimina pregunta actual
-
+        delete global.triviaAnswers[m.chat];
     } catch (e) {
         console.error(e);
     }
