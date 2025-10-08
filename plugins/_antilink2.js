@@ -1,4 +1,4 @@
-let linkRegex = /\b((https?:\/\/|www\.)?[\w-]+\.[\w-]+(?:\.[\w-]+)*(\/[\w\.\-\/]*)?)\b/i;
+let linkRegex = /\b((https?:\/\/|www\.)?[\w-]+\.[\w-]+(?:\.[\w-]+)*(\/[\w\.\-\/?=&]*)?)\b/gi;
 
 // Lista de dominios permitidos
 const excepciones = ['instagram.com', 'youtu.be', 'youtube.com', 'tiktok.com'];
@@ -17,12 +17,13 @@ export async function before(m, { isAdmin, isBotAdmin }) {
     const enlaces = m.text.match(linkRegex);
     if (!enlaces) return true; // si no hay enlaces, dejamos pasar
 
-    // Revisar si alguno de los enlaces NO está en la lista de excepciones
+    // Normalizar enlaces y verificar si alguno NO está en excepciones
     const linkBloqueado = enlaces.some(link => {
-        return !excepciones.some(dom => link.toLowerCase().includes(dom));
+        const linkLower = link.toLowerCase();
+        return !excepciones.some(dom => linkLower.includes(dom));
     });
 
-    if (!linkBloqueado) return true; // todos los enlaces son de los permitidos
+    if (!linkBloqueado) return true; // todos los enlaces son permitidos
 
     // Si llegamos acá, hay enlace bloqueado
     if (isAdmin) {
