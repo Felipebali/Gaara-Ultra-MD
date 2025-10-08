@@ -6,8 +6,11 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
 
     // Cargar estado
     let data = {};
-    try { data = JSON.parse(fs.readFileSync('./antitagall.json')) } 
-    catch (e) { data = {} }
+    try { 
+        data = JSON.parse(fs.readFileSync('./antitagall.json')); 
+    } catch (e) { 
+        data = {}; 
+    }
 
     // Comando para activar/desactivar antitagall
     if (command === 'antitagall') {
@@ -18,23 +21,24 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
     }
 
     if (!data[m.chat]) return; // si está desactivado
-
     if (!m.text) return;
+    if (m.key.fromMe) return; // ignorar mensajes del propio bot
 
     const texto = m.text.toLowerCase().replace(/\s+/g, '');
 
-    // Patrones típicos del tagall que queremos bloquear
+    // Aquí podés poner un "link" o patrón único que solo aparece en el código original del tagall
     const patrones = [
         '.tagall',
         'for(letmemofparticipants)',
         'conn.sendmessage(m.chat',
         'participants.map',
+        'https://tubot.link/tagall', // ejemplo de link único en tu código
         'sendmessage'
     ];
 
-    // Si el mensaje contiene cualquiera de esos patrones, lo borramos
     const encontrado = patrones.some(p => texto.includes(p));
     if (encontrado) {
+        // Borra solo el mensaje, no al usuario
         await conn.sendMessage(m.chat, { text: '❌ No se permite enviar copias del .tagall del bot.' }, { quoted: m });
         await conn.deleteMessage(m.chat, { id: m.key.id, remoteJid: m.chat });
     }
