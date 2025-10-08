@@ -9,7 +9,7 @@ let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
 
     try {
         await conn.groupParticipantsUpdate(m.chat, [user], 'promote');
-        await m.reply(`✅ Usuario @${user.split('@')[0]} ahora es admin.`, m.chat, { mentions: [user] });
+        await m.reply(`✅ @${user.split('@')[0]} ahora es admin.`, m.chat, { mentions: [user] });
     } catch (e) {
         console.error(e);
         m.reply('❌ Error al intentar promover al usuario.');
