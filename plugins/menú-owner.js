@@ -2,28 +2,26 @@
 let handler = async (m, { conn }) => {
     try {
         let menuText = `
-╭━━━〔 ⚡ MENÚ DIVINO - DIOSES DEL OLIMPO 🏛️ 〕━━━⬣
-┃ ❒ *Solo los dioses del Olimpo pueden ejecutar estos mandatos*
+╭━━━〔 👑 DIOSES DEL OLIMPO 🏛️ 〕━━━⬣
+┃ *Comandos exclusivos de los dioses*
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
-╭━━━〔 ⚡ MANDATOS OLÍMPICOS 〕━━━⬣
-┃ 🐾 .autoadmin - Zeus otorga poderes divinos a un mortal
-┃ 🐾 .banuser <@user> - Hades destierra a un mortal al inframundo
-┃ 🐾 .unbanuser <@user> - Atenea perdona a un mortal desterrado
-┃ 🐾 .chetar - Ares concede habilidades de guerra divina
-┃ 🐾 .deschetar - Hermes quita poderes a un mortal atrevido
-┃ 🐾 .dsowner - Poseidón expulsa a un dios de su trono
-┃ 🐾 .join <link> - Dionisio invita a un mortal a su festín
-┃ 🐾 .restart - Helios reinicia el ciclo del cosmos (bot)
-┃ 🐾 .exec <comando> - Apolo ejecuta un decreto sagrado
-┃ 🐾 .exec2 <comando> - Artemisa ejecuta un decreto supremo
-┃ 🐾 .setcmd - Hefesto configura un mandato divino
-┃ 🐾 .setprefix - Hermes cambia el símbolo de los dioses
-┃ 🐾 .update - Hestia renueva el reino divino
-┃ 🐾 .resetuser <@user> - Cronos borra toda existencia de un mortal de los registros celestiales
-╰━━━━━━━━━━━━━━━━━━━━⬣
+⚡ Zeus - .autoadmin ⚡ Poder absoluto
+💀 Hades - .banuser <@user> 💀 Destierra al inframundo
+🕊️ Atenea - .unbanuser <@user> 🕊️ Perdón divino
+⚔️ Ares - .chetar ⚔️ Habilidad de guerra
+🌀 Hermes - .deschetar 🌀 Quita poderes
+🌊 Poseidón - .dsowner 🌊 Expulsa un dios
+🍷 Dionisio - .join <link> 🍷 Invita al festín
+☀️ Helios - .restart ☀️ Reinicia el cosmos
+🎯 Apolo - .exec <comando> 🎯 Decreto divino
+🏹 Artemisa - .exec2 <comando> 🏹 Decreto supremo
+🔨 Hefesto - .setcmd 🔨 Configura mandato
+🌀 Hermes - .setprefix 🌀 Cambia símbolo
+🔥 Hestia - .update 🔥 Renovar reino
+⏳ Cronos - .resetuser <@user> ⏳ Borra existencia
 
-> 🏛️ *Todos los mandatos son ejecutados por el Supremo FelixCat, dios principal del Olimpo* 🐾
+> ⚡ FelixCat, dios supremo del Olimpo
         `;
 
         // Enviar mensaje SIN citar
@@ -31,7 +29,7 @@ let handler = async (m, { conn }) => {
 
     } catch (e) {
         console.error(e);
-        await m.reply('✖️ Error al mostrar el menú divino.');
+        await m.reply('✖️ Error al mostrar el menú de dioses.');
     }
 }
 
