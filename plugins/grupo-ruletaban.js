@@ -1,7 +1,7 @@
-// Comando .ruletaban
-export async function ruletabanCommand(m, { conn, isAdmin }) {
-    if (!m.isGroup) return await conn.sendMessage(m.chat, { text: "Este comando solo funciona en grupos." })
-    if (!isAdmin) return await conn.sendMessage(m.chat, { text: "Solo administradores pueden usar este comando." })
+// plugins/ruletaban.js
+let handler = async function (m, { conn, isAdmin }) {
+    if (!m.isGroup) return conn.sendMessage(m.chat, { text: "Este comando solo funciona en grupos." })
+    if (!isAdmin) return conn.sendMessage(m.chat, { text: "Solo administradores pueden usar este comando." })
 
     try {
         const groupMetadata = await conn.groupMetadata(m.chat)
@@ -9,7 +9,7 @@ export async function ruletabanCommand(m, { conn, isAdmin }) {
         // Verificar que el bot sea admin
         const botId = conn.user.id
         const botIsAdmin = groupMetadata.participants.find(p => p.id === botId)?.admin
-        if (!botIsAdmin) return await conn.sendMessage(m.chat, { text: "No puedo expulsar usuarios porque no soy admin." })
+        if (!botIsAdmin) return conn.sendMessage(m.chat, { text: "No puedo expulsar usuarios porque no soy admin." })
 
         // Filtrar solo usuarios normales
         const participantes = groupMetadata.participants
@@ -17,7 +17,7 @@ export async function ruletabanCommand(m, { conn, isAdmin }) {
             .map(p => p.id)
 
         if (participantes.length === 0) {
-            return await conn.sendMessage(m.chat, { text: "No hay usuarios normales para expulsar." })
+            return conn.sendMessage(m.chat, { text: "No hay usuarios normales para expulsar." })
         }
 
         // Elegir usuario al azar
@@ -43,3 +43,11 @@ export async function ruletabanCommand(m, { conn, isAdmin }) {
         await conn.sendMessage(m.chat, { text: "Ocurrió un error al intentar expulsar al usuario." })
     }
 }
+
+handler.command = ['ruletaban'] // Comando que activa esto
+handler.group = true // Solo funciona en grupos
+handler.botAdmin = true // El bot debe ser admin
+handler.admin = true // Solo admins pueden usarlo
+handler.fail = null
+
+export default handler
