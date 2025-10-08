@@ -1,23 +1,31 @@
 // plugins/ruletaban.js
-let handler = async function (m, { conn, isAdmin }) {
-    if (!m.isGroup) return conn.sendMessage(m.chat, { text: "Este comando solo funciona en grupos." })
-    if (!isAdmin) return conn.sendMessage(m.chat, { text: "Solo administradores pueden usar este comando." })
+let handler = async function (m, { conn }) {
+    if (!m.isGroup) return await conn.sendMessage(m.chat, { text: "Este comando solo funciona en grupos." })
 
     try {
         const groupMetadata = await conn.groupMetadata(m.chat)
 
-        // Verificar que el bot sea admin
+        // ID del bot y del usuario que ejecuta
         const botId = conn.user.id
-        const botIsAdmin = groupMetadata.participants.find(p => p.id === botId)?.admin
-        if (!botIsAdmin) return conn.sendMessage(m.chat, { text: "No puedo expulsar usuarios porque no soy admin." })
+        const userId = m.sender
+
+        // Verificar admins correctamente
+        const botParticipant = groupMetadata.participants.find(p => p.id === botId)
+        const userParticipant = groupMetadata.participants.find(p => p.id === userId)
+
+        const botIsAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin'
+        const userIsAdmin = userParticipant?.admin === 'admin' || userParticipant?.admin === 'superadmin'
+
+        if (!userIsAdmin) return await conn.sendMessage(m.chat, { text: "Solo administradores pueden usar este comando." })
+        if (!botIsAdmin) return await conn.sendMessage(m.chat, { text: "No puedo expulsar usuarios porque no soy admin." })
 
         // Filtrar solo usuarios normales
         const participantes = groupMetadata.participants
-            .filter(p => !p.admin)
+            .filter(p => !p.admin) // usuarios normales
             .map(p => p.id)
 
         if (participantes.length === 0) {
-            return conn.sendMessage(m.chat, { text: "No hay usuarios normales para expulsar." })
+            return await conn.sendMessage(m.chat, { text: "No hay usuarios normales para expulsar." })
         }
 
         // Elegir usuario al azar
@@ -36,7 +44,7 @@ let handler = async function (m, { conn, isAdmin }) {
             mentions: [usuarioExpulsar]
         })
 
-        console.log(`Usuario ${name} expulsado al azar`)
+        console.log(`Usuario ${name} expulsado al azar por .ruletaban`)
 
     } catch (err) {
         console.error("Error en .ruletaban:", err)
@@ -44,10 +52,10 @@ let handler = async function (m, { conn, isAdmin }) {
     }
 }
 
-handler.command = ['ruletaban'] // Comando que activa esto
-handler.group = true // Solo funciona en grupos
-handler.botAdmin = true // El bot debe ser admin
-handler.admin = true // Solo admins pueden usarlo
+handler.command = ['ruletaban']
+handler.group = true
+handler.botAdmin = true
+handler.admin = true
 handler.fail = null
 
 export default handler
