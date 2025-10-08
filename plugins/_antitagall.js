@@ -1,5 +1,6 @@
 // plugins/antitagall.js
 import fs from 'fs';
+
 let handler = async (m, { conn, usedPrefix, command, isAdmin, isOwner }) => {
     if (!m.isGroup) return;
 
@@ -23,11 +24,13 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isOwner }) => {
     // Solo revisa si está activado
     if (!data[m.chat]) return;
 
+    // Fragmento representativo del código del .tagall para detectar copias
     const tagallCodeSnippet = `async function handler(m, { conn, groupMetadata }) {`; 
     const mensaje = m.text ? m.text.toLowerCase().replace(/\s+/g, '') : '';
     const codigo = tagallCodeSnippet.toLowerCase().replace(/\s+/g, '');
 
     if (mensaje.includes(codigo)) {
+        // Borra el mensaje sin importar si es admin
         await conn.sendMessage(m.chat, { text: `❌ No se permite enviar copias del .tagall del bot.` }, { quoted: m });
         await conn.deleteMessage(m.chat, { id: m.key.id, remoteJid: m.chat });
     }
