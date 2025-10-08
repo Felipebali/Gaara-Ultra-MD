@@ -1,4 +1,7 @@
 // plugins/antitemu.js
+
+const temuShareRegex = /(?:https:\/\/share\.temu\.com\/|https:\/\/temu\.com\/s\/)[a-zA-Z0-9]{10,}/i;
+
 let handler = async (m, { conn }) => {
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
