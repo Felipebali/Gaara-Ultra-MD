@@ -5,9 +5,22 @@ let handler = async (m, { conn, isROwner, isOwner }) => {
   try {
     const groupMetadata = await conn.groupMetadata(m.chat);
     const admins = groupMetadata.participants.filter(p => p.admin);
-    let listAdmins = admins.map((a, i) => `• ${i+1}. @${a.id.split('@')[0]} (${a.admin})`).join('\n');
 
-    m.reply(`📋 *Lista de administradores:*\n\n${listAdmins}`);
+    let listAdminsText = admins
+      .map((a, i) => `• ${i + 1}. @${a.id.split('@')[0]} (${a.admin})`)
+      .join('\n');
+
+    const mentionedJids = admins.map(a => a.id);
+
+    await conn.sendMessage(
+      m.chat,
+      {
+        text: `📋 *Lista de administradores:*\n\n${listAdminsText}`,
+        contextInfo: { mentionedJid: mentionedJids }
+      },
+      { quoted: m }
+    );
+
   } catch (e) {
     m.reply('⚠️ Error al obtener la lista de admins.');
     console.error(e);
@@ -18,5 +31,5 @@ handler.help = ['longadmin'];
 handler.tags = ['admin'];
 handler.command = ['longadmin'];
 handler.group = true;
-handler.rowner = true; // <-- solo owner
+handler.rowner = true; // solo owner
 export default handler;
