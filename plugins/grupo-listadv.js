@@ -25,7 +25,7 @@ const handler = async (m, { conn, groupMetadata, isAdmin }) => {
     listaTexto += `\n📊 Total de usuarios advertidos: ${mentionedUsers.length}`
 
     try {
-        await conn.sendMessage(m.chat, { text: listaTexto, mentions: mentionedUsers }, { quoted: m })
+        await conn.sendMessage(m.chat, { text: listaTexto, mentions: mentionedUsers })
     } catch (e) {
         console.error(e)
         m.reply('❌ Error al mostrar la lista de advertencias.')
