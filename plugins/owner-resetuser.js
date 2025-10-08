@@ -1,33 +1,22 @@
 // plugins/resetuser.js
-export default async function handler(m, { conn, usedPrefix }) {
-    // Solo owner puede usar
+export default async function handler(m, { conn, text }) {
+    // Solo owner
     if (!global.owner.includes(m.sender)) return;
 
-    // Verifica que se mencionó al menos a un usuario
-    const mentioned = m.mentionedJid;
-    if (!mentioned || mentioned.length === 0) {
-        return conn.sendMessage(m.chat,
-            `❌ Menciona al usuario que quieres resetear.\nEjemplo: ${usedPrefix}resetuser @usuario`,
-            { quoted: m }
-        );
-    }
+    // Tomamos el primer argumento como número o JID
+    let target = text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : m.quoted?.sender;
+    if (!target) return conn.sendMessage(m.chat, '❌ Especifica un usuario o responde a su mensaje', { quoted: m });
 
-    // Aseguramos que la base de datos existe
+    // Inicializamos la base de datos
     if (!global.db) global.db = { data: { users: {} } };
-    if (!global.db.data.users) global.db.data.users = {};
+    if (!global.db.data.users[target]) global.db.data.users[target] = {};
 
-    // Recorremos todos los mencionados y reseteamos datos
-    for (let jid of mentioned) {
-        if (!global.db.data.users[jid]) global.db.data.users[jid] = {};
-        global.db.data.users[jid].warn = 0;
-        global.db.data.users[jid].banned = false;
-        // Agrega aquí más campos que quieras resetear (puntos, juegos, etc.)
-    }
+    // Reseteamos datos
+    global.db.data.users[target].warn = 0;
+    global.db.data.users[target].banned = false;
+    // aquí podés agregar más campos a resetear
 
-    await conn.sendMessage(m.chat,
-        `✅ Usuario(s) reseteado(s) correctamente.`,
-        { quoted: m }
-    );
+    await conn.sendMessage(m.chat, `✅ Usuario @${target.split('@')[0]} reseteado correctamente`, { quoted: m });
 }
 
 handler.command = ['resetuser'];
