@@ -1,27 +1,19 @@
-// plugins/del.js
-let handler = async (m, { conn }) => {
-    try {
-        if (!m.quoted) 
-            return conn.reply(m.chat, '⚠️ Responde al mensaje que quieres borrar usando `.del`', m);
+let handler = async (m, { conn, usedPrefix, command }) => {
 
-        const quotedKey = m.quoted.key;
-        if (!quotedKey) return conn.reply(m.chat, '✖️ No se pudo identificar el mensaje a eliminar.', m);
+if (!m.quoted) return conn.reply(m.chat, `${emoji} Por favor, cita el mensaje que deseas eliminar.`, m)
+try {
+let delet = m.message.extendedTextMessage.contextInfo.participant
+let bang = m.message.extendedTextMessage.contextInfo.stanzaId
+return conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
+} catch {
+return conn.sendMessage(m.chat, { delete: m.quoted.vM.key })
+}}
 
-        // Borrar mensaje usando la clave completa
-        await conn.sendMessage(m.chat, { delete: quotedKey });
+handler.help = ['delete']
+handler.tags = ['grupo']
+handler.command = ['del','delete']
+handler.group = false
+handler.admin = true
+handler.botAdmin = true
 
-        await conn.reply(m.chat, '✅ Mensaje eliminado correctamente.', m);
-    } catch (e) {
-        console.error(e);
-        await conn.reply(m.chat, '✖️ No se pudo borrar el mensaje. Asegúrate de que el bot tenga permisos de admin.', m);
-    }
-};
-
-handler.help = ['del'];
-handler.tags = ['admin'];
-handler.command = ['del','delete'];
-handler.group = true;
-handler.admin = true;
-handler.botAdmin = true;
-
-export default handler;
+export default handler
