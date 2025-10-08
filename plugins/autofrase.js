@@ -1,5 +1,5 @@
 // plugins/autofrase.js
-let autoFrases = {}; // guardará intervalos por chat
+let autoFrases = {}; // Guardará intervalos por chat
 
 const frases = [
   "🌟 ¡Sonríe, hoy puede ser un gran día!",
@@ -117,37 +117,36 @@ const frases = [
 
 let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
   if (!m.isGroup) return m.reply('⚠️ Este comando solo funciona en grupos.');
-  
-  // Verifica si el usuario es admin o el bot es admin
-  if (!isAdmin) return m.reply('⚠️ Solo los administradores pueden activar o desactivar.');
+  if (!isAdmin) return m.reply('⚠️ Solo administradores pueden activar o desactivar.');
 
   const chatId = m.chat;
   const chatData = global.db.data.chats[chatId] || {};
   chatData.autoFrase = chatData.autoFrase || false;
 
   if (!chatData.autoFrase) {
-    // Activar
     chatData.autoFrase = true;
     global.db.data.chats[chatId] = chatData;
     m.reply('✅ Sistema de *frases automáticas* activado. El bot enviará mensajes cada 15 minutos entre las 09:00 y las 23:59.');
 
-    // Intervalo
+    // Intervalo confiable
     autoFrases[chatId] = setInterval(async () => {
-      const now = new Date();
-      const hora = now.getHours();
-      if (hora >= 9 && hora <= 23 && chatData.autoFrase) {
-        const frase = frases[Math.floor(Math.random() * frases.length)];
-        try {
-          const groupMetadata = await conn.groupMetadata(chatId);
-          const mentions = groupMetadata.participants.map(p => p.id);
-          await conn.sendMessage(chatId, { text: frase, mentions });
-        } catch (err) {
-          console.error('Error enviando frase automática:', err);
+      try {
+        const now = new Date();
+        const hora = now.getHours();
+        if (hora >= 9 && hora <= 23 && chatData.autoFrase) {
+          const frase = frases[Math.floor(Math.random() * frases.length)];
+          // Intentar enviar el mensaje
+          try {
+            await conn.sendMessage(chatId, { text: frase });
+          } catch (err) {
+            console.error('Error enviando frase automática, reconectando...', err);
+          }
         }
+      } catch (e) {
+        console.error('Error en intervalo de frases automáticas:', e);
       }
-    }, 15 * 60 * 1000);
+    }, 15 * 60 * 1000); // cada 15 minutos
   } else {
-    // Desactivar
     chatData.autoFrase = false;
     global.db.data.chats[chatId] = chatData;
     if (autoFrases[chatId]) clearInterval(autoFrases[chatId]);
