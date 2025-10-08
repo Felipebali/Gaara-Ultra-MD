@@ -1,12 +1,13 @@
-// plugins/menuUsuario.js
+// plugins/menuUser.js
 const botname = global.botname || '😸 FelixCat-Bot 😸';
 const creador = 'Felipe';
 const versionBot = '10.5.0';
 
 let tags = {
-  'info': '🌀 INFOS 🐱',
+  'info': '🌀 INFO DEL BOT 🐱',
   'main': '📜 MENÚ FELINO 🐾',
   'game': '🎮 JUEGOS GATUNOS 🐱',
+  'group': '📚 GRUPOS 🐾',
   'downloader': '📥 DESCARGAS 😺',
   'sticker': '🖼️ STICKERS 🐾',
   'tools': '🧰 HERRAMIENTAS 😼',
@@ -14,16 +15,59 @@ let tags = {
 };
 
 let comandosPorCategoria = {
-  'info': {'.creador':'👑', '.dash':'📊', '.status':'📈', '.ping':'📶', '.infobot':'🤖', '.lid':'🆔'},
-  'main': {'.menu':'📜'},
-  'game': {
-    '.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃',
-    '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.capital':'🏛️', '.trivia':'🎯','.miau':'🐈‍⬛'
+  'info': {
+    '.creador':'👑',
+    '.dash':'📊',
+    '.status':'📈',
+    '.estado':'📉',
+    '.ping':'📶',
+    '.infobot':'🤖',
+    '.lid':'🆔'
   },
-  'downloader': {'.play <nombre de la canción>':'🎵'},
-  'sticker': {'.stiker <img>':'🖼️', '.sticker <url>':'🖼️'},
-  'tools': {'.invite':'📩', '.inspect':'🔍', '.reportar <mensaje>':'🚨'},
-  'especiales': {'.menuhot':'🔥', '.menuj':'🎮', '.menudl':'📥'}
+  'main': {
+    '.menu':'📜',
+    '.reportar':'📝'
+  },
+  'game': {
+    '.acertijo':'❓',
+    '.math':'➗',
+    '.ahorcado':'🔤',
+    '.dance *<@user>*':'💃',
+    '.delttt':'❌',
+    '.ppt':'✂️',
+    '.adivinanza':'❓',
+    '.bandera':'🏴',
+    '.ttt':'❌',
+    '.capital':'🏛️',
+    '.trivia':'🎯',
+    '.miau':'🐈‍⬛'
+  },
+  'group': {
+    '.enable <opción>':'✅',
+    '.disable <opción>':'❌'
+  },
+  'downloader': {
+    '.play <nombre de la canción>':'🎵',
+    '.ytmp3 <url>':'🎶',
+    '.ytmp4 <url>':'🎬',
+    '.tiktok <url>':'🎵',
+    '.ig <usuario>':'📸',
+    '.facebook <url>':'📺',
+    '.twitter <url>':'🐦',
+    '.mediafire <url>':'💾'
+  },
+  'sticker': {
+    '.stiker <img>':'🖼️',
+    '.sticker <url>':'🖼️'
+  },
+  'tools': {
+    '.invite':'📩',
+    '.superinspect':'🔎',
+    '.inspect':'🔍'
+  },
+  'especiales': {
+    '.menuhot':'🔥'
+  }
 };
 
 let handler = async (m, { conn }) => {
@@ -37,7 +81,7 @@ let handler = async (m, { conn }) => {
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 `;
 
-    for (let tag of ['info','main','game','downloader','sticker','tools','especiales']) {
+    for (let tag of ['info','main','game','group','downloader','sticker','tools','especiales']) {
       let comandos = comandosPorCategoria[tag];
       if (!comandos) continue;
 
@@ -56,9 +100,9 @@ ${Object.entries(comandos).map(([cmd, emoji]) => `┃ 🐾 ${cmd} ${emoji}`).joi
   }
 };
 
-handler.help = ['menuusuario'];
+handler.help = ['menuu'];
 handler.tags = ['main'];
-handler.command = ['menuusuario', 'menuser', 'menuparticipante'];
+handler.command = ['menuu','usermenu','menuser'];
 
 export default handler;
 
