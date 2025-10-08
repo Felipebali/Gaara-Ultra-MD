@@ -9,7 +9,7 @@ let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
 
     try {
         await conn.groupParticipantsUpdate(m.chat, [user], 'demote');
-        await m.reply(`✅ Usuario @${user.split('@')[0]} degradado de administrador.`, m.chat, { mentions: [user] });
+        await m.reply(`✅ Usuario @${user.split('@')[0]} deja de ser admin.`, m.chat, { mentions: [user] });
     } catch (e) {
         console.error(e);
         m.reply('❌ Error al intentar degradar al usuario.');
