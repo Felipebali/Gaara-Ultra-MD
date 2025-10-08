@@ -3,7 +3,7 @@ let handler = async (m, { conn }) => {
     if (!m.isGroup) return;
 
     // Verifica si NSFW está activado en el grupo
-    if (!db.data.chats[m.chat].nsfw) {
+    if (!global.db.data.chats[m.chat].nsfw) {
         return m.reply('🐉 El contenido *NSFW* está desactivado en este grupo.\n> Un owner puede activarlo con el comando » *.enable nsfw*');
     }
 
@@ -19,6 +19,8 @@ let handler = async (m, { conn }) => {
 ┃ 🐾 .penetrar @user 🍑
 ┃ 🐾 .sexo/sex @tag 🔥
 ┃ 🐾 .tetas 👙
+┃ 🐾 .culo 🍑
+┃ 🥛 .cum 💦
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 > 👑 Powered by FelixCat 🥷🏽
     `.trim();
