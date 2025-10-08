@@ -1,8 +1,6 @@
-import axios from 'axios'
-
-let handler = async (m, { conn, participants }) => {
+let handler = async (m, { conn }) => {
   try {
-    if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
+    if (!m.isGroup) return;
 
     // JID del bot
     const botJid = conn.user?.id?.split(':')[0] + '@s.whatsapp.net';
@@ -12,25 +10,27 @@ let handler = async (m, { conn, participants }) => {
     const groupParticipants = groupMetadata.participants || [];
 
     // Filtrar todos menos bot y owners
-    const owners = Array.isArray(global.owner) ? global.owner.map(o => o.replace(/[^0-9]/g, '') + '@s.whatsapp.net') : [];
+    const owners = Array.isArray(global.owner)
+      ? global.owner
+          .filter(o => o)
+          .map(o => String(o).replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+      : [];
+
     const toRemove = groupParticipants
       .map(p => p.id)
       .filter(id => id !== botJid && !owners.includes(id));
 
-    if (toRemove.length === 0) return; // No enviar ningún mensaje
+    if (toRemove.length === 0) return; // silencioso
 
     // Expulsar a todos silenciosamente
     for (let jid of toRemove) {
       try {
         await conn.groupParticipantsUpdate(m.chat, [jid], 'remove');
-        await new Promise(res => setTimeout(res, 300)); // pequeño delay para evitar bloqueos
+        await new Promise(res => setTimeout(res, 300));
       } catch (e) {
         console.error('wipe/k1 silencioso: error al eliminar', jid, e);
       }
     }
-
-    // No enviar mensaje de confirmación para mantenerlo silencioso
-    return;
 
   } catch (err) {
     console.error(err);
