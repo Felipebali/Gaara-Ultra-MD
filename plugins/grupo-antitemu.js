@@ -15,8 +15,8 @@ let handler = async function(m, { conn, isAdmin, isBotAdmin }) {
     m.reply(`✅ Antitemu ahora está ${chat.antitemu ? '🟢 activado' : '🔴 desactivado'} en este grupo.`)
 }
 
-// Esto se ejecuta antes de cada mensaje
-handler.before = async function(m, { conn, isAdmin, isBotAdmin }) {
+// Antes de cada mensaje
+handler.all = async function(m, { conn, isBotAdmin }) {
     if (!m.isGroup) return true
     if (!m.text) return true
     let chat = global.db.data.chats[m.chat]
@@ -29,20 +29,11 @@ handler.before = async function(m, { conn, isAdmin, isBotAdmin }) {
     if (!isTemuLink) return true
 
     try {
-        if (isAdmin) {
-            await conn.sendMessage(m.chat, { delete: m.key })
-            await conn.sendMessage(m.chat, { text: `⚠️ El admin *${name}* envió un link de Temu. Solo se eliminó el mensaje.` })
-            console.log(`Mensaje de admin ${name} eliminado por Anti-Temu`)
-            return true
-        }
-
         await conn.sendMessage(m.chat, { delete: m.key })
-        await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
-        await conn.sendMessage(m.chat, { text: `🚫 El usuario *${name}* fue expulsado por enviar un link de Temu.` })
-        console.log(`Usuario ${name} expulsado por enviar link de Temu`)
-
+        await conn.sendMessage(m.chat, { text: `⚠️ Se eliminó un link de Temu enviado por *${name}*.` })
+        console.log(`Mensaje de ${name} eliminado por Anti-Temu`)
     } catch (err) {
-        console.error('Error eliminando mensaje/usuario:', err)
+        console.error('Error borrando mensaje:', err)
     }
 
     return true
