@@ -5,7 +5,7 @@ let handler = async (m, { conn, isAdmin, chat }) => {
         const autoFraseEstado = chatData.autoFrase ? '🟢 Activado' : '🔴 Desactivado';
 
         let menuText = `
-╭━━━〔 🐾 MENÚ DE GRUPO 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐾 〕━━━⬣
+╭━━━〔 🐾 MENÚ PARA ADMINS 🐾 〕━━━⬣
 
 ╭━━━〔 🐱 PROMOVER / DEGRADAR 〕━━━⬣
 ┃ 🐾 .p <@user> - Promover a admin 😺
