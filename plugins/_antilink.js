@@ -1,73 +1,95 @@
-let linkRegex = /\b((https?:\/\/|www\.)?[\w-]+\.[\w-]+(?:\.[\w-]+)*(\/[\w\.\-\/?=&]*)?)\b/gi;
+/**
+ * Anti-Link FelixCat-Bot
+ * Admins: solo se borra el link
+ * Usuarios normales: borra mensaje o expulsa según tipo de link
+ * No elimina canales permitidos ni IG/TikTok/YouTube
+ */
 
-// Dominios permitidos
-const excepciones = ['instagram.com', 'youtu.be', 'youtube.com', 'tiktok.com'];
-
-// Links especiales
 const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
 const channelLinkRegex = /whatsapp\.com\/channel\/([0-9A-Za-z]+)/i
+const linkRegex = /\b((https?:\/\/|www\.)?[\w-]+\.[\w-]+(?:\.[\w-]+)*(\/[\w\.\-\/?=&]*)?)\b/gi
+const excepciones = ['instagram.com', 'youtu.be', 'youtube.com', 'tiktok.com']
 
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
-    if (!m || !m.text) return true;
-    if (m.isBaileys && m.fromMe) return true;
-    if (!m.isGroup) return false;
+    if (!m || !m.text) return true
+    if (m.isBaileys && m.fromMe) return true
+    if (!m.isGroup) return false
+    if (!isBotAdmin) return true
 
-    const chat = global.db?.data?.chats?.[m.chat];
-    if (!chat || !chat.antiLink) return true;
+    let chat = global.db?.data?.chats?.[m.chat]
+    if (!chat || !chat.antiLink) return true
 
-    const delet = m.key.participant;
-    const bang = m.key.id;
-    const user = `@${m.sender.split('@')[0]}`;
+    const delet = m.key.participant
+    const bang = m.key.id
+    const name = m.pushName || m.name || m.notify || m.sender.split('@')[0]
 
-    // 1️⃣ Primero detectar links generales HTTP/HTTPS
-    const enlaces = m.text.match(linkRegex) || [];
+    const isGroupLink = groupLinkRegex.test(m.text)
+    const isChannelLink = channelLinkRegex.test(m.text)
+
+    // Links HTTP/HTTPS generales
+    const enlaces = m.text.match(linkRegex) || []
     const linkBloqueado = enlaces.some(link => {
-        const linkLower = link.toLowerCase();
-        return !excepciones.some(dom => linkLower.includes(dom));
-    });
+        const linkLower = link.toLowerCase()
+        return !excepciones.some(dom => linkLower.includes(dom))
+    })
 
-    // 2️⃣ Detectar links de grupos y canales de WhatsApp
-    const isGroupLink = groupLinkRegex.test(m.text);
-    const isChannelLink = channelLinkRegex.test(m.text);
+    // ⚡ Si es un canal permitido, solo ignorar
+    if (isChannelLink) return true
 
-    // Ignorar links de canales
-    if (isChannelLink) return true;
-
-    // 3️⃣ Si es admin
+    // === CASO 1: admin ===
     if (isAdmin) {
         if (linkBloqueado || isGroupLink) {
             try {
-                if (isBotAdmin) await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet } });
-                await conn.sendMessage(m.chat, { text: `⚠️ El administrador ${user} envió un enlace no permitido. Solo se eliminó el mensaje.` });
-                console.log(`Mensaje de admin ${user} eliminado por Anti-Link`);
+                if (isBotAdmin) await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet } })
+                await conn.sendMessage(m.chat, {
+                    text: `⚠️ El administrador *${name}* envió un enlace no permitido o de grupo. Solo se eliminó el mensaje.`,
+                    mentions: [m.sender]
+                })
+                console.log(`Mensaje de admin ${name} eliminado por Anti-Link`)
             } catch (e) { console.error(e) }
         }
-        return true;
+        return true
     }
 
-    // 4️⃣ Si es usuario normal
-    if (!isAdmin && (linkBloqueado || isGroupLink)) {
+    // === CASO 2: usuario normal ===
+    if (!isAdmin) {
         try {
-            if (isBotAdmin) await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet } });
-            await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove'); // expulsar
-            await conn.sendMessage(m.chat, { text: `🚫 El usuario ${user} fue expulsado por enviar un enlace no permitido.` });
-            console.log(`Usuario ${user} expulsado por Anti-Link`);
+            if (isBotAdmin) await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet } })
+
+            if (isGroupLink) {
+                // Expulsar si es link de grupo
+                await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
+                await conn.sendMessage(m.chat, {
+                    text: `🚫 El usuario *${name}* fue expulsado por enviar un link de grupo.`,
+                    mentions: [m.sender]
+                })
+                console.log(`Usuario ${name} expulsado por link de grupo`)
+            } else if (linkBloqueado) {
+                // Solo mensaje si es HTTP/HTTPS normal
+                await conn.sendMessage(m.chat, {
+                    text: `⚠️ ${name} envió un enlace no permitido. Solo se eliminó el mensaje.`,
+                    mentions: [m.sender]
+                })
+                console.log(`Mensaje de ${name} eliminado por link prohibido`)
+            }
+
         } catch (e) { console.error(e) }
-        return false;
+
+        return false
     }
 
-    return true;
+    return true
 }
 
 // Comando para activar/desactivar Anti-Link
 export async function antilinkCommand(m, { conn, isAdmin }) {
-    if (!m.isGroup) return conn.sendMessage(m.chat, { text: "Este comando solo funciona en grupos." });
-    if (!isAdmin) return conn.sendMessage(m.chat, { text: "Solo administradores pueden activar/desactivar Anti-Link." });
+    if (!m.isGroup) return conn.sendMessage(m.chat, { text: "Este comando solo funciona en grupos." })
+    if (!isAdmin) return conn.sendMessage(m.chat, { text: "Solo administradores pueden activar/desactivar Anti-Link." })
 
-    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = { antiLink: true };
-    const chat = global.db.data.chats[m.chat];
-    chat.antiLink = !chat.antiLink;
+    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = { antiLink: true }
+    let chat = global.db.data.chats[m.chat]
+    chat.antiLink = !chat.antiLink
 
-    await global.db.write();
-    conn.sendMessage(m.chat, { text: `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.` });
+    await global.db.write()
+    conn.sendMessage(m.chat, { text: `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.` })
 }
