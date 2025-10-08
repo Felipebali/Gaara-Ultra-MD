@@ -6,13 +6,12 @@ let handler = async (m, { conn }) => {
         global.db.data.chats[m.chat] = chat;
 
         const estado = chat.games ? '🟢 Activados' : '🔴 Desactivados';
-        await conn.sendMessage(m.chat, { text: `🎮 Mini-juegos ${estado} en este chat.` }, { quoted: m });
-
+        await conn.sendMessage(m.chat, { text: `🎮 Mini-juegos ${estado} en este chat.` });
     } catch (e) {
         console.error(e);
         await m.reply('✖️ Error al cambiar el estado de los juegos.');
     }
-}
+};
 
 handler.command = ['juegos'];
 handler.group = true;
