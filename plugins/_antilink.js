@@ -75,5 +75,6 @@ export async function antilinkCommand(m, { conn, isAdmin }) {
     chat.antiLink = !chat.antiLink
 
     await global.db.write()
-    conn.sendMessage(m.chat, { text: `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.` })
+    // No citar el mensaje
+    await conn.sendMessage(m.chat, { text: `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.` })
 }
