@@ -2,38 +2,38 @@
 let handler = async (m, { conn }) => {
     try {
         let menuText = `
-          ╭━━━〔 👑 DIOSES DEL OLIMPO 🏛️ 〕━━━╮
-          │  *Comandos exclusivos de los dioses*  │
-          ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+╭━━━〔 👑 MENÚ OWNER 〕━━━╮
+┃ Comandos exclusivos del dueño
+╰━━━━━━━━━━━━━━━━━━━━╯
 
-          ⚡ Zeus      - .autoadmin       ⚡ Poder absoluto
-          💀 Hades     - .banuser <@user> 💀 Destierra al inframundo
-          🕊️ Atenea    - .unbanuser <@user> 🕊️ Perdón divino
-          ⚔️ Ares      - .chetar          ⚔️ Habilidad de guerra
-          🌀 Hermes    - .deschetar       🌀 Quita poderes
-          🌊 Poseidón  - .dsowner         🌊 Expulsa un dios
-          🍷 Dionisio  - .join <link>     🍷 Invita al festín
-          ☀️ Helios    - .restart         ☀️ Reinicia el cosmos
-          🎯 Apolo     - .exec <comando>  🎯 Decreto divino
-          🏹 Artemisa  - .exec2 <comando> 🏹 Decreto supremo
-          🔨 Hefesto   - .setcmd          🔨 Configura mandato
-          🌀 Hermes    - .setprefix       🌀 Cambia símbolo
-          🔥 Hestia    - .update          🔥 Renovar reino
-          ⏳ Cronos    - .resetuser <@user> ⏳ Borra existencia
+.**autoadmin** - Otorga poderes de administrador
+.**banuser <@user>** - Banear usuario
+.**unbanuser <@user>** - Desbanear usuario
+.**chetar** - Concede habilidades especiales
+.**deschetar** - Quita habilidades
+.**dsowner** - Eliminar dueño
+.**join <link>** - Unirse a un grupo
+.**restart** - Reiniciar bot
+.**exec <comando>** - Ejecutar código
+.**exec2 <comando>** - Ejecutar código avanzado
+.**setcmd** - Configurar comando
+.**setprefix** - Cambiar prefijo
+.**update** - Actualizar bot
+.**resetuser <@user>** - Borrar todos los datos de un usuario
 
-          > ⚡ FelixCat, dios supremo del Olimpo
+> ⚡ FelixCat - Owner
         `;
 
-        // Enviar mensaje SIN citar
+        // Enviar mensaje sin citar
         await conn.sendMessage(m.chat, { text: menuText });
 
     } catch (e) {
         console.error(e);
-        await m.reply('✖️ Error al mostrar el menú de dioses.');
+        await m.reply('✖️ Error al mostrar el menú de owner.');
     }
 }
 
-handler.command = ['menuow'];
+handler.command = ['menuow','mw'];
 handler.owner = true;
 
 export default handler;
