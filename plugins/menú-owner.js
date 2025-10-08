@@ -1,12 +1,12 @@
 // plugins/menu-owner.js
-let handler = async (m) => {
+let handler = async (m, { conn }) => {
     try {
         let menuText = `
 ╭━━━〔 👑 MENÚ OWNER 𝗙𝗘𝗟𝗜𝗖𝗔𝗧 🐾 〕━━━⬣
 ┃ ❒ *Comandos exclusivos del dueño*
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
-╭━━━〔 ⚡ ADMIN / SUB-BOTS 〕━━━⬣
+╭━━━〔 👑 JEFES / DIOSES 〕━━━⬣
 ┃ 🐾 .autoadmin - Activar autoadmin
 ┃ 🐾 .banuser <@user> - Banear usuario
 ┃ 🐾 .unbanuser <@user> - Desbanear usuario
@@ -20,12 +20,14 @@ let handler = async (m) => {
 ┃ 🐾 .setcmd - Configurar comando
 ┃ 🐾 .setprefix - Cambiar prefijo
 ┃ 🐾 .update - Actualizar bot
+┃ 🐾 .resetuser <@user> - Eliminar todos los datos de un usuario
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 > 👑 Powered by FelixCat 🐾
         `;
 
-        await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
+        // Enviar mensaje SIN citar
+        await conn.sendMessage(m.chat, { text: menuText });
 
     } catch (e) {
         console.error(e);
