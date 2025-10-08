@@ -22,7 +22,6 @@ async function startBot() {
 
     // Definir pushMessage para que el handler funcione
     conn.pushMessage = async function(messages) {
-        // Esta función no necesita hacer nada real, solo evitar errores
         return messages
     }
 
@@ -31,13 +30,17 @@ async function startBot() {
         if (!messages || !messages[0]) return
         const m = messages[0]
 
-        // Mostrar mensaje en consola directamente (solo para debug)
+        // Mostrar cualquier tipo de mensaje en consola
         try {
-            if (m.message) {
-                let text = m.message.conversation || m.message.extendedTextMessage?.text || '[no text]'
-                let sender = m.key.participant || m.key.remoteJid
-                console.log(`[${sender}]: ${text}`)
-            }
+            let sender = m.key.participant || m.key.remoteJid
+            let text = m.message?.conversation
+                    || m.message?.extendedTextMessage?.text
+                    || m.message?.imageMessage ? '[imagen]'
+                    : m.message?.videoMessage ? '[video]'
+                    : m.message?.stickerMessage ? '[sticker]'
+                    : m.message?.buttonsResponseMessage?.selectedButtonId ? `[botón: ${m.message.buttonsResponseMessage.selectedButtonId}]`
+                    : '[otro tipo]'
+            console.log(`[${sender}]: ${text}`)
         } catch (err) {
             console.error('Error al mostrar mensaje:', err)
         }
