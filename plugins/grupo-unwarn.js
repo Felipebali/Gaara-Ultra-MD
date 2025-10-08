@@ -19,7 +19,8 @@ let handler = async (m, { conn, isAdmin, isROwner }) => {
     let name = target.split('@')[0]
     try { name = await conn.getName(target) } catch {}
 
-    return conn.sendMessage(m.chat, { text: `🟢 ${name} ahora tiene ${warns[target].count}/3 advertencias.`, mentions: [target] }, { quoted: m })
+    // Mensaje de éxito SIN citar
+    return conn.sendMessage(m.chat, { text: `🟢 ${name} ahora tiene ${warns[target].count}/3 advertencias.`, mentions: [target] })
 }
 
 handler.command = ['unwarn','quitarwarn','sacarwarn']
