@@ -21,7 +21,7 @@ const handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     audios: { key: 'audios', tipo: 'chat', emoji: '🎵', nombre: 'Audios' },
     modoadmin: { key: 'modoadmin', tipo: 'chat', emoji: '👑', nombre: 'Modo Admin' },
     antifake: { key: 'antifake', tipo: 'chat', emoji: '🚫', nombre: 'Antifake' },
-    antibot: { key: 'antiBot', tipo: 'chat', emoji: '🤖', nombre: 'Antibot' },
+    antibot: { key: 'antibot', tipo: 'chat', emoji: '🤖', nombre: 'Antibot' },
     games: { key: 'games', tipo: 'chat', emoji: '🎮', nombre: 'Juegos' },
     simi: { key: 'simi', tipo: 'chat', emoji: '💬', nombre: 'ChatBot' },
     autoaceptar: { key: 'autoAceptar', tipo: 'chat', emoji: '✅', nombre: 'Autoaceptar' },
@@ -43,7 +43,7 @@ const handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     msg += '╭─〔 *Funciones del Grupo* 〕\n';
     for (let [nombre, info] of Object.entries(opciones)) {
       if (info.tipo === 'chat') {
-        const estado = chat[info.key] === true ? '✅' : '❌';
+        const estado = chat[info.key] === true ? '✅ Activado' : '❌ Desactivado';
         msg += `│ ${info.emoji} ${info.nombre}: ${estado}\n`;
       }
     }
@@ -52,7 +52,7 @@ const handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
     msg += '╭─〔 *Funciones del Bot* 〕\n';
     for (let [nombre, info] of Object.entries(opciones)) {
       if (info.tipo === 'bot') {
-        const estado = bot[info.key] === true ? '✅' : '❌';
+        const estado = bot[info.key] === true ? '✅ Activado' : '❌ Desactivado';
         msg += `│ ${info.emoji} ${info.nombre}: ${estado}\n`;
       }
     }
@@ -60,7 +60,7 @@ const handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
     msg += `⚙️ Usa *.nombre* para activar o desactivar (ej: *.welcome*).`;
 
-    return conn.sendMessage(m.chat, { text: msg }, { quoted: m });
+    return conn.sendMessage(m.chat, { text: msg });
   }
 
   // ⚡ Si el comando coincide con una opción, alternar estado
@@ -70,7 +70,7 @@ const handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
 
   // Solo admin o dueño puede modificar
   if (!isAdmin && !isOwner)
-    return m.reply('🚫 Solo los administradores o el dueño pueden cambiar la configuración.');
+    return conn.sendMessage(m.chat, { text: '🚫 Solo administradores o el dueño pueden cambiar la configuración.' });
 
   if (tipo === 'chat') {
     chat[key] = !chat[key];
@@ -79,7 +79,11 @@ const handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
   }
 
   const estado = tipo === 'chat' ? chat[key] : bot[key];
-  return m.reply(`🛠 *${opciones[command].nombre}* fue ${estado ? '✅ activado' : '❌ desactivado'}.`);
+  const mensaje = estado
+    ? `🎊 ¡Listo! *${opciones[command].nombre}* ahora está activo.`
+    : `🛑 Oops… *${opciones[command].nombre}* ha sido desactivado.`;
+
+  return conn.sendMessage(m.chat, { text: mensaje });
 };
 
 // 🔹 Comandos
