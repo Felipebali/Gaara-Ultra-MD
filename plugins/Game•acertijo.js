@@ -4,7 +4,6 @@ const timeout = 30000; // 30 segundos
 const handler = async (m, { conn }) => {
     const chatSettings = global.db.data.chats[m.chat] || {};
 
-    // Revisar si los juegos están activados
     if (!chatSettings.games) {
         return conn.reply(m.chat, '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.', m);
     }
@@ -13,11 +12,10 @@ const handler = async (m, { conn }) => {
     const id = m.chat;
 
     if (id in conn.tekateki) {
-        conn.reply(m.chat, '⚠️ Todavía hay acertijos sin responder en este chat', conn.tekateki[id][0]);
-        throw false;
+        return conn.reply(m.chat, '⚠️ Todavía hay acertijos sin responder en este chat', conn.tekateki[id][0]);
     }
 
-    // Lista de 30 acertijos directamente en el código
+    // Lista de 30 acertijos
     const tekateki = [
         { question: "¿Cuál es la capital de Francia?", response: "París" },
         { question: "¿2 + 2?", response: "4" },
@@ -69,6 +67,25 @@ const handler = async (m, { conn }) => {
             delete conn.tekateki[id];
         }, timeout)
     ];
+};
+
+// Listener de mensajes para responder si es correcto o no
+export const after = async (m, { conn }) => {
+    const id = m.chat;
+    if (!conn.tekateki || !(id in conn.tekateki)) return;
+
+    const json = conn.tekateki[id][1];
+    const answer = json.response.toLowerCase().trim();
+    const userAnswer = m.text.toLowerCase().trim();
+
+    if (userAnswer === answer) {
+        await conn.reply(m.chat, `🎉 Correcto! La respuesta es *${json.response}*`, m);
+        clearTimeout(conn.tekateki[id][3]);
+        delete conn.tekateki[id];
+    } else {
+        // Opcional: puedes comentar esta línea si no querés avisar cuando la respuesta es incorrecta
+        await conn.sendMessage(m.chat, { text: `❌ Incorrecto, sigue intentando...` }, { quoted: m });
+    }
 };
 
 handler.help = ['acertijo'];
