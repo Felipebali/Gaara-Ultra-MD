@@ -2,15 +2,6 @@
 let handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return;
 
-  // Verificar si el bot es administrador
-  const botParticipant = groupMetadata.participants.find(p => p.id === conn.user.jid);
-  const botIsAdmin = botParticipant?.admin || botParticipant?.superAdmin;
-  if (!botIsAdmin) {
-    return await conn.sendMessage(m.chat, {
-      text: 'Sos 🫎 o que? No ves que no soy admin para hacer Tagall.'
-    });
-  }
-
   // Verificar si quien ejecuta es administrador
   const senderParticipant = groupMetadata.participants.find(p => p.id === m.sender);
   const senderIsAdmin = senderParticipant?.admin || senderParticipant?.superAdmin;
@@ -65,6 +56,6 @@ handler.help = ['invocar', 'tagall'];
 handler.tags = ['grupos'];
 handler.group = true;
 handler.admin = true; // Solo admins pueden usarlo
-handler.botAdmin = true; // El bot debe ser admin
+handler.botAdmin = false; // El bot no necesita ser admin
 
 export default handler;
