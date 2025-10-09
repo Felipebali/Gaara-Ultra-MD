@@ -1,11 +1,10 @@
 const handler = async (m, { conn, text }) => {
     const emoji = '⚠️';
     const done = '✅';
-    const numberPattern = /\d+/g;
     let user = '';
 
     // Detectar usuario por número o mensaje citado
-    const numberMatches = text?.match(numberPattern);
+    const numberMatches = text?.match(/\d+/g);
     if (numberMatches) {
         const number = numberMatches.join('');
         user = number + '@s.whatsapp.net';
@@ -25,18 +24,18 @@ const handler = async (m, { conn, text }) => {
     // Eliminar todos los datos del usuario
     delete global.db.data.users[userJid];
 
-    // Eliminar advertencias del usuario en todos los grupos
-    for (let chatId in global.db.data.chats) {
-        if (global.db.data.chats[chatId].warns && global.db.data.chats[chatId].warns[userJid]) {
-            delete global.db.data.chats[chatId].warns[userJid];
+    // Eliminar todas las advertencias del usuario en todos los chats
+    Object.values(global.db.data.chats).forEach(chat => {
+        if (chat.warns && chat.warns[userJid]) {
+            delete chat.warns[userJid];
         }
-    }
+    });
 
     // Guardar cambios en la base de datos
     if (global.db.write) await global.db.write();
 
-    // Mensaje de éxito genérico
-    conn.sendMessage(m.chat, { text: `${done} Éxito. Los datos del usuario fueron eliminados de la base de datos.` });
+    // Mensaje de éxito limpio
+    conn.sendMessage(m.chat, { text: `${done} Éxito. Todos los datos y advertencias del usuario fueron eliminados de la base de datos.` });
 };
 
 handler.tags = ['owner'];
