@@ -66,15 +66,24 @@ const handler = async (m, { conn, command }) => {
 
     // BANLIST
     else if (command === 'banlist') {
-        const bannedUsers = Object.entries(db)
-            .filter(([jid, data]) => data.banned)
-            .map(([jid, data]) => `• ${conn.getName(jid)} (baneado por: ${await conn.getName(data.bannedBy)})`);
+        const bannedEntries = Object.entries(db).filter(([jid, data]) => data.banned);
 
-        if (bannedUsers.length === 0) {
-            await conn.sendMessage(m.chat, { text: `${done} No hay usuarios baneados.` });
-        } else {
-            await conn.sendMessage(m.chat, { text: `🚫 Lista de usuarios baneados:\n\n${bannedUsers.join('\n')}` });
+        if (bannedEntries.length === 0) {
+            return await conn.sendMessage(m.chat, { text: `${done} No hay usuarios baneados.` });
         }
+
+        // Obtener todos los nombres de usuarios y de quien los baneó
+        const bannedUsersText = await Promise.all(
+            bannedEntries.map(async ([jid, data]) => {
+                const userName = await conn.getName(jid);
+                const bannedByName = await conn.getName(data.bannedBy);
+                return `• ${userName} (baneado por: ${bannedByName})`;
+            })
+        );
+
+        await conn.sendMessage(m.chat, {
+            text: `🚫 Lista de usuarios baneados:\n\n${bannedUsersText.join('\n')}`
+        });
     }
 
     if (global.db.write) await global.db.write();
