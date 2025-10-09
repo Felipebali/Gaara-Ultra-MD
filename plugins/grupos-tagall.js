@@ -4,7 +4,7 @@ let handler = async function (m, { conn, groupMetadata }) {
 
   // Verificar si el bot es administrador
   const botParticipant = groupMetadata.participants.find(p => p.id === conn.user.jid);
-  const botIsAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
+  const botIsAdmin = botParticipant?.admin || botParticipant?.superAdmin;
   if (!botIsAdmin) {
     return await conn.sendMessage(m.chat, {
       text: 'Sos 🫎 o que? No ves que no soy admin para hacer Tagall.'
@@ -13,7 +13,7 @@ let handler = async function (m, { conn, groupMetadata }) {
 
   // Verificar si quien ejecuta es administrador
   const senderParticipant = groupMetadata.participants.find(p => p.id === m.sender);
-  const senderIsAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
+  const senderIsAdmin = senderParticipant?.admin || senderParticipant?.superAdmin;
   if (!senderIsAdmin) {
     return await conn.sendMessage(m.chat, {
       text: `❌ @${m.sender.split('@')[0]}, solo los administradores pueden usar TagAll.`,
@@ -32,7 +32,7 @@ let handler = async function (m, { conn, groupMetadata }) {
     return await conn.sendMessage(m.chat, {
       text: `❌ @${m.sender.split('@')[0]}, el TagAll está desactivado en este grupo.`,
       mentions: [m.sender]
-    }, { quoted: m });
+    });
   }
 
   const participantes = groupMetadata?.participants || [];
@@ -46,6 +46,7 @@ let handler = async function (m, { conn, groupMetadata }) {
     `┃ 🔥 ¡Invocación completada por @${m.sender.split('@')[0]}! 🔥`,
     '┃ 📌 Todos los usuarios del chat han sido invocados:',
     listaUsuarios,
+    `┃ 🐾 No te escapes, @${m.sender.split('@')[0]} 😏`,
     `┃ 🔗 ${LINK_UNICO_TAGALL}`,
     '╰━━━━━━━━━━━━━━━━━━━━⬣'
   ].join('\n');
@@ -54,12 +55,12 @@ let handler = async function (m, { conn, groupMetadata }) {
     m.chat,
     {
       text: mensaje,
-      mentions: mencionados.concat(m.sender) // menciona al admin que activó
+      mentions: mencionados.concat(m.sender)
     }
   );
 };
 
-handler.command = ['invocar', 'tagall'];
+handler.command = ['invocar', 'tag', 'tagall'];
 handler.help = ['invocar', 'tagall'];
 handler.tags = ['grupos'];
 handler.group = true;
