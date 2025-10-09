@@ -15,7 +15,7 @@ let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner }
   const mensajeOpcional = args.length ? args.join(' ') : '⚡ Sin mensaje extra.';
 
   const mensaje = [
-    `🔥 @${m.sender.split('@')[0]} activa el tag de todos! 🔥`,
+    `🔥 Se activo el tag de todos! 🔥`,
     `⚡ Usuarios invocados:`,
     mencionados.map(jid => `- @${jid.split('@')[0]}`).join('\n'),
     '💥 Que comience la acción!'
