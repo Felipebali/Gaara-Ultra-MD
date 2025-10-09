@@ -10,8 +10,8 @@ let handler = async (m, { conn, usedPrefix }) => {
     const realPing = Date.now() - startTime
 
     // Información del bot
-    let botname = conn.user.name || "Bot"
-    let owner = 'xzzys26'
+    let botname = conn.user.name || "FelixCat-Bot"
+    let owner = 'Balkoszky🇵🇱'
     let vs = global.vs || '3.2.1'
 
     // Uptime REAL del bot
