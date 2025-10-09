@@ -55,13 +55,22 @@ let handler = async (m, { conn }) => {
         { name: "Bolivia", emoji: "🇧🇴" },
         { name: "Paraguay", emoji: "🇵🇾" },
         { name: "Ecuador", emoji: "🇪🇨" },
-        { name: "Honduras", emoji: "🇭🇳" }
+        { name: "Honduras", emoji: "🇭🇳" },
+        { name: "Corea del Sur", emoji: "🇰🇷" },
+        { name: "Singapur", emoji: "🇸🇬" },
+        { name: "Emiratos Árabes", emoji: "🇦🇪" },
+        { name: "Arabia Saudita", emoji: "🇸🇦" },
+        { name: "Irán", emoji: "🇮🇷" },
+        { name: "Iraq", emoji: "🇮🇶" },
+        { name: "Pakistán", emoji: "🇵🇰" },
+        { name: "Bangladesh", emoji: "🇧🇩" },
+        { name: "Noruega", emoji: "🇳🇴" },
+        { name: "Islandia", emoji: "🇮🇸" },
+        { name: "Luxemburgo", emoji: "🇱🇺" }
     ];
 
-    // Elegir país aleatorio
     const correct = flags[Math.floor(Math.random() * flags.length)];
 
-    // Mezclar opciones
     let options = [correct.name];
     while (options.length < 4) {
         const opt = flags[Math.floor(Math.random() * flags.length)].name;
@@ -69,14 +78,27 @@ let handler = async (m, { conn }) => {
     }
     options = options.sort(() => Math.random() - 0.5);
 
-    // Guardar la respuesta correcta en memoria temporal
     if (!global.flagGame) global.flagGame = {};
-    global.flagGame[m.chat] = correct.name.toLowerCase();
+    global.flagGame[m.chat] = {
+        answer: correct.name.toLowerCase(),
+        timeout: setTimeout(async () => {
+            if (global.flagGame[m.chat]) {
+                const insultMessages = [
+                    '💀 Sos un desastre, te gané el tiempo!',
+                    '😹 Inútil, no respondiste a tiempo!',
+                    '🤡 Qué desastre, la respuesta era',
+                    '🫠 Ni cerca! Era'
+                ];
+                const msg = insultMessages[Math.floor(Math.random() * insultMessages.length)];
+                await conn.sendMessage(m.chat, { text: `${msg} *${correct.name}* ${correct.emoji}` }, { quoted: m });
+                delete global.flagGame[m.chat];
+            }
+        }, 30000)
+    };
 
-    // Enviar pregunta
     let text = `🌍 *Adivina la bandera*:\n\n${correct.emoji}\n\nOpciones:`;
     options.forEach((o, i) => text += `\n${i + 1}. ${o}`);
-    text += `\n\nResponde con el número o el nombre de la opción correcta.`;
+    text += `\n\nResponde con el número o el nombre de la opción correcta. Tienes 30 segundos!`;
 
     conn.sendMessage(m.chat, { text }, { quoted: m });
 };
@@ -88,18 +110,18 @@ handler.group = false;
 
 handler.before = async (m, { conn }) => {
     const chatSettings = global.db.data.chats[m.chat] || {};
-    if (chatSettings.games === false) return; // Juegos desactivados
+    if (chatSettings.games === false) return;
 
     if (!m.text) return;
-    const answer = global.flagGame?.[m.chat];
-    if (!answer) return;
+    const game = global.flagGame?.[m.chat];
+    if (!game) return;
 
     const normalized = m.text.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    if (normalized === answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()) {
-        await conn.sendMessage(m.chat, { text: `✅ Correcto! La bandera es de *${answer}* 🎉` }, { quoted: m });
+    if (normalized === game.answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()) {
+        clearTimeout(game.timeout);
+        await conn.sendMessage(m.chat, { text: `✅ Correcto! La bandera es de *${game.answer}* 🎉` }, { quoted: m });
         delete global.flagGame[m.chat];
     } else {
-        // Mensaje gracioso para cualquier intento incorrecto
         const failMessages = [
             '❌ Dale boludo, vos podés o sos inútil? 😅',
             '🙃 Casi, pero no es esa!',
