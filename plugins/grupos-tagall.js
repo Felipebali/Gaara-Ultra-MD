@@ -3,6 +3,11 @@
 let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner }) {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
+  // Bloqueo de uso externo (protegido)
+  if (!conn.user || !conn.user.id) {
+    return m.reply('❌ Este comando está protegido y no puede ser usado fuera de Felix-Cat Bot.');
+  }
+
   // Solo admins o owners
   if (!(isAdmin || isOwner)) {
     global.dfail?.('admin', m, conn);
@@ -15,10 +20,12 @@ let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner }
   const mensajeOpcional = args.length ? args.join(' ') : '⚡ Sin mensaje extra.';
 
   const mensaje = [
-    `🔥 Se activo el tag de todos! 🔥`,
+    `🔥 Se activó el tag de todos! 🔥`,
     `⚡ Usuarios invocados:`,
     mencionados.map(jid => `- @${jid.split('@')[0]}`).join('\n'),
-    '💥 Que comience la acción!'
+    `💬 Mensaje extra: ${mensajeOpcional}`,
+    '💥 Que comience la acción!',
+    '\n🔗 Protección Anti-Copia: https://miunicolink.local/tagall-FelixCat'
   ].join('\n');
 
   await conn.sendMessage(m.chat, {
