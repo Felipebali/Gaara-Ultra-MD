@@ -8,7 +8,7 @@ let handler = async function (m, { conn, groupMetadata }) {
     ?.admin;
   if (!botIsAdmin) {
     return await conn.sendMessage(m.chat, {
-      text: '❌ No puedo usar TagAll porque no soy administrador del grupo.'
+      text: 'Sos 🫎 o que? No ves que no soy admin para hacer Tagall.'
     });
   }
 
