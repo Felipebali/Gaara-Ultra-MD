@@ -1,5 +1,6 @@
 // plugins/_ml.js
-import axios from 'axios';
+import pkg from 'axios';
+const { default: axios } = pkg;
 
 let handler = async (m, { conn, text }) => {
   if (!text) return conn.reply(m.chat, '⚠️ Debes poner lo que quieres buscar. Ej: .ml notebook', m);
