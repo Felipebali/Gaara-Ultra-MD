@@ -1,45 +1,38 @@
 // plugins/_ml.js
 import axios from 'axios';
-import { load } from 'cheerio';
 
-const handler = async (m, { conn, args }) => {
-  if (!args || args.length === 0) 
-    return conn.sendMessage(m.chat, { text: '⚠️ Escribí lo que querés buscar. Ejemplo: *.ml iPhone 14*' });
+let handler = async (m, { conn, text }) => {
+  if (!text) return conn.reply(m.chat, '⚠️ Debes poner lo que quieres buscar. Ej: .ml iPhone 14', m);
 
-  const query = args.join(' ');
   try {
-    const url = `https://listado.mercadolibre.com.uy/${encodeURIComponent(query)}`;
-    const { data } = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
+    // API pública que devuelve resultados de ML en JSON
+    let url = `https://meli-api.vercel.app/api?q=${encodeURIComponent(text)}&limit=3`;
+    let { data } = await axios.get(url);
 
-    const $ = load(data);
-    const items = [];
-    $('li.ui-search-layout__item').slice(0, 3).each((i, el) => {
-      const title = $(el).find('h2.ui-search-item__title').text();
-      const link = $(el).find('a.ui-search-link').attr('href');
-      const price = $(el).find('span.price-tag-fraction').first().text();
-      if (title && link) items.push({ title, link, price });
-    });
-
-    if (!items.length) return conn.sendMessage(m.chat, { text: '❌ No se encontraron productos.' });
-
-    let message = `🛒 *Resultados de Mercado Libre para:* *${query}*\n\n`;
-    for (let prod of items) {
-      message += `🔹 *${prod.title}*\n💰 Precio: ${prod.price}\n🔗 [Ver en Mercado Libre](${prod.link})\n\n`;
+    if (!data.results || data.results.length === 0) {
+      return conn.reply(m.chat, '⚠️ No se encontraron productos.', m);
     }
 
-    await conn.sendMessage(m.chat, { text: message, linksPreview: true });
+    let mensaje = '*🛒 Resultados de Mercado Libre:*\n\n';
+    for (let item of data.results) {
+      mensaje += `*${item.title}*\n💰 Precio: ${item.price} ${item.currency_id || ''}\n🔗 [Link al producto](${item.permalink})\n🖼️ Imagen: ${item.thumbnail}\n\n`;
+    }
+
+    // Envía el mensaje con links clicables
+    await conn.sendMessage(m.chat, {
+      text: mensaje,
+      mentions: [],
+      contextInfo: { externalAdReply: { mediaUrl: '', mediaType: 1, title: 'Mercado Libre', body: '', thumbnailUrl: '' } }
+    });
+
   } catch (e) {
-    console.log(e);
-    conn.sendMessage(m.chat, { text: '[ALERTA] ❌ Ocurrió un error buscando en Mercado Libre.' });
+    console.log('Error plugin ML:', e);
+    conn.reply(m.chat, '[ALERTA] ❌ Ocurrió un error buscando en Mercado Libre.', m);
   }
 };
 
-handler.command = ['ml'];
 handler.help = ['ml <producto>'];
 handler.tags = ['internet'];
-handler.group = false;
-handler.register = true;
+handler.command = ['ml'];
 
 export default handler;
