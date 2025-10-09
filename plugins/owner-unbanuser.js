@@ -1,44 +1,28 @@
-const handler = async (m, { conn, args }) => {
-    const emoji = '🚫';
-    const done = '✅';
-    const db = global.db.data.users || (global.db.data.users = {});
-
-    if (!args || !args[0]) {
-        return await conn.reply(m.chat, `${emoji} Por favor escribe el número o @mención del usuario que deseas desbanear.\nEjemplo: .unbanuser 59898719147`, m);
+const handler = async (m, { conn, args, text, usedPrefix, command }) => {
+    let user;
+    let db = global.db.data.users;
+    if (m.quoted) {
+        user = m.quoted.sender;
+    } else if (args.length >= 1) {
+        user = args[0].replace('@', '') + '@s.whatsapp.net';
+    } else {
+        await conn.reply(m.chat, `${emoji} Por favor, etiqueta o coloca el número del usuario que quieres desbanear del Bot.`, m);
+        return;
     }
-
-    let input = args[0];
-
-    // Limpiar todos los caracteres que no sean dígitos
-    input = input.replace(/\D/g, '');
-
-    if (!input) return await conn.reply(m.chat, `${emoji} Formato de número inválido.`, m);
-
-    const userJid = input + '@s.whatsapp.net';
-    const userJidLower = userJid.toLowerCase();
-
-    if (!db[userJidLower]) {
-        return await conn.reply(m.chat, `${emoji} El usuario @${input} no está registrado en la base de datos.`, m, { mentions: [userJidLower] });
+    if (db[user]) {
+        db[user].banned = false;
+        db[user].banRazon = '';
+        const nametag = await conn.getName(user);
+        const nn = conn.getName(m.sender);
+        await conn.reply(m.chat, `${done} El usuario *${nametag}* ha sido desbaneado.`, m, { mentionedJid: [user] });
+        conn.reply(`${suittag}@s.whatsapp.net`, `${emoji} El usuario *${nametag}* ha sido desbaneado por *${nn}*.`, m);
+    } else {
+        await conn.reply(m.chat, `${emoji4} El usuario no está registrado.`, m);
     }
-
-    db[userJidLower].banned = false;
-    db[userJidLower].banReason = '';
-    db[userJidLower].bannedBy = null;
-
-    const userName = await conn.getName(userJidLower);
-    const senderName = await conn.getName(m.sender);
-
-    await conn.sendMessage(m.chat, {
-        text: `${done} El usuario *@${input}* (${userName}) ha sido desbaneado por ${senderName}.`,
-        mentions: [userJidLower, m.sender]
-    });
-
-    if (global.db.write) await global.db.write();
 };
-
-handler.help = ['unbanuser <número>'];
+handler.help = ['unbanuser <@tag>'];
 handler.command = ['unbanuser'];
-handler.tags = ['owner'];
+handler.tags = ['mods'];
 handler.rowner = true;
 
 export default handler;
