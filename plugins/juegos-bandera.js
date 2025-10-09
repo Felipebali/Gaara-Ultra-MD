@@ -88,7 +88,7 @@ handler.group = false;
 
 handler.before = async (m, { conn }) => {
     const chatSettings = global.db.data.chats[m.chat] || {};
-    if (chatSettings.games === false) return; // Desactivado
+    if (chatSettings.games === false) return; // Juegos desactivados
 
     if (!m.text) return;
     const answer = global.flagGame?.[m.chat];
@@ -98,6 +98,16 @@ handler.before = async (m, { conn }) => {
     if (normalized === answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()) {
         await conn.sendMessage(m.chat, { text: `✅ Correcto! La bandera es de *${answer}* 🎉` }, { quoted: m });
         delete global.flagGame[m.chat];
+    } else if (!isNaN(normalized) && normalized.length <= 2) {
+        // Mensaje gracioso para respuestas incorrectas
+        const failMessages = [
+            '❌ Dale boludo, vos podés o sos inútil? 😅',
+            '🙃 Casi, pero no es esa!',
+            '🤔 Intentá de nuevo, campeón!',
+            '😬 Nooo, fijate bien!'
+        ];
+        const msg = failMessages[Math.floor(Math.random() * failMessages.length)];
+        await conn.sendMessage(m.chat, { text: msg }, { quoted: m });
     }
 };
 
