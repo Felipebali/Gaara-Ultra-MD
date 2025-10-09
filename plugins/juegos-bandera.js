@@ -1,9 +1,7 @@
 // plugins/juegos-bandera.js
 let handler = async (m, { conn }) => {
     const chatSettings = global.db.data.chats[m.chat] || {};
-    if (chatSettings.games === false) {
-        return conn.sendMessage(m.chat, { text: '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.' }, { quoted: m });
-    }
+    if (chatSettings.games === false) return conn.sendMessage(m.chat, { text: '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.' }, { quoted: m });
 
     const flags = [
         { name: "Uruguay", emoji: "🇺🇾" }, { name: "Argentina", emoji: "🇦🇷" },
@@ -75,16 +73,15 @@ handler.tags = ['juegos'];
 handler.group = false;
 
 handler.before = async (m, { conn }) => {
-    // ❌ SOLO ejecutar si hay juego activo
     const game = global.flagGame?.[m.chat];
-    if (!game || !game.answer) return;
-
-    // ❌ SOLO si hay texto
-    if (!m?.text) return;
+    if (!game || !game.answer) return; // ❌ NO hacer nada si no hay juego activo
+    if (!m?.text) return; // ❌ NO procesar si no hay texto
 
     const userText = String(m.text || '');
     const normalizedUser = userText.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     const normalizedAnswer = String(game.answer || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+    if (!normalizedAnswer) return; // ❌ Seguridad extra
 
     if (normalizedUser === normalizedAnswer) {
         clearTimeout(game.timeout);
