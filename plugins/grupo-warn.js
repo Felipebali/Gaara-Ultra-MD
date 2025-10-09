@@ -11,6 +11,7 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
 
     const date = new Date().toLocaleDateString('es-ES')
 
+    // Inicializar warns en el chat si no existe
     const chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
     if (!chat.warns) chat.warns = {}
     const warns = chat.warns
@@ -22,14 +23,17 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     warns[user] = { count: newWarnCount, date: date }
     await global.db.write()
 
-    let senderName = userName = user.split('@')[0]
+    // Obtener nombres de manera segura
+    let senderName = user.split('@')[0]
+    let userName = user.split('@')[0]
+
     try { senderName = await conn.getName(m.sender) } catch {}
     try { userName = await conn.getName(user) } catch {}
 
     if (newWarnCount >= 3) {
         const texto = `🚫 *USUARIO ELIMINADO* 🚫
 
-👤 @${user.split('@')[0]}
+👤 @${userName}
 👮‍♂️ Moderador: ${senderName}
 📅 Fecha: ${date}
 ⚠️ Advertencias: ${newWarnCount}/3
@@ -50,7 +54,7 @@ ${mensaje ? mensaje : 'Sin motivo especificado'}
     } else {
         const texto = `⚠️ *ADVERTENCIA ${newWarnCount}/3* ⚠️
 
-👤 @${user.split('@')[0]}
+👤 @${userName}
 👮‍♂️ Moderador: ${senderName}
 📅 Fecha: ${date}
 
