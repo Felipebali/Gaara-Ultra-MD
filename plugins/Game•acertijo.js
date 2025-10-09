@@ -1,17 +1,12 @@
 // plugins/Game•acertijo.js
-const timeout = 30000; // 30 segundos
-
-const handler = async (m, { conn }) => {
+let handler = async (m, { conn, usedPrefix, command }) => {
     const chatSettings = global.db.data.chats[m.chat] || {};
-    if (!chatSettings.games) return conn.reply(m.chat, '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.', m);
+    if (chatSettings.games === false) return conn.reply(m.chat, '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.', m);
 
-    // Inicializar contenedor de acertijos si no existe
     if (!conn.tekateki) conn.tekateki = {};
     const id = m.chat;
 
-    if (id in conn.tekateki) return conn.reply(m.chat, '⚠️ Todavía hay acertijos sin responder en este chat', conn.tekateki[id].message);
-
-    // Lista de 30 acertijos
+    // Lista de acertijos
     const tekateki = [
         { question: "¿Cuál es la capital de Francia?", response: "parís" },
         { question: "¿2 + 2?", response: "4" },
@@ -45,46 +40,47 @@ const handler = async (m, { conn }) => {
         { question: "¿Qué planeta tiene anillos?", response: "saturno" }
     ];
 
+    // Si ya hay un acertijo activo
+    if (id in conn.tekateki) {
+        // Verificar respuesta
+        const userAnswer = m.text?.toLowerCase()?.trim();
+        if (!userAnswer) return;
+
+        if (userAnswer === conn.tekateki[id].answer) {
+            await conn.reply(m.chat, `🎉 Correcto! La respuesta es *${conn.tekateki[id].answer}*`, m);
+            clearTimeout(conn.tekateki[id].timeout);
+            delete conn.tekateki[id];
+        }
+        return;
+    }
+
+    // Elegir un acertijo al azar
     const json = tekateki[Math.floor(Math.random() * tekateki.length)];
+
     const caption = `
 ⷮ🚩 *ACERTIJOS*
 ✨️ *${json.question}*
-⏱️ *Tiempo:* ${(timeout / 1000).toFixed(0)} segundos`.trim();
+⏱️ *Tiempo:* 30 segundos`.trim();
 
     // Guardar acertijo activo
-    conn.tekateki[id] = { 
-        message: await conn.reply(m.chat, caption, m), 
+    conn.tekateki[id] = {
         answer: json.response.toLowerCase().trim(),
         timeout: setTimeout(async () => {
             if (conn.tekateki[id]) {
-                await conn.reply(m.chat, `🚩 Se acabó el tiempo!\n*Respuesta:* ${json.response}`, conn.tekateki[id].message);
+                await conn.reply(m.chat, `🚩 Se acabó el tiempo!\n*Respuesta:* ${json.response}`, m);
                 delete conn.tekateki[id];
             }
-        }, timeout)
+        }, 30000)
     };
-};
 
-// Escuchar todas las respuestas
-handler.all = async (m, { conn }) => {
-    if (!conn.tekateki) conn.tekateki = {};
-    const id = m.chat;
-    if (!(id in conn.tekateki)) return;
-
-    const userAnswer = m.text?.toLowerCase().trim();
-    const correctAnswer = conn.tekateki[id].answer;
-
-    if (!userAnswer) return;
-
-    if (userAnswer === correctAnswer) {
-        await conn.reply(m.chat, `🎉 Correcto! La respuesta es *${conn.tekateki[id].answer}*`, m);
-        clearTimeout(conn.tekateki[id].timeout);
-        delete conn.tekateki[id];
-    }
+    await conn.reply(m.chat, caption, m);
 };
 
 handler.help = ['acertijo'];
 handler.tags = ['game'];
 handler.command = ['acertijo', 'acert', 'tekateki'];
 handler.group = true;
+handler.register = true;
+handler.rowner = false;
 
 export default handler;
