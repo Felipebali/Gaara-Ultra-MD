@@ -1,4 +1,4 @@
-// plugins/banderas.js
+// plugins/juegos-bandera.js
 let handler = async (m, { conn }) => {
     const chatSettings = global.db.data.chats[m.chat] || {};
     if (chatSettings.games === false) {
@@ -78,16 +78,17 @@ let handler = async (m, { conn }) => {
 
     if (!global.flagGame) global.flagGame = {};
     global.flagGame[m.chat] = {
-        answer: correct.name?.toLowerCase() || null,
+        answer: correct.name || '', // asegurar string
         timeout: setTimeout(async () => {
-            if (global.flagGame[m.chat]?.answer) {
-                const insultMessages = [
+            const game = global.flagGame?.[m.chat];
+            if (game?.answer) {
+                const insults = [
                     '💀 Sos un desastre, te gané el tiempo!',
                     '😹 Inútil, no respondiste a tiempo!',
                     '🤡 Qué desastre, la respuesta era',
                     '🫠 Ni cerca! Era'
                 ];
-                const msg = insultMessages[Math.floor(Math.random() * insultMessages.length)];
+                const msg = insults[Math.floor(Math.random() * insults.length)];
                 await conn.sendMessage(m.chat, { text: `${msg} *${correct.name}* ${correct.emoji}` }, { quoted: m });
                 delete global.flagGame[m.chat];
             }
@@ -98,7 +99,7 @@ let handler = async (m, { conn }) => {
     options.forEach((o, i) => text += `\n${i + 1}. ${o}`);
     text += `\n\nResponde con el número o el nombre de la opción correcta. Tienes 30 segundos!`;
 
-    conn.sendMessage(m.chat, { text }, { quoted: m });
+    await conn.sendMessage(m.chat, { text }, { quoted: m });
 };
 
 handler.command = ['bandera', 'flags', 'flag'];
@@ -107,28 +108,27 @@ handler.tags = ['juegos'];
 handler.group = false;
 
 handler.before = async (m, { conn }) => {
-    // Protecciones totales
-    if (!m?.text) return;
-    if (!global.flagGame?.[m.chat]) return;
-    const game = global.flagGame[m.chat];
-    if (!game?.answer) return;
+    // seguridad total
+    if (!m || !m.text) return;
+    const game = global.flagGame?.[m.chat];
+    if (!game || !game.answer) return;
 
-    const userText = m.text.toString();
-    const normalized = userText.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const answerNormalized = game.answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const userText = String(m.text || '');
+    const normalizedUser = userText.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const normalizedAnswer = String(game.answer).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
-    if (normalized === answerNormalized) {
+    if (normalizedUser === normalizedAnswer) {
         clearTimeout(game.timeout);
         await conn.sendMessage(m.chat, { text: `✅ Correcto! La bandera es de *${game.answer}* 🎉` }, { quoted: m });
         delete global.flagGame[m.chat];
     } else {
-        const failMessages = [
+        const fails = [
             '❌ Dale boludo, vos podés o sos inútil? 😅',
             '🙃 Casi, pero no es esa!',
             '🤔 Intentá de nuevo, campeón!',
             '😬 Nooo, fijate bien!'
         ];
-        const msg = failMessages[Math.floor(Math.random() * failMessages.length)];
+        const msg = fails[Math.floor(Math.random() * fails.length)];
         await conn.sendMessage(m.chat, { text: msg }, { quoted: m });
     }
 };
