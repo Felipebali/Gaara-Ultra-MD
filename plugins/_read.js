@@ -1,41 +1,44 @@
-// 🐾 FelixCat_Bot - Comando "read" para ver mensajes ViewOnce
-// Autor base: Hidekijs | Mod: Feli (https://github.com/Felipebali)
+// 🐾 FelixCat_Bot — Comando "read" (ver mensajes ViewOnce)
+// Hecho por Feli 😺
 
 import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
 let handler = async (m, { conn }) => {
   try {
     const quoted = m.quoted
-    if (!quoted?.message) return m.reply('🐾 Responde a un mensaje *ViewOnce* (ver una vez) para mostrar su contenido.')
+    if (!quoted?.message) return m.reply('🐾 Responde a un mensaje *ViewOnce* (ver una vez) para mostrarlo.')
 
-    // Detectar si es un mensaje viewOnce
-    const viewOnceMsg = quoted.message?.viewOnceMessageV2 ||
-                        quoted.message?.viewOnceMessageV2Extension ||
-                        quoted.message?.viewOnceMessage ||
-                        null
+    // Detectar si contiene viewOnceMessage en cualquier versión
+    const viewOnce = quoted.message?.viewOnceMessageV2 ||
+                     quoted.message?.viewOnceMessageV2Extension ||
+                     quoted.message?.viewOnceMessage
 
-    if (!viewOnceMsg) return m.reply('⚠️ Ese mensaje no es de tipo *ver una vez*.')
+    if (!viewOnce) return m.reply('⚠️ Ese mensaje no es de tipo *ver una vez*.')
 
-    // Detectar tipo (imagen / video / audio)
-    const media = viewOnceMsg.message.imageMessage ||
-                  viewOnceMsg.message.videoMessage ||
-                  viewOnceMsg.message.audioMessage
+    // Buscar el contenido multimedia real
+    const msg = viewOnce.message.imageMessage ||
+                viewOnce.message.videoMessage ||
+                viewOnce.message.audioMessage
 
-    if (!media) return m.reply('❌ No se encontró contenido multimedia en el mensaje.')
+    if (!msg) return m.reply('❌ No se encontró contenido multimedia en el mensaje.')
 
-    const type = media.mimetype.split('/')[0]
-    const stream = await downloadContentFromMessage(media, type)
+    const mime = msg.mimetype || ''
+    const tipo = mime.split('/')[0]
+
+    // Descargar contenido
+    const stream = await downloadContentFromMessage(msg, tipo)
     let buffer = Buffer.from([])
     for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
 
-    if (type === 'image') {
-      await conn.sendMessage(m.chat, { image: buffer, caption: media.caption || '' })
-    } else if (type === 'video') {
-      await conn.sendMessage(m.chat, { video: buffer, caption: media.caption || '', mimetype: 'video/mp4' })
-    } else if (type === 'audio') {
+    // Enviar según el tipo detectado
+    if (tipo === 'image') {
+      await conn.sendMessage(m.chat, { image: buffer, caption: msg.caption || '' })
+    } else if (tipo === 'video') {
+      await conn.sendMessage(m.chat, { video: buffer, caption: msg.caption || '', mimetype: 'video/mp4' })
+    } else if (tipo === 'audio') {
       await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: false })
     } else {
-      m.reply('⚠️ Tipo de contenido no soportado.')
+      m.reply('⚠️ Tipo de archivo no soportado.')
     }
 
   } catch (err) {
@@ -44,10 +47,9 @@ let handler = async (m, { conn }) => {
   }
 }
 
-// 🧩 Comandos
-handler.command = /^(read|ver)$/i
-handler.owner = true // Solo el dueño puede usarlo
 handler.help = ['read', 'ver']
 handler.tags = ['tools']
+handler.command = /^read|ver$/i
+handler.owner = true // Solo dueños
 
 export default handler
