@@ -1,6 +1,6 @@
 // plugins/_ml.js
 import axios from 'axios';
-import cheerio from 'cheerio';
+import { load } from 'cheerio';
 
 const handler = async (m, { conn, args }) => {
   if (!args || args.length === 0) 
@@ -13,7 +13,7 @@ const handler = async (m, { conn, args }) => {
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
 
-    const $ = cheerio.load(data);
+    const $ = load(data);
     const items = [];
     $('li.ui-search-layout__item').slice(0, 3).each((i, el) => {
       const title = $(el).find('h2.ui-search-item__title').text();
