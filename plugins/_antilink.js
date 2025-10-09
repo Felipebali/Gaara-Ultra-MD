@@ -32,8 +32,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
         try {
             await conn.sendMessage(m.chat, { delete: m.key }) // borrar solo el mensaje
             await conn.sendMessage(m.chat, { 
-                text: `⚠️ El admin *${name}* envió un link prohibido o de Tagall. Solo se eliminó el mensaje.`,
-                contextInfo: {} // evita citar
+                text: `✨ El admin *${name}* envió un link prohibido o de Tagall. Solo se eliminó el mensaje.`,
             })
             console.log(`Mensaje de admin ${name} eliminado por Anti-Link/Tagall`)
         } catch (err) {
@@ -51,15 +50,13 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
                 // Expulsar solo por link de grupo
                 await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
                 await conn.sendMessage(m.chat, { 
-                    text: `🚫 El usuario *${name}* fue expulsado por enviar link de grupo.`,
-                    contextInfo: {} // evita citar
+                    text: `🚨 El usuario *${name}* fue expulsado por enviar link de grupo.`,
                 })
                 console.log(`Usuario ${name} eliminado del grupo por Anti-Link`)
             } else if (isTagallLink) {
                 // Solo borrar mensaje si es link de tagall
                 await conn.sendMessage(m.chat, { 
-                    text: `⚠️ ${name} envió un link de Tagall. Solo se eliminó el mensaje.`,
-                    contextInfo: {} // evita citar
+                    text: `⚡ ${name} envió un link de Tagall. Solo se eliminó el mensaje.`,
                 })
                 console.log(`Mensaje de ${name} eliminado por Tagall`)
             }
@@ -86,6 +83,5 @@ export async function antilinkCommand(m, { conn, isAdmin }) {
     // Mensaje independiente, sin citar ni responder
     await conn.sendMessage(m.chat, { 
         text: `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.`,
-        contextInfo: {} // esto evita referencias o citas
     })
 }
