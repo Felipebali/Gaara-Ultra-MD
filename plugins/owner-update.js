@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 import AdmZip from 'adm-zip';
 
 let handler = async (m, { conn }) => {
-    conn.reply(m.chat, `🐾 *FelixCat invoca su hechizo de actualización...*\n🩸 Descargando archivos desde GitHub...`);
+    conn.reply(m.chat, `🐾 *FelixCat invoca su maullido de actualización...*\n🩸 Descargando archivos desde GitHub...`);
 
     try {
         const zipUrl = 'https://github.com/Felipebali/Gaara-Ultra-MD/archive/refs/heads/main.zip';
