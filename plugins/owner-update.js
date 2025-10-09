@@ -1,7 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import fetch from 'node-fetch';
-import AdmZip from 'adm-zip';
+const fs = require('fs');
+const path = require('path');
+const fetch = require('node-fetch'); // usar v2 si estás en CommonJS
+const AdmZip = require('adm-zip');
 
 let handler = async (m, { conn }) => {
     conn.reply(m.chat, `🐾 *FelixCat invoca su hechizo de actualización...*\n🩸 Descargando archivos desde GitHub...`);
@@ -60,4 +60,4 @@ handler.tags = ['owner'];
 handler.command = ['update', 'fix', 'actualizar'];
 handler.rowner = true;
 
-export default handler;
+module.exports = handler;
