@@ -1,6 +1,9 @@
 import { exec } from 'child_process';
 
 let handler = async (m, { conn }) => {
+  const emoji4 = '🩸';  // Se define el emoji
+  const msm = '⚠️';     // Se define el prefijo para mensajes de error
+
   m.reply(`*⚙️ 𝘐𝘯𝘪𝘤𝘪𝘢𝘯𝘥𝘰 𝘱𝘳𝘰𝘤𝘦𝘴𝘰 𝘥𝘦 𝘢𝘤𝘵𝘶𝘢𝘭𝘪𝘻𝘢𝘤𝘪𝘰𝘯. . . ..*`);
 
   exec('git pull', (err, stdout, stderr) => {
