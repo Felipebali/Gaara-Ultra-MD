@@ -1,20 +1,30 @@
-// 🐾 FelixCat_Bot — Ver mensajes de tipo "Ver una vez"
-// Solo para dueño, sin citar mensajes.
+// 🐾 FelixCat_Bot — Comando .readvo (ver mensajes "una vez")
+// Funciona sin citar el mensaje ni responder al usuario
+// Solo para dueño 🐾
 
 import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
-let handler = async (m, { conn, usedPrefix, isOwner }) => {
-  if (!isOwner) return // Ignora si no es dueño
+let handler = async (m, { conn, isOwner }) => {
+  if (!isOwner) return
 
   const q = m.quoted
-  if (!q) return conn.sendMessage(m.chat, { text: '🐾 ¡Miau! Responde a un mensaje de tipo *ver una vez* para abrirlo.' })
+  if (!q) {
+    await conn.sendMessage(m.chat, { text: '🐾 ¡Miau! Responde a un mensaje de tipo *ver una vez* para abrirlo.' })
+    return
+  }
 
   try {
     await m.react('⏳')
-    await conn.sendPresenceUpdate('composing', m.chat)
 
-    // Detección flexible del contenido "view once"
-    let msg = q.msg || q.message?.viewOnceMessageV2 || q.message?.viewOnceMessage || q
+    // Buscar el mensaje viewOnce dentro de todas las posibles estructuras
+    let msg =
+      q.message?.viewOnceMessageV2Extension?.message ||
+      q.message?.viewOnceMessageV2?.message ||
+      q.message?.viewOnceMessage?.message ||
+      q.message ||
+      q.msg ||
+      q
+
     let mediaMsg =
       msg.imageMessage ||
       msg.videoMessage ||
@@ -23,16 +33,16 @@ let handler = async (m, { conn, usedPrefix, isOwner }) => {
 
     if (!mediaMsg) {
       await m.react('❌')
-      return conn.sendMessage(m.chat, { text: '😿 No encontré contenido multimedia en ese mensaje.' })
+      return conn.sendMessage(m.chat, { text: '😿 No se encontró contenido multimedia en el mensaje.' })
     }
 
-    // Descargar contenido
-    let type = mediaMsg.mimetype.split('/')[0]
-    let stream = await downloadContentFromMessage(mediaMsg, type)
+    // Descargar el contenido correctamente
+    const type = mediaMsg.mimetype ? mediaMsg.mimetype.split('/')[0] : 'file'
+    const stream = await downloadContentFromMessage(mediaMsg, type)
     let buffer = Buffer.from([])
     for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
 
-    // Enviar sin citar mensaje
+    // Enviar sin citar ni responder al mensaje original
     if (type === 'image') {
       await conn.sendMessage(m.chat, { image: buffer, caption: mediaMsg.caption || '' })
     } else if (type === 'video') {
@@ -44,17 +54,18 @@ let handler = async (m, { conn, usedPrefix, isOwner }) => {
     }
 
     await m.react('✅')
-    await conn.sendMessage(m.chat, { text: '✨ El maullido mágico reveló el secreto. 🐾' })
-
+    await conn.sendMessage(m.chat, { text: '✨ El maullido reveló el secreto oculto. 🐾' })
   } catch (e) {
     await m.react('⚠️')
-    conn.sendMessage(m.chat, { text: `❌ Error al intentar abrir el mensaje.\n> Usa *${usedPrefix}report* para informar.\n\n${e.message}` })
+    await conn.sendMessage(m.chat, {
+      text: `❌ Error al intentar abrir el mensaje:\n${e.message}`,
+    })
   }
 }
 
 handler.help = ['readvo']
-handler.tags = ['tools', 'felixcat']
+handler.tags = ['tools', 'owner']
 handler.command = /^(readvo|readviewonce|read)$/i
-handler.owner = true // Solo para dueño
+handler.owner = true
 
 export default handler
