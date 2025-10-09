@@ -1,8 +1,5 @@
 import { sticker } from '../lib/sticker.js';
 
-const redes = 'https://chat.whatsapp.com/KkAYjIFHOGXKNjUN6IkUqf'; // URL de invitación
-const icons = null; // Si quieres un thumbnail, coloca la imagen aquí
-
 let handler = async (m, { conn, args }) => {
     let stiker;
     try {
@@ -37,18 +34,7 @@ let handler = async (m, { conn, args }) => {
             'sticker.webp',
             '', 
             m,
-            true,
-            {
-                contextInfo: {
-                    externalAdReply: {
-                        showAdAttribution: false,
-                        title: global.packname,
-                        body: `𝚅𝙴𝙶𝙴𝚃𝙰 𝙱𝙾𝚃- 𝙼𝙱`,
-                        sourceUrl: redes,
-                        thumbnail: icons
-                    }
-                }
-            }
+            true
         );
     }
 };
