@@ -1,14 +1,21 @@
 // plugins/antifake-offline.js
 
 let handler = async (m, { conn, isAdmin, isOwner }) => {
-  if (!m.isGroup) return conn.sendMessage(m.chat, { text: '⚠️ Este comando solo funciona en grupos.' });
-  if (!(isAdmin || isOwner)) return conn.sendMessage(m.chat, { text: '⚠️ Solo admins pueden usar este comando.' });
+  if (!m.isGroup) {
+    return conn.sendMessage(m.chat, { text: '⚠️ Este comando solo funciona en grupos.' });
+  }
+  if (!(isAdmin || isOwner)) {
+    return conn.sendMessage(m.chat, { text: '⚠️ Solo admins pueden usar este comando.' });
+  }
 
   let chat = global.db.data.chats[m.chat];
   chat.antifake = !chat.antifake;
 
+  // Mensaje sin citar el comando
   conn.sendMessage(m.chat, { 
-    text: `⚡️ La función *antifake* se *${chat.antifake ? 'activó' : 'desactivó'}* para este chat`
+    text: chat.antifake
+      ? '⚡️ La función *antifake* se activó para este chat ✅'
+      : '🛑 La función *antifake* se desactivó para este chat ❌'
   });
 };
 
@@ -21,14 +28,12 @@ handler.all = async (m, { conn }) => {
     for (let jid of newUsers) {
       let number = jid.split('@')[0];
 
-      // Patrones comunes de números VoIP/virtuales en Uruguay
-      // Ejemplo: 099, 098, 097 son móviles reales; 094, 092 pueden ser temporales
-      // Ajusta según lo que quieras filtrar
+      // Patrones de números VoIP/virtuales en Uruguay
       let suspiciousPrefixes = ['092', '094', '095', '096'];
       let prefix = number.slice(2, 5); // quitar +598 y tomar los primeros 3 dígitos
 
       if (suspiciousPrefixes.includes(prefix)) {
-        // Avisar a los admins
+        // Avisar a los admins sin citar al usuario
         let groupMetadata = await conn.groupMetadata(m.chat);
         let admins = groupMetadata.participants.filter(u => u.admin === 'admin' || u.admin === 'superadmin');
         let mentions = admins.map(u => u.id);
@@ -44,4 +49,8 @@ handler.all = async (m, { conn }) => {
   }
 };
 
-handler.help = ['
+handler.help = ['antifake'];
+handler.tags = ['group'];
+handler.command = ['antifake', 'antivirtuales'];
+
+export default handler;
