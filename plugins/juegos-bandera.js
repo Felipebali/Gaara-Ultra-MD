@@ -75,13 +75,16 @@ handler.tags = ['juegos'];
 handler.group = false;
 
 handler.before = async (m, { conn }) => {
-    if (!m?.text) return;
+    // ❌ SOLO ejecutar si hay juego activo
     const game = global.flagGame?.[m.chat];
     if (!game || !game.answer) return;
 
+    // ❌ SOLO si hay texto
+    if (!m?.text) return;
+
     const userText = String(m.text || '');
     const normalizedUser = userText.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const normalizedAnswer = String(game.answer).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const normalizedAnswer = String(game.answer || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
     if (normalizedUser === normalizedAnswer) {
         clearTimeout(game.timeout);
@@ -97,7 +100,6 @@ handler.before = async (m, { conn }) => {
             '💀 Sos un desastre total!',
             '🤡 Sos peor que un bot fallando!'
         ];
-        // Aumenta el nivel de insulto según la cantidad de intentos
         const index = Math.min(game.attempts - 1, insults.length - 1);
         await conn.sendMessage(m.chat, { text: insults[index] }, { quoted: m });
     }
