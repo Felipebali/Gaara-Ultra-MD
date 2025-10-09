@@ -6,65 +6,31 @@ let handler = async (m, { conn }) => {
     }
 
     const flags = [
-        { name: "Uruguay", emoji: "🇺🇾" },
-        { name: "Argentina", emoji: "🇦🇷" },
-        { name: "Brasil", emoji: "🇧🇷" },
-        { name: "Chile", emoji: "🇨🇱" },
-        { name: "México", emoji: "🇲🇽" },
-        { name: "España", emoji: "🇪🇸" },
-        { name: "Japón", emoji: "🇯🇵" },
-        { name: "Francia", emoji: "🇫🇷" },
-        { name: "Alemania", emoji: "🇩🇪" },
-        { name: "Italia", emoji: "🇮🇹" },
-        { name: "Estados Unidos", emoji: "🇺🇸" },
-        { name: "Canadá", emoji: "🇨🇦" },
-        { name: "Reino Unido", emoji: "🇬🇧" },
-        { name: "India", emoji: "🇮🇳" },
-        { name: "China", emoji: "🇨🇳" },
-        { name: "Rusia", emoji: "🇷🇺" },
-        { name: "Portugal", emoji: "🇵🇹" },
-        { name: "Países Bajos", emoji: "🇳🇱" },
-        { name: "Grecia", emoji: "🇬🇷" },
-        { name: "Bélgica", emoji: "🇧🇪" },
-        { name: "Suiza", emoji: "🇨🇭" },
-        { name: "Suecia", emoji: "🇸🇪" },
-        { name: "Noruega", emoji: "🇳🇴" },
-        { name: "Finlandia", emoji: "🇫🇮" },
-        { name: "Dinamarca", emoji: "🇩🇰" },
-        { name: "Polonia", emoji: "🇵🇱" },
-        { name: "Turquía", emoji: "🇹🇷" },
-        { name: "Corea del Sur", emoji: "🇰🇷" },
-        { name: "Corea del Norte", emoji: "🇰🇵" },
-        { name: "Tailandia", emoji: "🇹🇭" },
-        { name: "Malasia", emoji: "🇲🇾" },
-        { name: "Indonesia", emoji: "🇮🇩" },
-        { name: "Filipinas", emoji: "🇵🇭" },
-        { name: "Vietnam", emoji: "🇻🇳" },
-        { name: "Australia", emoji: "🇦🇺" },
-        { name: "Nueva Zelanda", emoji: "🇳🇿" },
-        { name: "Sudáfrica", emoji: "🇿🇦" },
-        { name: "Nigeria", emoji: "🇳🇬" },
-        { name: "Egipto", emoji: "🇪🇬" },
-        { name: "Marruecos", emoji: "🇲🇦" },
-        { name: "Camerún", emoji: "🇨🇲" },
-        { name: "Jamaica", emoji: "🇯🇲" },
-        { name: "Cuba", emoji: "🇨🇺" },
-        { name: "Venezuela", emoji: "🇻🇪" },
-        { name: "Colombia", emoji: "🇨🇴" },
-        { name: "Perú", emoji: "🇵🇪" },
-        { name: "Bolivia", emoji: "🇧🇴" },
-        { name: "Paraguay", emoji: "🇵🇾" },
-        { name: "Ecuador", emoji: "🇪🇨" },
-        { name: "Honduras", emoji: "🇭🇳" },
-        { name: "Singapur", emoji: "🇸🇬" },
-        { name: "Emiratos Árabes", emoji: "🇦🇪" },
-        { name: "Arabia Saudita", emoji: "🇸🇦" },
-        { name: "Irán", emoji: "🇮🇷" },
-        { name: "Iraq", emoji: "🇮🇶" },
-        { name: "Pakistán", emoji: "🇵🇰" },
-        { name: "Bangladesh", emoji: "🇧🇩" },
-        { name: "Islandia", emoji: "🇮🇸" },
-        { name: "Luxemburgo", emoji: "🇱🇺" }
+        { name: "Uruguay", emoji: "🇺🇾" }, { name: "Argentina", emoji: "🇦🇷" },
+        { name: "Brasil", emoji: "🇧🇷" }, { name: "Chile", emoji: "🇨🇱" },
+        { name: "México", emoji: "🇲🇽" }, { name: "España", emoji: "🇪🇸" },
+        { name: "Japón", emoji: "🇯🇵" }, { name: "Francia", emoji: "🇫🇷" },
+        { name: "Alemania", emoji: "🇩🇪" }, { name: "Italia", emoji: "🇮🇹" },
+        { name: "Estados Unidos", emoji: "🇺🇸" }, { name: "Canadá", emoji: "🇨🇦" },
+        { name: "Reino Unido", emoji: "🇬🇧" }, { name: "India", emoji: "🇮🇳" },
+        { name: "China", emoji: "🇨🇳" }, { name: "Rusia", emoji: "🇷🇺" },
+        { name: "Portugal", emoji: "🇵🇹" }, { name: "Países Bajos", emoji: "🇳🇱" },
+        { name: "Grecia", emoji: "🇬🇷" }, { name: "Bélgica", emoji: "🇧🇪" },
+        { name: "Suiza", emoji: "🇨🇭" }, { name: "Suecia", emoji: "🇸🇪" },
+        { name: "Noruega", emoji: "🇳🇴" }, { name: "Finlandia", emoji: "🇫🇮" },
+        { name: "Dinamarca", emoji: "🇩🇰" }, { name: "Polonia", emoji: "🇵🇱" },
+        { name: "Turquía", emoji: "🇹🇷" }, { name: "Corea del Sur", emoji: "🇰🇷" },
+        { name: "Corea del Norte", emoji: "🇰🇵" }, { name: "Tailandia", emoji: "🇹🇭" },
+        { name: "Malasia", emoji: "🇲🇾" }, { name: "Indonesia", emoji: "🇮🇩" },
+        { name: "Filipinas", emoji: "🇵🇭" }, { name: "Vietnam", emoji: "🇻🇳" },
+        { name: "Australia", emoji: "🇦🇺" }, { name: "Nueva Zelanda", emoji: "🇳🇿" },
+        { name: "Sudáfrica", emoji: "🇿🇦" }, { name: "Nigeria", emoji: "🇳🇬" },
+        { name: "Egipto", emoji: "🇪🇬" }, { name: "Marruecos", emoji: "🇲🇦" },
+        { name: "Camerún", emoji: "🇨🇲" }, { name: "Jamaica", emoji: "🇯🇲" },
+        { name: "Cuba", emoji: "🇨🇺" }, { name: "Venezuela", emoji: "🇻🇪" },
+        { name: "Colombia", emoji: "🇨🇴" }, { name: "Perú", emoji: "🇵🇪" },
+        { name: "Bolivia", emoji: "🇧🇴" }, { name: "Paraguay", emoji: "🇵🇾" },
+        { name: "Ecuador", emoji: "🇪🇨" }, { name: "Honduras", emoji: "🇭🇳" }
     ];
 
     const correct = flags[Math.floor(Math.random() * flags.length)];
@@ -78,7 +44,8 @@ let handler = async (m, { conn }) => {
 
     if (!global.flagGame) global.flagGame = {};
     global.flagGame[m.chat] = {
-        answer: correct.name || '', // asegurar string
+        answer: correct.name || '',
+        attempts: 0,
         timeout: setTimeout(async () => {
             const game = global.flagGame?.[m.chat];
             if (game?.answer) {
@@ -108,8 +75,7 @@ handler.tags = ['juegos'];
 handler.group = false;
 
 handler.before = async (m, { conn }) => {
-    // seguridad total
-    if (!m || !m.text) return;
+    if (!m?.text) return;
     const game = global.flagGame?.[m.chat];
     if (!game || !game.answer) return;
 
@@ -122,14 +88,18 @@ handler.before = async (m, { conn }) => {
         await conn.sendMessage(m.chat, { text: `✅ Correcto! La bandera es de *${game.answer}* 🎉` }, { quoted: m });
         delete global.flagGame[m.chat];
     } else {
-        const fails = [
+        game.attempts += 1;
+        const insults = [
             '❌ Dale boludo, vos podés o sos inútil? 😅',
             '🙃 Casi, pero no es esa!',
             '🤔 Intentá de nuevo, campeón!',
-            '😬 Nooo, fijate bien!'
+            '😬 Nooo, fijate bien!',
+            '💀 Sos un desastre total!',
+            '🤡 Sos peor que un bot fallando!'
         ];
-        const msg = fails[Math.floor(Math.random() * fails.length)];
-        await conn.sendMessage(m.chat, { text: msg }, { quoted: m });
+        // Aumenta el nivel de insulto según la cantidad de intentos
+        const index = Math.min(game.attempts - 1, insults.length - 1);
+        await conn.sendMessage(m.chat, { text: insults[index] }, { quoted: m });
     }
 };
 
