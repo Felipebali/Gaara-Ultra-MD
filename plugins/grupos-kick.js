@@ -5,7 +5,7 @@ let handler = async (m, { conn, participants, usedPrefix, command, isAdmin, isOw
   if (!m.mentionedJid[0] && !m.quoted) {
     return conn.reply(m.chat, `📌 *¿A quién quieres que elimine?*  
 No has mencionado ni respondido a nadie...  
-No juegues conmigo. ☠️`, m);
+No juegues conmigo. ☠️`);
   }
 
   let user = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted.sender;
@@ -17,38 +17,38 @@ No juegues conmigo. ☠️`, m);
   // Protecciones especiales estilo Gaara ⚡
   if (user === conn.user.jid) {
     return conn.reply(m.chat, `🙃 ¿Quieres que me saque yo mismo?  
-No seas ridículo.`, m);
+No seas ridículo.`);
   }
 
   if (user === ownerGroup) {
     return conn.reply(m.chat, `👑 Ese es el dueño del grupo.  
-Ni lo sueñes...`, m);
+Ni lo sueñes...`);
   }
 
   if (user === ownerBot) {
-    return conn.reply(m.chat, `🛡️ Ese es mi creador, no lo voy a tocar.`, m);
+    return conn.reply(m.chat, `🛡️ Ese es mi creador, no lo voy a tocar.`);
   }
 
   // Verificar que el usuario está en el grupo
   const groupMembers = participants.map(p => p.id);
   if (!groupMembers.includes(user)) {
-    return conn.reply(m.chat, `❌ Esa persona ni siquiera está en el grupo.`, m);
+    return conn.reply(m.chat, `❌ Esa persona ni siquiera está en el grupo.`);
   }
 
   // Verificación: solo admins o owners del bot pueden usar el comando
   if (!(isAdmin || isOwner)) {
-    return conn.reply(m.chat, `❌ Solo administradores o mi dueño pueden usar este comando.`, m);
+    return conn.reply(m.chat, `❌ Solo administradores o mi dueño pueden usar este comando.`);
   }
 
   // Ejecuta la expulsión
   try {
     await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
     conn.reply(m.chat, `💥 *Eliminado.*  
-He decidido que ya no pertenezcas aquí.`, m);
+He decidido que ya no pertenezcas aquí.`);
   } catch (e) {
     console.error(e);
     conn.reply(m.chat, `❌ No pude sacarlo…  
-Seguramente no tengo permisos suficientes.`, m);
+Seguramente no tengo permisos suficientes.`);
   }
 };
 
