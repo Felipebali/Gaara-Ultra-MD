@@ -1,6 +1,5 @@
 import fetch from 'node-fetch'
 import yts from 'yt-search'
-import axios from 'axios'
 
 let handler = async (m, { conn, text, command, usedPrefix }) => {
   try {
@@ -8,33 +7,32 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
 
     await conn.sendMessage(m.chat, { react: { text: "⏳", key: m.key } })
 
+    // Buscar video en YouTube
     let search = await yts(text)
     let video = search.videos[0]
     if (!video) return conn.reply(m.chat, '☁️ No se encontró ningún resultado.', m)
 
-    const apis = [
-      { api: 'ZenzzXD v2', endpoint: `https://api.zenzxz.my.id/downloader/ytmp3v2?url=${encodeURIComponent(video.url)}`, extractor: res => res.download_url },
-      { api: 'Vreden', endpoint: `https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(video.url)}&quality=128`, extractor: res => res.result?.download?.url },
-      { api: 'Xyro', endpoint: `https://xyro.site/download/youtubemp3?url=${encodeURIComponent(video.url)}`, extractor: res => res.result?.dl }
-    ]
+    // Descargar audio desde API gratuita
+    const apiUrl = `https://api.vihangayt.me/ytmp3?url=${encodeURIComponent(video.url)}`
+    const res = await fetch(apiUrl)
+    const json = await res.json()
 
-    const { url: downloadUrl, servidor } = await fetchFromApis(apis)
-    if (!downloadUrl) return conn.reply(m.chat, '❌ Ninguna API devolvió el audio.', m)
+    if (!json || !json.url) return conn.reply(m.chat, '❌ No se pudo obtener el audio.', m)
 
-    const audioBuffer = await (await fetch(downloadUrl)).buffer()
-    const thumbnailBuffer = await (await fetch(video.thumbnail)).buffer()
+    const audioBuffer = await (await fetch(json.url)).arrayBuffer()
+    const thumbnailBuffer = await (await fetch(video.thumbnail)).arrayBuffer()
 
     await conn.sendMessage(m.chat, {
-      audio: audioBuffer,
+      audio: Buffer.from(audioBuffer),
       fileName: `${video.title}.mp3`,
-      mimetype: "audio/mpeg",
+      mimetype: 'audio/mpeg',
       ptt: false,
       contextInfo: {
         externalAdReply: {
           title: video.title,
           body: `Canal: ${video.author?.name || "Desconocido"} | Duración: ${video.timestamp}`,
           mediaType: 2,
-          thumbnail: thumbnailBuffer,
+          thumbnail: Buffer.from(thumbnailBuffer),
           mediaUrl: video.url,
           sourceUrl: video.url
         }
@@ -54,15 +52,3 @@ handler.tags = ['descargas']
 handler.help = ['ytmp3 <texto o link>', 'song <texto>']
 
 export default handler
-
-async function fetchFromApis(apis) {
-  for (const api of apis) {
-    try {
-      const res = await fetch(api.endpoint)
-      const json = await res.json()
-      const url = api.extractor(json)
-      if (url) return { url, servidor: api.api }
-    } catch {}
-  }
-  return { url: null, servidor: "Ninguno" }
-}
