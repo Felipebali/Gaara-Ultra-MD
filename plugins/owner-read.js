@@ -1,56 +1,60 @@
-// FelixCat_Bot 🐾 — By Feli
-// Comando: .readvo | .readviewonce | .read
-// Función: Ver mensajes "ver una vez" (solo dueño, sin citar mensajes)
+// 🐾 FelixCat_Bot — Ver mensajes de tipo "Ver una vez"
+// Solo para dueño, sin citar mensajes.
 
 import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
 let handler = async (m, { conn, usedPrefix, isOwner }) => {
-  if (!isOwner) return // No responde si no es owner
+  if (!isOwner) return // Ignora si no es dueño
 
-  const quoted = m.quoted
-  if (!quoted) return conn.sendMessage(m.chat, { text: '🐾 ¡Miau! Responde al mensaje de tipo *"ver una vez"* para poder abrirlo.' })
+  const q = m.quoted
+  if (!q) return conn.sendMessage(m.chat, { text: '🐾 ¡Miau! Responde a un mensaje de tipo *ver una vez* para abrirlo.' })
 
   try {
     await m.react('⏳')
     await conn.sendPresenceUpdate('composing', m.chat)
 
-    const viewOnce = quoted.viewOnce
-      ? quoted
-      : quoted.msg?.imageMessage ||
-        quoted.msg?.videoMessage ||
-        quoted.msg?.audioMessage
+    // Detección flexible del contenido "view once"
+    let msg = q.msg || q.message?.viewOnceMessageV2 || q.message?.viewOnceMessage || q
+    let mediaMsg =
+      msg.imageMessage ||
+      msg.videoMessage ||
+      msg.audioMessage ||
+      msg.documentMessage
 
-    const messageType = viewOnce.mimetype || quoted.mtype
-    const stream = await downloadContentFromMessage(viewOnce, messageType.split('/')[0])
-
-    if (!stream) return conn.sendMessage(m.chat, { text: '😿 No pude descargar el contenido, intenta de nuevo.' })
-
-    let buffer = Buffer.from([])
-    for await (const chunk of stream) {
-      buffer = Buffer.concat([buffer, chunk])
+    if (!mediaMsg) {
+      await m.react('❌')
+      return conn.sendMessage(m.chat, { text: '😿 No encontré contenido multimedia en ese mensaje.' })
     }
 
-    if (messageType.includes('video')) {
-      await conn.sendMessage(m.chat, { video: buffer, caption: viewOnce.caption || '', mimetype: 'video/mp4' })
-    } else if (messageType.includes('image')) {
-      await conn.sendMessage(m.chat, { image: buffer, caption: viewOnce.caption || '' })
-    } else if (messageType.includes('audio')) {
-      await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: viewOnce.ptt || false })
+    // Descargar contenido
+    let type = mediaMsg.mimetype.split('/')[0]
+    let stream = await downloadContentFromMessage(mediaMsg, type)
+    let buffer = Buffer.from([])
+    for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
+
+    // Enviar sin citar mensaje
+    if (type === 'image') {
+      await conn.sendMessage(m.chat, { image: buffer, caption: mediaMsg.caption || '' })
+    } else if (type === 'video') {
+      await conn.sendMessage(m.chat, { video: buffer, caption: mediaMsg.caption || '', mimetype: 'video/mp4' })
+    } else if (type === 'audio') {
+      await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: mediaMsg.ptt || false })
+    } else {
+      await conn.sendMessage(m.chat, { document: buffer, mimetype: mediaMsg.mimetype, fileName: 'archivo_desconocido' })
     }
 
     await m.react('✅')
-    await conn.sendMessage(m.chat, { text: '✨ El maullido mágico reveló el contenido oculto. 🐾' })
+    await conn.sendMessage(m.chat, { text: '✨ El maullido mágico reveló el secreto. 🐾' })
 
   } catch (e) {
-    await m.react('❌')
-    conn.sendMessage(m.chat, { text: `⚠️ Ocurrió un error, miau:\n> Usa *${usedPrefix}report* para avisarle a mi creador.\n\n${e.message}` })
+    await m.react('⚠️')
+    conn.sendMessage(m.chat, { text: `❌ Error al intentar abrir el mensaje.\n> Usa *${usedPrefix}report* para informar.\n\n${e.message}` })
   }
 }
 
-handler.help = ['readviewonce', 'read', 'readvo']
+handler.help = ['readvo']
 handler.tags = ['tools', 'felixcat']
-handler.command = /^(readviewonce|read|readvo)$/i
-handler.owner = true // Solo dueños
-handler.register = true
+handler.command = /^(readvo|readviewonce|read)$/i
+handler.owner = true // Solo para dueño
 
 export default handler
