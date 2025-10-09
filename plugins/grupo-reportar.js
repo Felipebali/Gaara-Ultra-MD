@@ -1,36 +1,25 @@
-let handler = async (m, { conn, args }) => {
-    if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' });
+// plugins/reportar.js
+let handler = async (m, { conn }) => {
+  if (!m.quoted) return m.reply('⚠️ Debes responder un mensaje para reportarlo.');
 
-    // Usuario reportado
-    let target = (m.quoted && m.quoted.sender) || (m.mentionedJid && m.mentionedJid[0]);
-    if (!target) {
-        return conn.sendMessage(m.chat, { text: `⚠️ Debes mencionar o responder a alguien para reportarlo.\n\nEjemplo:\n.report @usuario spam` });
-    }
+  // Enviar reporte al dueño sin mostrar mensajes raros
+  const owners = ['59896026646@s.whatsapp.net', '59898719147@s.whatsapp.net']; // dueños
+  for (let owner of owners) {
+    await conn.sendMessage(owner, {
+      text: `🚨 *Nuevo reporte recibido*\n\n📩 *Chat:* ${m.chat}\n🔗 *Mensaje reportado:*`,
+    });
 
-    // Motivo
-    const reason = args.length ? args.join(' ') : 'Sin motivo';
+    // Reenvía el mensaje original citado
+    await conn.copyNForward(owner, m.quoted, true);
+  }
 
-    // Obtener admins
-    let metadata = await conn.groupMetadata(m.chat).catch(_ => ({}));
-    const admins = (metadata.participants || []).filter(p => p.admin).map(p => p.id);
-    if (!admins.length) {
-        return conn.sendMessage(m.chat, { text: '⚠️ No hay administradores en este grupo.' });
-    }
-
-    // Elegir correctamente qué citar (anticrash)
-    let safeQuoted = null;
-    if (m.quoted && typeof m.quoted === 'object' && m.quoted.key) {
-        safeQuoted = m.quoted;
-    }
-
-    // Enviar mensaje
-    await conn.sendMessage(m.chat, {
-        text: `🚨 *REPORTE* 🚨\n\n👤 Usuario: @${target.split('@')[0]}\n📝 Motivo: ${reason}\n\n👮 Admins: ${admins.map(v => '@' + v.split('@')[0]).join(', ')}`,
-        mentions: [target, ...admins]
-    }, safeQuoted ? { quoted: safeQuoted } : {});  // ✅ Anticrash
+  // Respuesta al grupo
+  await conn.sendMessage(m.chat, {
+    text: '✅ El mensaje fue reportado a los administradores.',
+  }, { quoted: m.quoted }); // acá cita el mensaje reportado
 };
 
-handler.command = ['report', 'reportar'];
+handler.command = ['reportar', 'report'];
 handler.group = true;
 
 export default handler;
