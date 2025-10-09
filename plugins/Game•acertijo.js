@@ -8,24 +8,18 @@ let handler = async (m, { conn }) => {
     if (!conn.tekateki) conn.tekateki = {};
     const id = m.chat;
 
-    // Si ya hay un acertijo activo, no se puede iniciar otro
     if (id in conn.tekateki) {
         await conn.sendMessage(m.chat, { text: '⚠️ Todavía hay un acertijo activo en este chat. Responde el actual primero.' }, { quoted: m });
         return;
     }
 
-    // Lista de acertijos con opciones
     const quizzes = [
         { question: "¿Capital de Francia?", options: ["A) París","B) Madrid","C) Berlín","D) Roma"], answer: "A" },
         { question: "2 + 2 = ?", options: ["A) 3","B) 4","C) 5","D) 6"], answer: "B" },
         { question: "Planeta rojo", options: ["A) Venus","B) Marte","C) Júpiter","D) Saturno"], answer: "B" },
         { question: "Río más largo del mundo", options: ["A) Amazonas","B) Nilo","C) Yangtsé","D) Misisipi"], answer: "B" },
         { question: "Animal más rápido", options: ["A) Guepardo","B) León","C) Tigre","D) Caballo"], answer: "A" },
-        { question: "Color del cielo en un día despejado", options: ["A) Rojo","B) Verde","C) Azul","D) Amarillo"], answer: "C" },
-        { question: "Día después del lunes", options: ["A) Martes","B) Miércoles","C) Domingo","D) Viernes"], answer: "A" },
-        { question: "Se bebe y es vital para la vida", options: ["A) Leche","B) Agua","C) Jugo","D) Vino"], answer: "B" },
-        { question: "¿Qué gas respiramos para vivir?", options: ["A) Oxígeno","B) Nitrógeno","C) Dióxido de carbono","D) Helio"], answer: "A" },
-        { question: "¿Cuál es el metal más ligero?", options: ["A) Hierro","B) Oro","C) Litio","D) Plomo"], answer: "C" }
+        { question: "Lenguaje de programación que usamos aquí", options: ["A) Python","B) JavaScript","C) C++","D) Java"], answer: "B" }
     ];
 
     const quiz = quizzes[Math.floor(Math.random() * quizzes.length)];
@@ -43,12 +37,11 @@ let handler = async (m, { conn }) => {
         headerType: 1
     };
 
-    // Guardar acertijo activo
     conn.tekateki[id] = {
         answer: quiz.answer,
         timeout: setTimeout(async () => {
             if (conn.tekateki[id]) {
-                await conn.sendMessage(m.chat, { text: `⏰ Se acabó el tiempo!\nRespuesta correcta: *${quiz.answer}*` }, { quoted: m });
+                await conn.sendMessage(m.chat, { text: `⏰ Se acabó el tiempo!\nRespuesta correcta: *${quiz.answer}*` });
                 delete conn.tekateki[id];
             }
         }, 30000)
@@ -57,17 +50,24 @@ let handler = async (m, { conn }) => {
     await conn.sendMessage(m.chat, buttonMessage);
 };
 
-// Handler para todas las respuestas (botones)
+// Handler para todas las respuestas (botones o texto)
 handler.all = async (m, { conn }) => {
-    if (!conn.tekateki) return;
+    if (!conn.tekateki) conn.tekateki = {};
     const id = m.chat;
     if (!(id in conn.tekateki)) return;
 
-    const msgText = (m.text || '').toUpperCase();
-    const correct = conn.tekateki[id].answer;
+    let msgText = "";
+    // Si es botón
+    if (m.message?.buttonsResponseMessage?.selectedButtonId) {
+        msgText = m.message.buttonsResponseMessage.selectedButtonId.toUpperCase();
+    } else if (m.text) { // Si es texto
+        msgText = m.text.toUpperCase();
+    } else {
+        return; // no es respuesta válida
+    }
 
-    if (msgText === correct) {
-        await conn.reply(m.chat, `🎉 Correcto! La respuesta es *${correct}*`, m);
+    if (msgText === conn.tekateki[id].answer) {
+        await conn.reply(m.chat, `🎉 Correcto! La respuesta es *${conn.tekateki[id].answer}*`, m);
         clearTimeout(conn.tekateki[id].timeout);
         delete conn.tekateki[id];
     } else if (["A","B","C","D"].includes(msgText)) {
