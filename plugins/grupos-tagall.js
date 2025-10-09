@@ -2,6 +2,16 @@
 let handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return;
 
+  // Verificar si el bot es administrador
+  const botIsAdmin = groupMetadata.participants
+    .find(p => p.id === conn.user.jid)
+    ?.admin;
+  if (!botIsAdmin) {
+    return await conn.sendMessage(m.chat, {
+      text: '❌ No puedo usar TagAll porque no soy administrador del grupo.'
+    });
+  }
+
   // LINK ÚNICO para que el antitagall detecte copias
   const LINK_UNICO_TAGALL = 'https://miunicolink.local/tagall-FelixCat'; // <-- link único inventado
 
@@ -28,7 +38,7 @@ let handler = async function (m, { conn, groupMetadata }) {
     '┃ 🔥 ¡Invocación completada! 🔥',
     '┃ 📌 Todos los usuarios del chat han sido invocados:',
     listaUsuarios,
-    `┃ 🔗 ${LINK_UNICO_TAGALL}`, // <- link agregado en el mensaje
+    `┃ 🔗 ${LINK_UNICO_TAGALL}`,
     '╰━━━━━━━━━━━━━━━━━━━━⬣'
   ].join('\n');
 
@@ -46,6 +56,6 @@ handler.help = ['invocar', 'tagall'];
 handler.tags = ['grupos'];
 handler.group = true;
 handler.admin = false; // cualquiera puede usarlo
-handler.botAdmin = false;
+handler.botAdmin = true; // ahora requiere que el bot sea admin
 
 export default handler;
