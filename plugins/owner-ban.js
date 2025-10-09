@@ -3,22 +3,24 @@ const handler = async (m, { conn, command }) => {
     const done = '✅';
     const db = global.db.data.users || (global.db.data.users = {});
 
-    // Verificar que se haya citado un mensaje
-    if (!m.quoted || !m.quoted.sender) {
-        return await conn.reply(m.chat, `${emoji} Debes responder a un mensaje del usuario para usar este comando.`, m);
+    // BAN, UNBAN y CHECK requieren mensaje citado
+    if (['banuser', 'unbanuser', 'checkban'].includes(command)) {
+        if (!m.quoted || !m.quoted.sender) {
+            return await conn.reply(m.chat, `${emoji} Debes responder a un mensaje del usuario para usar este comando.`, m);
+        }
     }
 
-    const userJid = m.quoted.sender;
-    const userName = await conn.getName(userJid); // Nombre para mostrar
+    const userJid = m.quoted?.sender;
+    const userName = userJid ? await conn.getName(userJid) : null; // Nombre para mostrar
     const senderName = await conn.getName(m.sender); // Tu nombre
 
     // Inicializar usuario si no existe
-    if (!db[userJid]) db[userJid] = {};
+    if (userJid && !db[userJid]) db[userJid] = {};
 
     // BAN
     if (command === 'banuser') {
         db[userJid].banned = true;
-        db[userJid].banReason = 'No especificado'; // Se puede personalizar si quieres
+        db[userJid].banReason = 'No especificado';
         db[userJid].bannedBy = m.sender;
 
         await conn.sendMessage(m.chat, {
@@ -62,11 +64,24 @@ const handler = async (m, { conn, command }) => {
         }
     }
 
+    // BANLIST
+    else if (command === 'banlist') {
+        const bannedUsers = Object.entries(db)
+            .filter(([jid, data]) => data.banned)
+            .map(([jid, data]) => `• ${conn.getName(jid)} (baneado por: ${await conn.getName(data.bannedBy)})`);
+
+        if (bannedUsers.length === 0) {
+            await conn.sendMessage(m.chat, { text: `${done} No hay usuarios baneados.` });
+        } else {
+            await conn.sendMessage(m.chat, { text: `🚫 Lista de usuarios baneados:\n\n${bannedUsers.join('\n')}` });
+        }
+    }
+
     if (global.db.write) await global.db.write();
 };
 
-handler.help = ['banuser', 'unbanuser', 'checkban'];
-handler.command = ['banuser', 'unbanuser', 'checkban'];
+handler.help = ['banuser', 'unbanuser', 'checkban', 'banlist'];
+handler.command = ['banuser', 'unbanuser', 'checkban', 'banlist'];
 handler.tags = ['owner'];
 handler.rowner = true; // solo owners
 
