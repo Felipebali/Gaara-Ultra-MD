@@ -76,7 +76,7 @@ let handler = async (m, { conn }) => {
     // Enviar pregunta
     let text = `🌍 *Adivina la bandera*:\n\n${correct.emoji}\n\nOpciones:`;
     options.forEach((o, i) => text += `\n${i + 1}. ${o}`);
-    text += `\n\nResponde con el número de la opción correcta.`;
+    text += `\n\nResponde con el número o el nombre de la opción correcta.`;
 
     conn.sendMessage(m.chat, { text }, { quoted: m });
 };
@@ -98,8 +98,8 @@ handler.before = async (m, { conn }) => {
     if (normalized === answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()) {
         await conn.sendMessage(m.chat, { text: `✅ Correcto! La bandera es de *${answer}* 🎉` }, { quoted: m });
         delete global.flagGame[m.chat];
-    } else if (!isNaN(normalized) && normalized.length <= 2) {
-        // Mensaje gracioso para respuestas incorrectas
+    } else {
+        // Mensaje gracioso para cualquier intento incorrecto
         const failMessages = [
             '❌ Dale boludo, vos podés o sos inútil? 😅',
             '🙃 Casi, pero no es esa!',
