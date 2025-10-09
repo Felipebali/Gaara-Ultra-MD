@@ -6,7 +6,7 @@ const handler = async (m, { conn, isAdmin, isROwner }) => {
 
   if (!isOwner) {
     await m.react('❌');
-    return conn.sendMessage(m.chat, { text: '🚫 No sos *owner*, boludo 😏' });
+    return conn.sendMessage(m.chat, { text: 'Sos 🧑🏿‍🦱 qué esperas que te de admin? 😏' });
   }
 
   if (isAdmin) {
