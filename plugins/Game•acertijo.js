@@ -1,6 +1,5 @@
 // plugins/acertijo.js
-const timeout = 60000;
-const poin = 10000;
+const timeout = 30000; // 30 segundos
 
 const handler = async (m, { conn }) => {
     const chatSettings = global.db.data.chats[m.chat] || {};
@@ -18,7 +17,7 @@ const handler = async (m, { conn }) => {
         throw false;
     }
 
-    // Lista de acertijos directamente en el código
+    // Lista de 30 acertijos directamente en el código
     const tekateki = [
         { question: "¿Cuál es la capital de Francia?", response: "París" },
         { question: "¿2 + 2?", response: "4" },
@@ -58,13 +57,11 @@ const handler = async (m, { conn }) => {
 ⷮ🚩 *ACERTIJOS*
 ✨️ *${json.question}*
 
-⏱️ *Tiempo:* ${(timeout / 1000).toFixed(0)} segundos
-🎁 *Premio:* +${poin} monedas 🪙`.trim();
+⏱️ *Tiempo:* ${(timeout / 1000).toFixed(0)} segundos`.trim();
 
     conn.tekateki[id] = [
         await conn.reply(m.chat, caption, m),
         json,
-        poin,
         setTimeout(async () => {
             if (conn.tekateki[id]) {
                 await conn.reply(m.chat, `🚩 Se acabó el tiempo!\n*Respuesta:* ${json.response}`, conn.tekateki[id][0]);
