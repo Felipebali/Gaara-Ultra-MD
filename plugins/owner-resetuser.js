@@ -20,7 +20,7 @@ const handler = async (m, { conn, text }) => {
 
     // Verificar que el usuario exista en la base de datos
     if (!global.db.data.users[userJid]) {
-        return conn.sendMessage(m.chat, { text: `${emoji} El usuario @${userNumber} no se encuentra en mi base de datos.`, mentions: [userJid] });
+        return conn.sendMessage(m.chat, { text: `${emoji} El usuario ${userNumber} no se encuentra en mi base de datos.` });
     }
 
     // Eliminar todos los datos del usuario
@@ -36,8 +36,8 @@ const handler = async (m, { conn, text }) => {
     // Guardar cambios en la base de datos
     if (global.db.write) await global.db.write();
 
-    // Mensaje de éxito
-    conn.sendMessage(m.chat, { text: `${done} Éxito. Todos los datos y advertencias del usuario @${userNumber} fueron eliminados de mi base de datos.`, mentions: [userJid] });
+    // Mensaje de éxito sin mencionar
+    conn.sendMessage(m.chat, { text: `${done} Éxito. Todos los datos y advertencias del usuario ${userNumber} fueron eliminados de mi base de datos.` });
 };
 
 handler.tags = ['owner'];
