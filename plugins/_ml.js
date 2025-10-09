@@ -1,4 +1,4 @@
-import axios from 'axios';
+const axios = require('axios');
 
 const handler = async (m, { conn, args }) => {
   if (!args || args.length === 0) {
@@ -10,25 +10,29 @@ const handler = async (m, { conn, args }) => {
 
   try {
     const response = await axios.get(url);
-    const results = response.data.results;
 
-    if (!results || results.length === 0) {
+    // Revisar si hay resultados
+    const results = response.data && response.data.results ? response.data.results : [];
+    if (results.length === 0) {
       return conn.sendMessage(m.chat, { text: `❌ No se encontraron resultados para "${args.join(' ')}".` });
     }
 
     let message = `🛒 *3 Productos de Mercado Libre* para: *${args.join(' ')}*\n\n`;
 
     results.forEach((item, index) => {
+      const price = item.price ? `$${item.price} ${item.currency_id}` : 'Sin precio';
+      const condition = item.condition === 'new' ? 'Nuevo' : item.condition === 'used' ? 'Usado' : 'Desconocido';
+
       message += `🔹 *${item.title}*\n`;
-      message += `💰 Precio: $${item.price} ${item.currency_id}\n`;
-      message += `📦 Estado: ${item.condition === 'new' ? 'Nuevo' : 'Usado'}\n`;
+      message += `💰 Precio: ${price}\n`;
+      message += `📦 Estado: ${condition}\n`;
       message += `🔗 [Ver en Mercado Libre](${item.permalink})\n\n`;
     });
 
     await conn.sendMessage(m.chat, { text: message, linksPreview: true });
 
   } catch (err) {
-    console.error(err);
+    console.error('Error en comando ML:', err);
     conn.sendMessage(m.chat, { text: '❌ Ocurrió un error buscando en Mercado Libre.' });
   }
 };
@@ -39,4 +43,4 @@ handler.tags = ['internet'];
 handler.group = false;
 handler.register = true;
 
-export default handler;
+module.exports = handler;
