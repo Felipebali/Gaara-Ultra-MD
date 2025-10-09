@@ -1,13 +1,15 @@
 // plugins/antifake-offline.js
 
 let handler = async (m, { conn, isAdmin, isOwner }) => {
-  if (!m.isGroup) return conn.reply(m.chat, '⚠️ Este comando solo funciona en grupos.', m);
-  if (!(isAdmin || isOwner)) return conn.reply(m.chat, '⚠️ Solo admins pueden usar este comando.', m);
+  if (!m.isGroup) return conn.sendMessage(m.chat, { text: '⚠️ Este comando solo funciona en grupos.' });
+  if (!(isAdmin || isOwner)) return conn.sendMessage(m.chat, { text: '⚠️ Solo admins pueden usar este comando.' });
 
   let chat = global.db.data.chats[m.chat];
   chat.antifake = !chat.antifake;
 
-  conn.reply(m.chat, `⚡️ La función *antifake* se *${chat.antifake ? 'activó' : 'desactivó'}* para este chat`, m);
+  conn.sendMessage(m.chat, { 
+    text: `⚡️ La función *antifake* se *${chat.antifake ? 'activó' : 'desactivó'}* para este chat`
+  });
 };
 
 handler.all = async (m, { conn }) => {
@@ -42,8 +44,4 @@ handler.all = async (m, { conn }) => {
   }
 };
 
-handler.help = ['antifake'];
-handler.tags = ['group'];
-handler.command = ['antifake', 'antivirtuales'];
-
-export default handler;
+handler.help = ['
