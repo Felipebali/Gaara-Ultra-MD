@@ -1,62 +1,40 @@
-// plugins/tagall.js
-let handler = async function (m, { conn, groupMetadata }) {
-  if (!m.isGroup) return;
+// ✦ ᴄᴏᴅɪɢᴏ ᴄʀᴇᴀᴅᴏ ᴘᴏʀ Felix-Cat 😼
 
-  // Verificar si quien ejecuta es admin o superadmin
-  const senderParticipant = groupMetadata.participants.find(p => p.id === m.sender);
-  const senderIsAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
+let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner }) {
+  if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
-  if (!senderIsAdmin) {
-    return await conn.sendMessage(m.chat, {
-      text: `❌ @${m.sender.split('@')[0]}, solo los administradores pueden usar TagAll.`,
-      mentions: [m.sender]
-    });
-  }
-
-  // LINK ÚNICO para que el antitagall detecte copias
-  const LINK_UNICO_TAGALL = 'https://miunicolink.local/tagall-FelixCat';
-
-  // Verificar si está activado el tagall
-  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
-  const chatSettings = global.db.data.chats[m.chat];
-
-  if (chatSettings.antitagall) {
-    return await conn.sendMessage(m.chat, {
-      text: `❌ @${m.sender.split('@')[0]}, el TagAll está desactivado en este grupo.`,
-      mentions: [m.sender]
-    });
+  // Solo admins o owners pueden usarlo
+  if (!(isAdmin || isOwner)) {
+    global.dfail?.('admin', m, conn);
+    throw false;
   }
 
   const participantes = groupMetadata?.participants || [];
   const mencionados = participantes.map(p => p.id).filter(Boolean);
 
-  // Mensaje con @all
+  const mensajeOpcional = args.length ? args.join(' ') : '✨ *Sin mensaje adicional.*';
+
   let listaUsuarios = mencionados.map(jid => `┃ ⚡ @${jid.split('@')[0]}`).join('\n');
 
   const mensaje = [
     '╭━━━〔 𝗙𝗲𝗹𝗶𝘅𝗖𝗮𝘁-𝗕𝗼𝘁 〕━━━⬣',
     `┃ 🔥 ¡Invocación completada por @${m.sender.split('@')[0]}! 🔥`,
-    '┃ 📌 Todos los usuarios del chat han sido invocados:',
+    `┃ 📝 Mensaje: ${mensajeOpcional}`,
+    '┃ 📌 Si te mencioné es para que hables 🫎:',
     listaUsuarios,
-    `┃ 🐾 No te escapes, @${m.sender.split('@')[0]} 😏`,
-    `┃ 🔗 ${LINK_UNICO_TAGALL}`,
     '╰━━━━━━━━━━━━━━━━━━━━⬣'
   ].join('\n');
 
-  await conn.sendMessage(
-    m.chat,
-    {
-      text: mensaje,
-      mentions: mencionados.concat(m.sender) // menciona al admin que activó
-    }
-  );
+  await conn.sendMessage(m.chat, {
+    text: mensaje,
+    mentions: mencionados.concat(m.sender)
+  });
 };
 
-handler.command = ['invocar', 'tag', 'tagall'];
-handler.help = ['invocar', 'tagall'];
+handler.command = ['invocar', 'todos', 'llamar'];
+handler.help = ['invocar *<mensaje>*'];
 handler.tags = ['grupos'];
 handler.group = true;
-handler.admin = true; // solo admins pueden usarlo
-handler.botAdmin = false; // el bot no necesita ser admin
+handler.admin = true; // Solo admins pueden usarlo
 
 export default handler;
