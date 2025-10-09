@@ -1,7 +1,9 @@
 // plugins/juegos-bandera.js
 let handler = async (m, { conn }) => {
     const chatSettings = global.db.data.chats[m.chat] || {};
-    if (chatSettings.games === false) return conn.sendMessage(m.chat, { text: '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.' }, { quoted: m });
+    if (chatSettings.games === false) {
+        return conn.sendMessage(m.chat, { text: '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.' }, { quoted: m });
+    }
 
     const flags = [
         { name: "Uruguay", emoji: "🇺🇾" }, { name: "Argentina", emoji: "🇦🇷" },
@@ -28,11 +30,17 @@ let handler = async (m, { conn }) => {
         { name: "Cuba", emoji: "🇨🇺" }, { name: "Venezuela", emoji: "🇻🇪" },
         { name: "Colombia", emoji: "🇨🇴" }, { name: "Perú", emoji: "🇵🇪" },
         { name: "Bolivia", emoji: "🇧🇴" }, { name: "Paraguay", emoji: "🇵🇾" },
-        { name: "Ecuador", emoji: "🇪🇨" }, { name: "Honduras", emoji: "🇭🇳" }
+        { name: "Ecuador", emoji: "🇪🇨" }, { name: "Honduras", emoji: "🇭🇳" },
+        { name: "Singapur", emoji: "🇸🇬" }, { name: "Noruega", emoji: "🇳🇴" },
+        { name: "Islandia", emoji: "🇮🇸" }, { name: "Luxemburgo", emoji: "🇱🇺" },
+        { name: "Irlanda", emoji: "🇮🇪" }, { name: "Hungría", emoji: "🇭🇺" },
+        { name: "Pakistán", emoji: "🇵🇰" }, { name: "Bangladesh", emoji: "🇧🇩" }
     ];
 
+    // Elegir país aleatorio
     const correct = flags[Math.floor(Math.random() * flags.length)];
 
+    // Mezclar opciones
     let options = [correct.name];
     while (options.length < 4) {
         const opt = flags[Math.floor(Math.random() * flags.length)].name;
@@ -40,18 +48,18 @@ let handler = async (m, { conn }) => {
     }
     options = options.sort(() => Math.random() - 0.5);
 
+    // Guardar en memoria
     if (!global.flagGame) global.flagGame = {};
     global.flagGame[m.chat] = {
-        answer: correct.name || '',
-        attempts: 0,
+        answer: correct.name,
         timeout: setTimeout(async () => {
             const game = global.flagGame?.[m.chat];
             if (game?.answer) {
                 const insults = [
-                    '💀 Sos un desastre, te gané el tiempo!',
-                    '😹 Inútil, no respondiste a tiempo!',
-                    '🤡 Qué desastre, la respuesta era',
-                    '🫠 Ni cerca! Era'
+                    '💀 Sos un inútil total!',
+                    '🤡 Ni siquiera lo intentaste!',
+                    '😹 Patético, la respuesta era',
+                    '🫠 Sos un desastre, era'
                 ];
                 const msg = insults[Math.floor(Math.random() * insults.length)];
                 await conn.sendMessage(m.chat, { text: `${msg} *${correct.name}* ${correct.emoji}` }, { quoted: m });
@@ -74,21 +82,16 @@ handler.group = false;
 
 handler.before = async (m, { conn }) => {
     const game = global.flagGame?.[m.chat];
-    if (!game || !game.answer) return; // ❌ NO hacer nada si no hay juego activo
-    if (!m?.text) return; // ❌ NO procesar si no hay texto
+    if (!game?.answer || !m?.text) return;
 
-    const userText = String(m.text || '');
-    const normalizedUser = userText.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const normalizedAnswer = String(game.answer || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-
-    if (!normalizedAnswer) return; // ❌ Seguridad extra
+    const normalizedUser = m.text.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const normalizedAnswer = game.answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
     if (normalizedUser === normalizedAnswer) {
         clearTimeout(game.timeout);
         await conn.sendMessage(m.chat, { text: `✅ Correcto! La bandera es de *${game.answer}* 🎉` }, { quoted: m });
         delete global.flagGame[m.chat];
     } else {
-        game.attempts += 1;
         const insults = [
             '❌ Dale boludo, vos podés o sos inútil? 😅',
             '🙃 Casi, pero no es esa!',
@@ -97,8 +100,7 @@ handler.before = async (m, { conn }) => {
             '💀 Sos un desastre total!',
             '🤡 Sos peor que un bot fallando!'
         ];
-        const index = Math.min(game.attempts - 1, insults.length - 1);
-        await conn.sendMessage(m.chat, { text: insults[index] }, { quoted: m });
+        await conn.sendMessage(m.chat, { text: insults[0] }, { quoted: m });
     }
 };
 
