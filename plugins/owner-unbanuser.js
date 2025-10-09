@@ -3,45 +3,38 @@ const handler = async (m, { conn, text }) => {
         const emojis = '🚫'; 
         const done = '✅'; 
 
-        let user;
         const db = global.db.data.users || (global.db.data.users = {});
 
-        // 1️⃣ Usuario citado
-        if (m.quoted) {
-            user = m.quoted.sender;
+        if (!text) {
+            return await conn.reply(m.chat, `*${emojis} Debes escribir el número o mencionar al usuario que deseas desbanear.*\nEjemplo: .unbanuser 59898719147`, m);
         }
-        // 2️⃣ Usuario mencionado
-        else if (m.mentionedJid && m.mentionedJid.length) {
-            user = m.mentionedJid[0];
+
+        // Obtener número del usuario del texto
+        const numberMatch = text.match(/\d+/g);
+        if (!numberMatch) {
+            return await conn.reply(m.chat, `*${emojis} Formato de número inválido.*`, m);
         }
-        // 3️⃣ Usuario escrito como número
-        else if (text && /\d+/.test(text)) {
-            const number = text.match(/\d+/g).join('');
-            user = number + '@s.whatsapp.net';
-        }
-        else {
-            await conn.reply(m.chat, `*${emojis} Debes mencionar, responder o escribir el número del usuario que deseas desbanear.*`, m);
-            return;
-        }
+
+        const user = numberMatch.join('') + '@s.whatsapp.net';
 
         // Verificar que el usuario exista en la base de datos
-        if (db[user]) {
-            db[user].banned = false;
-            db[user].banReason = '';
-            db[user].bannedBy = null;
-
-            const userName = await conn.getName(user);
-            await conn.sendMessage(m.chat, { 
-                text: `*${done} El usuario* *@${user.split('@')[0]}* (*${userName}*) *ha sido desbaneado.*`, 
-                mentions: [user] 
-            });
-
-            // Guardar cambios si la base de datos requiere write()
-            if (global.db.write) await global.db.write();
-
-        } else {
-            await conn.reply(m.chat, `*⚠️ El usuario no está registrado en la base de datos.*`, m);
+        if (!db[user]) {
+            return await conn.reply(m.chat, `*⚠️ El usuario @${user.split('@')[0]} no está registrado en la base de datos.*`, m, { mentions: [user] });
         }
+
+        // Desbanear usuario
+        db[user].banned = false;
+        db[user].banReason = '';
+        db[user].bannedBy = null;
+
+        const userName = await conn.getName(user);
+        await conn.sendMessage(m.chat, { 
+            text: `*${done} El usuario* *@${user.split('@')[0]}* (*${userName}*) *ha sido desbaneado.*`, 
+            mentions: [user] 
+        });
+
+        // Guardar cambios en la base de datos
+        if (global.db.write) await global.db.write();
 
     } catch (e) {
         console.error(e);
@@ -49,7 +42,7 @@ const handler = async (m, { conn, text }) => {
     }
 };
 
-handler.help = ['unbanuser <@usuario o número>'];
+handler.help = ['unbanuser <número>'];
 handler.command = ['unbanuser'];
 handler.tags = ['owner'];
 handler.rowner = true; // Solo owner
