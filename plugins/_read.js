@@ -1,40 +1,53 @@
-// Este código fue hecho por https://github.com/Hidekijs, modificado por https://github.com/GataNina-Li.
+// 🐾 FelixCat_Bot - Comando "read" para ver mensajes ViewOnce
+// Autor base: Hidekijs | Mod: Feli (https://github.com/Felipebali)
 
-let { downloadContentFromMessage } = (await import('@whiskeysockets/baileys'))
+import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
 let handler = async (m, { conn }) => {
-    let quoted = m.quoted
-    if (!quoted) return conn.reply(m.chat, `*Responde a un mensaje ViewOnce para ver su contenido.*`, m)
+  try {
+    const quoted = m.quoted
+    if (!quoted?.message) return m.reply('🐾 Responde a un mensaje *ViewOnce* (ver una vez) para mostrar su contenido.')
 
-    try {
-        let viewOnceMessage = quoted.viewOnce ? quoted : quoted.mediaMessage?.imageMessage || quoted.mediaMessage?.videoMessage || quoted.mediaMessage?.audioMessage
-        let messageType = viewOnceMessage.mimetype || quoted.mtype
-        let stream = await downloadContentFromMessage(viewOnceMessage, messageType.split('/')[0])
+    // Detectar si es un mensaje viewOnce
+    const viewOnceMsg = quoted.message?.viewOnceMessageV2 ||
+                        quoted.message?.viewOnceMessageV2Extension ||
+                        quoted.message?.viewOnceMessage ||
+                        null
 
-        if (!stream) return conn.reply(m.chat, `*❌ No se pudo descargar el contenido.*`, m)
+    if (!viewOnceMsg) return m.reply('⚠️ Ese mensaje no es de tipo *ver una vez*.')
 
-        let buffer = Buffer.from([])
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk])
-        }
+    // Detectar tipo (imagen / video / audio)
+    const media = viewOnceMsg.message.imageMessage ||
+                  viewOnceMsg.message.videoMessage ||
+                  viewOnceMsg.message.audioMessage
 
-        if (messageType.includes('video')) {
-            await conn.sendMessage(m.chat, { video: buffer, caption: viewOnceMessage.caption || '', mimetype: 'video/mp4' }, { quoted: m })
+    if (!media) return m.reply('❌ No se encontró contenido multimedia en el mensaje.')
 
-        } else if (messageType.includes('image')) {
-            await conn.sendMessage(m.chat, { image: buffer, caption: viewOnceMessage.caption || '' }, { quoted: m })
+    const type = media.mimetype.split('/')[0]
+    const stream = await downloadContentFromMessage(media, type)
+    let buffer = Buffer.from([])
+    for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
 
-        } else if (messageType.includes('audio')) {
-            await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: viewOnceMessage.ptt || false }, { quoted: m })
-        }
-
-    } catch {
-        conn.reply(m.chat, `*❌ No es un mensaje de imagen, video o audio ViewOnce.*`, m)
+    if (type === 'image') {
+      await conn.sendMessage(m.chat, { image: buffer, caption: media.caption || '' })
+    } else if (type === 'video') {
+      await conn.sendMessage(m.chat, { video: buffer, caption: media.caption || '', mimetype: 'video/mp4' })
+    } else if (type === 'audio') {
+      await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: false })
+    } else {
+      m.reply('⚠️ Tipo de contenido no soportado.')
     }
+
+  } catch (err) {
+    console.error(err)
+    m.reply('❌ Ocurrió un error al intentar mostrar el mensaje ViewOnce.')
+  }
 }
 
-handler.command = /^(readviewonce|read|viewonce|ver)$/i
-handler.owner = true // 🔹 Solo dueños
-handler.register = true
+// 🧩 Comandos
+handler.command = /^(read|ver)$/i
+handler.owner = true // Solo el dueño puede usarlo
+handler.help = ['read', 'ver']
+handler.tags = ['tools']
 
 export default handler
