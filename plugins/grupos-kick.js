@@ -1,6 +1,6 @@
 // creado Por Xzzys26 adaptado para Gaara-Ultra-MD
 
-let handler = async (m, { conn, participants, usedPrefix, command }) => {
+let handler = async (m, { conn, participants, usedPrefix, command, isAdmin, isOwner }) => {
   // Verifica si se mencionó o respondió a alguien
   if (!m.mentionedJid[0] && !m.quoted) {
     return conn.reply(m.chat, `📌 *¿A quién quieres que elimine?*  
@@ -35,6 +35,11 @@ Ni lo sueñes...`, m);
     return conn.reply(m.chat, `❌ Esa persona ni siquiera está en el grupo.`, m);
   }
 
+  // Verificación: solo admins o owners del bot pueden usar el comando
+  if (!(isAdmin || isOwner)) {
+    return conn.reply(m.chat, `❌ Solo administradores o mi dueño pueden usar este comando.`, m);
+  }
+
   // Ejecuta la expulsión
   try {
     await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
@@ -50,9 +55,9 @@ Seguramente no tengo permisos suficientes.`, m);
 handler.help = ['kick'];
 handler.tags = ['grupo'];
 handler.command = ['k', 'echar', 'sacar', 'ban'];
-handler.admin = true;
 handler.group = true;
 handler.botAdmin = true;
 handler.register = true;
 
+// ❌ Eliminamos handler.admin porque ahora la verificación la hace dentro
 export default handler;
