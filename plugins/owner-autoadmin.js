@@ -1,8 +1,8 @@
-const handler = async (m, { conn, isAdmin, isROwner }) => {
-  // Verifica si es owner
-  const owners = global.owner.map(([num]) => num); // Usa la lista global de owners
-  const sender = m.sender.replace(/[^0-9]/g, '');
-  const isOwner = owners.some(num => sender.includes(num));
+const handler = async (m, { conn, isAdmin }) => {
+  const sender = m.sender.split('@')[0]; // solo el número sin @s.whatsapp.net
+  const owners = global.owner.map(([num]) => num.replace(/[^0-9]/g, '')); // limpia los números de owners
+
+  const isOwner = owners.includes(sender);
 
   if (!isOwner) {
     await m.react('❌');
