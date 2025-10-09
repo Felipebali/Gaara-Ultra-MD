@@ -3,9 +3,8 @@ let handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return;
 
   // Verificar si el bot es administrador
-  const botIsAdmin = groupMetadata.participants
-    .find(p => p.id === conn.user.jid)
-    ?.admin;
+  const botParticipant = groupMetadata.participants.find(p => p.id === conn.user.jid);
+  const botIsAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin';
   if (!botIsAdmin) {
     return await conn.sendMessage(m.chat, {
       text: 'Sos 🫎 o que? No ves que no soy admin para hacer Tagall.'
@@ -13,9 +12,8 @@ let handler = async function (m, { conn, groupMetadata }) {
   }
 
   // Verificar si quien ejecuta es administrador
-  const senderIsAdmin = groupMetadata.participants
-    .find(p => p.id === m.sender)
-    ?.admin;
+  const senderParticipant = groupMetadata.participants.find(p => p.id === m.sender);
+  const senderIsAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
   if (!senderIsAdmin) {
     return await conn.sendMessage(m.chat, {
       text: `❌ @${m.sender.split('@')[0]}, solo los administradores pueden usar TagAll.`,
@@ -34,13 +32,13 @@ let handler = async function (m, { conn, groupMetadata }) {
     return await conn.sendMessage(m.chat, {
       text: `❌ @${m.sender.split('@')[0]}, el TagAll está desactivado en este grupo.`,
       mentions: [m.sender]
-    });
+    }, { quoted: m });
   }
 
   const participantes = groupMetadata?.participants || [];
   const mencionados = participantes.map(p => p.id).filter(Boolean);
 
-  // Mensaje con @all y un toque divertido
+  // Mensaje con @all
   let listaUsuarios = mencionados.map(jid => `┃ ⚡ @${jid.split('@')[0]}`).join('\n');
 
   const mensaje = [
@@ -48,7 +46,6 @@ let handler = async function (m, { conn, groupMetadata }) {
     `┃ 🔥 ¡Invocación completada por @${m.sender.split('@')[0]}! 🔥`,
     '┃ 📌 Todos los usuarios del chat han sido invocados:',
     listaUsuarios,
-    `┃ 🐾 No te escapes, @${m.sender.split('@')[0]} 😏`,
     `┃ 🔗 ${LINK_UNICO_TAGALL}`,
     '╰━━━━━━━━━━━━━━━━━━━━⬣'
   ].join('\n');
@@ -62,7 +59,7 @@ let handler = async function (m, { conn, groupMetadata }) {
   );
 };
 
-handler.command = ['invocar', 'tag', 'tagall'];
+handler.command = ['invocar', 'tagall'];
 handler.help = ['invocar', 'tagall'];
 handler.tags = ['grupos'];
 handler.group = true;
