@@ -15,22 +15,26 @@ const handler = async (m, { conn, text }) => {
         return conn.sendMessage(m.chat, { text: `${emoji} Formato de usuario no reconocido. Responda a un mensaje, etiquete a un usuario o escriba su número de usuario.` });
     }
 
-    const userNumber = user.split('@')[0];
+    const userJid = user.toLowerCase(); // asegurar minúsculas
+    const userNumber = userJid.split('@')[0];
 
     // Verificar que el usuario exista en la base de datos
-    if (!global.db.data.users[user]) {
-        return conn.sendMessage(m.chat, { text: `${emoji} El usuario @${userNumber} no se encuentra en mi base de datos.`, mentions: [user] });
+    if (!global.db.data.users[userJid]) {
+        return conn.sendMessage(m.chat, { text: `${emoji} El usuario @${userNumber} no se encuentra en mi base de datos.`, mentions: [userJid] });
     }
 
     // Eliminar todos los datos del usuario
-    delete global.db.data.users[user];
+    delete global.db.data.users[userJid];
+
+    // Guardar cambios en la base de datos
+    if (global.db.write) await global.db.write();
 
     // Mensaje de éxito
-    conn.sendMessage(m.chat, { text: `${done} Éxito. Todos los datos del usuario @${userNumber} fueron eliminados de mi base de datos.`, mentions: [user] });
+    conn.sendMessage(m.chat, { text: `${done} Éxito. Todos los datos del usuario @${userNumber} fueron eliminados de mi base de datos.`, mentions: [userJid] });
 };
 
 handler.tags = ['owner'];
-handler.command = ['restablecerdatos','deletedatauser','resetuser','borrardatos'];
+handler.command = ['r','deletedatauser','resetuser','borrardatos'];
 handler.owner = true; // SOLO owner
 
 export default handler;
