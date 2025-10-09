@@ -1,3 +1,6 @@
+// plugins/_ml.js
+import axios from 'axios';
+
 const handler = async (m, { conn, args }) => {
   if (!args || args.length === 0) {
     return conn.sendMessage(m.chat, { text: '⚠️ Escribí lo que querés buscar. Ejemplo: *.ml iPhone 14*' });
@@ -37,7 +40,6 @@ const handler = async (m, { conn, args }) => {
     message += `🔗 [Ver en Mercado Libre](${prod.link})\n\n`;
   }
 
-  // Enviar mensaje con preview de links activado
   await conn.sendMessage(m.chat, { text: message, linksPreview: true });
 };
 
@@ -47,4 +49,4 @@ handler.tags = ['internet'];
 handler.group = false;
 handler.register = true;
 
-module.exports = handler;
+export default handler;
