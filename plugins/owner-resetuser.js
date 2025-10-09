@@ -12,15 +12,14 @@ const handler = async (m, { conn, text }) => {
     } else if (m.quoted && m.quoted.sender) {
         user = m.quoted.sender;
     } else {
-        return conn.sendMessage(m.chat, { text: `${emoji} Formato de usuario no reconocido. Responda a un mensaje, etiquete a un usuario o escriba su número de usuario.` });
+        return conn.sendMessage(m.chat, { text: `${emoji} Formato de usuario no reconocido.` });
     }
 
     const userJid = user.toLowerCase();
-    const userNumber = userJid.split('@')[0];
 
     // Verificar que el usuario exista en la base de datos
     if (!global.db.data.users[userJid]) {
-        return conn.sendMessage(m.chat, { text: `${emoji} El usuario ${userNumber} no se encuentra en mi base de datos.` });
+        return conn.sendMessage(m.chat, { text: `${emoji} El usuario no se encuentra en la base de datos.` });
     }
 
     // Eliminar todos los datos del usuario
@@ -36,8 +35,8 @@ const handler = async (m, { conn, text }) => {
     // Guardar cambios en la base de datos
     if (global.db.write) await global.db.write();
 
-    // Mensaje de éxito sin mencionar
-    conn.sendMessage(m.chat, { text: `${done} Éxito. Todos los datos y advertencias del usuario ${userNumber} fueron eliminados de mi base de datos.` });
+    // Mensaje de éxito genérico
+    conn.sendMessage(m.chat, { text: `${done} Éxito. Los datos del usuario fueron eliminados de la base de datos.` });
 };
 
 handler.tags = ['owner'];
