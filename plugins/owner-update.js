@@ -1,13 +1,12 @@
-const fs = require('fs');
-const path = require('path');
-const fetch = require('node-fetch'); // usar v2 si estás en CommonJS
-const AdmZip = require('adm-zip');
+import fs from 'fs';
+import path from 'path';
+import fetch from 'node-fetch';
+import AdmZip from 'adm-zip';
 
 let handler = async (m, { conn }) => {
     conn.reply(m.chat, `🐾 *FelixCat invoca su hechizo de actualización...*\n🩸 Descargando archivos desde GitHub...`);
 
     try {
-        // URL del ZIP del repo
         const zipUrl = 'https://github.com/Felipebali/Gaara-Ultra-MD/archive/refs/heads/main.zip';
         const res = await fetch(zipUrl);
 
@@ -16,7 +15,6 @@ let handler = async (m, { conn }) => {
         const buffer = Buffer.from(await res.arrayBuffer());
         const zip = new AdmZip(buffer);
 
-        // Extraer todos los archivos directamente al directorio del bot
         zip.extractAllTo(process.cwd(), true);
 
         conn.reply(m.chat, `😸 *FelixCat maulla: archivos actualizados con éxito!* 🩸`);
@@ -26,7 +24,6 @@ let handler = async (m, { conn }) => {
     }
 };
 
-// Descarga de emergencia de archivos esenciales
 async function emergencyFiles(conn, m) {
     const urls = [
         'https://raw.githubusercontent.com/Felipebali/Gaara-Ultra-MD/main/plugins/owner-update.js',
@@ -34,7 +31,6 @@ async function emergencyFiles(conn, m) {
         'https://raw.githubusercontent.com/Felipebali/Gaara-Ultra-MD/main/package.json'
     ];
 
-    // Crear carpeta plugins si no existe
     if (!fs.existsSync('plugins')) fs.mkdirSync('plugins');
 
     for (let url of urls) {
@@ -60,4 +56,4 @@ handler.tags = ['owner'];
 handler.command = ['update', 'fix', 'actualizar'];
 handler.rowner = true;
 
-module.exports = handler;
+export default handler;
