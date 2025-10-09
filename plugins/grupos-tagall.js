@@ -2,10 +2,10 @@
 let handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return;
 
-  // Verificar si quien ejecuta es administrador
+  // Verificar si quien ejecuta es admin o superadmin
   const senderParticipant = groupMetadata.participants.find(p => p.id === m.sender);
   const senderIsAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
-  
+
   if (!senderIsAdmin) {
     return await conn.sendMessage(m.chat, {
       text: `❌ @${m.sender.split('@')[0]}, solo los administradores pueden usar TagAll.`,
@@ -47,7 +47,7 @@ let handler = async function (m, { conn, groupMetadata }) {
     m.chat,
     {
       text: mensaje,
-      mentions: mencionados.concat(m.sender)
+      mentions: mencionados.concat(m.sender) // menciona al admin que activó
     }
   );
 };
@@ -56,7 +56,7 @@ handler.command = ['invocar', 'tag', 'tagall'];
 handler.help = ['invocar', 'tagall'];
 handler.tags = ['grupos'];
 handler.group = true;
-handler.admin = true; // Solo admins pueden usarlo
-handler.botAdmin = false; // El bot no necesita ser admin
+handler.admin = true; // solo admins pueden usarlo
+handler.botAdmin = false; // el bot no necesita ser admin
 
 export default handler;
