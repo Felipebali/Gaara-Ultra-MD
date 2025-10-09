@@ -9,23 +9,21 @@ let handler = async (m, { conn, args }) => {
         });
     }
 
-    // Motivo
+    // Motivo del reporte
     const reason = args.length ? args.join(' ') : 'Sin motivo';
 
-    // Obtener admins
+    // Obtener administradores
     let metadata = await conn.groupMetadata(m.chat).catch(_ => ({}));
     const admins = (metadata.participants || []).filter(p => p.admin).map(p => p.id);
-    if (!admins.length) {
-        return conn.sendMessage(m.chat, { text: `⚠️ No hay administradores en este grupo.` });
-    }
+    if (!admins.length) return conn.sendMessage(m.chat, { text: '⚠️ No hay administradores en este grupo.' });
 
-    // Cita segura: si hay mensaje citado, lo usa; si no, no usa nada
-    let quotedMsg = m.quoted ? m.quoted : null;
-
+    // Mensaje final SIN nombre extra del objetivo
     await conn.sendMessage(m.chat, {
-        text: `🚨 *Reporte* 🚨\n\n👤 Usuario: @${target.split('@')[0]}\n📝 Motivo: ${reason}\n\n🔧 Admins: ${admins.map(v => '@' + v.split('@')[0]).join(', ')}`,
+        text: `🚨 *REPORTE* 🚨\n\n👤 Usuario: @${target.split('@')[0]}\n📝 Motivo: ${reason}\n\n👮 Admins: ${admins.map(a => '@' + a.split('@')[0]).join(', ')}`,
         mentions: [target, ...admins]
-    }, quotedMsg ? { quoted: quotedMsg } : {}); // ✅ Anticrash, siempre seguro
+    }, {
+        quoted: m.quoted || m // ✅ Cita mensaje si fue respuesta
+    });
 };
 
 handler.command = ['report', 'reportar'];
