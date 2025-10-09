@@ -1,8 +1,9 @@
-// ✦ Minimalista por Felix-Cat 😼
+// ✦ Minimalista y al estilo Felix-Cat 😼
 
 let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner }) {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
+  // Solo admins o owners
   if (!(isAdmin || isOwner)) {
     global.dfail?.('admin', m, conn);
     throw false;
@@ -11,13 +12,14 @@ let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner }
   const participantes = groupMetadata?.participants || [];
   const mencionados = participantes.map(p => p.id).filter(Boolean);
 
-  const mensajeOpcional = args.length ? args.join(' ') : '✨ Sin mensaje adicional.';
+  const mensajeOpcional = args.length ? args.join(' ') : '⚡ Sin mensaje extra.';
 
-  const mensaje = `🔥 @${m.sender.split('@')[0]} ha invocado a todos 🔥
-📝 Mensaje: ${mensajeOpcional}
-
-📌 Usuarios mencionados:
-${mencionados.map(jid => `⚡ @${jid.split('@')[0]}`).join('\n')}`;
+  const mensaje = [
+    `🔥 @${m.sender.split('@')[0]} activa el tag de todos! 🔥`,
+    `⚡ Usuarios invocados:`,
+    mencionados.map(jid => `- @${jid.split('@')[0]}`).join('\n'),
+    '💥 Que comience la acción!'
+  ].join('\n');
 
   await conn.sendMessage(m.chat, {
     text: mensaje,
@@ -25,7 +27,7 @@ ${mencionados.map(jid => `⚡ @${jid.split('@')[0]}`).join('\n')}`;
   });
 };
 
-handler.command = ['invocar', 'todos', 'llamar', 'tagall'];
+handler.command = ['invocar', 'todos', 'tagall'];
 handler.help = ['invocar *<mensaje>*'];
 handler.tags = ['grupos'];
 handler.group = true;
