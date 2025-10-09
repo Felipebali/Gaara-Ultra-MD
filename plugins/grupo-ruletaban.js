@@ -5,7 +5,7 @@ let handler = async (m, { conn, groupMetadata, isAdmin }) => {
         if (!isAdmin) return m.reply('❌ Solo administradores pueden usar este comando.');
 
         const participantes = groupMetadata.participants.filter(p => !p.admin && !p.bot); // filtra usuarios normales
-        if (participantes.length === 0) return m.reply('❌ No hay usuarios para expulsar.');
+        if (participantes.length === 0) return m.reply('Sos 🫎 o que onda? No ves que no hay nadie.');
 
         // Elegir usuario al azar
         const elegido = participantes[Math.floor(Math.random() * participantes.length)];
@@ -17,7 +17,7 @@ let handler = async (m, { conn, groupMetadata, isAdmin }) => {
 
         // Avisar al grupo mencionando al usuario expulsado
         await conn.sendMessage(m.chat, {
-            text: `🎯 ¡Ruleta Ban! El usuario @${userJid.split('@')[0]} ha sido expulsado.`,
+            text: `🎯 Te llegó la hora @${userJid.split('@')[0]} me caes mal Chao 👋🏻.`,
             mentions: [userJid]
         });
 
