@@ -19,6 +19,3 @@ handler.group = true;
 handler.admin = true;
 
 export default handler;
-
-Esto hace que mantenga los juegos activados o desactivados
-
