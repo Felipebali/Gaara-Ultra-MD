@@ -78,9 +78,9 @@ let handler = async (m, { conn }) => {
 
     if (!global.flagGame) global.flagGame = {};
     global.flagGame[m.chat] = {
-        answer: correct.name?.toLowerCase(), // Protegido
+        answer: correct.name?.toLowerCase() || null,
         timeout: setTimeout(async () => {
-            if (global.flagGame[m.chat]) {
+            if (global.flagGame[m.chat]?.answer) {
                 const insultMessages = [
                     '💀 Sos un desastre, te gané el tiempo!',
                     '😹 Inútil, no respondiste a tiempo!',
@@ -107,16 +107,15 @@ handler.tags = ['juegos'];
 handler.group = false;
 
 handler.before = async (m, { conn }) => {
-    const chatSettings = global.db.data.chats[m.chat] || {};
-    if (chatSettings.games === false) return;
+    // Protecciones totales
+    if (!m?.text) return;
+    if (!global.flagGame?.[m.chat]) return;
+    const game = global.flagGame[m.chat];
+    if (!game?.answer) return;
 
-    if (!m.text) return;
-    const game = global.flagGame?.[m.chat];
-    if (!game || !game.answer) return;
-
-    const userText = (m.text || '').toString();
+    const userText = m.text.toString();
     const normalized = userText.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const answerNormalized = (game.answer || '').toString().replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const answerNormalized = game.answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
     if (normalized === answerNormalized) {
         clearTimeout(game.timeout);
