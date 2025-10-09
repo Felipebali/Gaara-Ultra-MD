@@ -1,6 +1,5 @@
-import yts from 'yt-search'
-import ytdl from 'ytdl-core'
-import { Readable } from 'stream'
+import { youtube } from '@bochilteam/scraper'
+import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text, command, usedPrefix }) => {
   try {
@@ -9,20 +8,21 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
     await conn.sendMessage(m.chat, { react: { text: "⏳", key: m.key } })
 
     // Buscar video en YouTube
-    let search = await yts(text)
-    let video = search.videos[0]
+    let result = await youtube(text, { type: 'video' })
+    let video = result[0]
     if (!video) return conn.reply(m.chat, '☁️ No se encontró ningún resultado.', m)
 
-    // Descargar audio con ytdl-core (solo audio)
-    const stream = ytdl(video.url, { filter: 'audioonly', quality: 'highestaudio' })
-    const chunks = []
-    for await (const chunk of stream) chunks.push(chunk)
-    const audioBuffer = Buffer.concat(chunks)
+    // Tomar URL de audio 128kbps
+    let audioUrl = video.audio['128kbps']
+    if (!audioUrl) return conn.reply(m.chat, '❌ No se pudo obtener el audio.', m)
+
+    // Descargar audio
+    const audioBuffer = Buffer.from(await (await fetch(audioUrl)).arrayBuffer())
 
     // Descargar miniatura
     const thumbnailBuffer = Buffer.from(await (await fetch(video.thumbnail)).arrayBuffer())
 
-    // Enviar audio
+    // Enviar audio con miniatura e info
     await conn.sendMessage(m.chat, {
       audio: audioBuffer,
       fileName: `${video.title}.mp3`,
@@ -31,7 +31,7 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
       contextInfo: {
         externalAdReply: {
           title: video.title,
-          body: `Canal: ${video.author?.name || "Desconocido"} | Duración: ${video.timestamp}`,
+          body: `Canal: ${video.author.name || "Desconocido"} | Duración: ${video.durationH}`,
           mediaType: 2,
           thumbnail: thumbnailBuffer,
           mediaUrl: video.url,
