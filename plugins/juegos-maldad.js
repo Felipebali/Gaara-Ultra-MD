@@ -1,19 +1,19 @@
-// plugins/reacciones.js
+// plugins/juegos/reacciones.js
 
 let handler = async (m, { conn }) => {
   try {
     if (!m.isGroup) return; // Solo grupos
 
     const chat = global.db.data.chats[m.chat];
-    if (!chat.juegos) return; // Verificar si los juegos están activados
+    if (!chat.juegos) return; // Solo si los juegos están activados
 
-    // Extraer texto del mensaje
+    // Extraer texto del mensaje, soportando varios tipos
     let text = '';
     if (m.message?.conversation) text = m.message.conversation.toLowerCase();
     else if (m.message?.extendedTextMessage?.text) text = m.message.extendedTextMessage.text.toLowerCase();
     else return;
 
-    // Lista de palabras clave y mensajes
+    // Palabras clave y sus mensajes
     const palabrasClave = {
       '.zorra': [
         `😏 @user1 se acostó con @user2 😜`,
@@ -37,36 +37,34 @@ let handler = async (m, { conn }) => {
     const palabra = Object.keys(palabrasClave).find(p => text.includes(p));
     if (!palabra) return;
 
+    // Obtener participantes del grupo
     const groupMetadata = await conn.groupMetadata(m.chat);
     const participants = groupMetadata.participants.map(u => u.id);
 
-    // Quitar al bot y al que escribió el mensaje
-    const users = participants.filter(u => u !== m.sender && u !== conn.user.jid);
-    if (users.length === 0) return;
+    // Filtrar al que escribió el mensaje y al bot
+    const others = participants.filter(u => u !== m.sender && u !== conn.user.jid);
+    if (others.length === 0) return;
 
-    // Elegir un usuario al azar diferente al que escribió
-    const randomUser = users[Math.floor(Math.random() * users.length)];
+    // Usuario al azar
+    const randomUser = others[Math.floor(Math.random() * others.length)];
 
-    // Elegir un mensaje al azar de la palabra clave
+    // Escoger mensaje al azar
     let mensaje = palabrasClave[palabra][Math.floor(Math.random() * palabrasClave[palabra].length)];
 
-    // Reemplazar placeholders con usuarios
+    // Reemplazar placeholders con menciones
     mensaje = mensaje.replace('@user1', `@${m.sender.split('@')[0]}`)
                      .replace('@user2', `@${randomUser.split('@')[0]}`);
 
-    // Enviar mensaje mencionando a ambos sin citar
-    await conn.sendMessage(m.chat, {
-      text: mensaje,
-      mentions: [m.sender, randomUser]
-    });
+    // Enviar mensaje sin citar
+    await conn.sendMessage(m.chat, { text: mensaje, mentions: [m.sender, randomUser] });
 
   } catch (e) {
     console.log('Error en plugin de reacciones:', e);
   }
 };
 
-handler.help = ['zorra', 'zorro', 'guapo', 'tonto'];
+handler.help = ['.zorra', '.zorro', '.guapo', '.tonto'];
 handler.tags = ['fun', 'juegos'];
-handler.command = ['zorra', 'zorro', 'guapo', 'tonto'];
+handler.command = ['.zorra', '.zorro', '.guapo', '.tonto'];
 
 export default handler;
