@@ -4,7 +4,7 @@ let handler = async (m, { conn }) => {
 
     // Verifica si NSFW está activado en el grupo
     if (!global.db.data.chats[m.chat].nsfw) {
-        return m.reply('🐉 El contenido *NSFW* está desactivado en este grupo.\n> Un owner puede activarlo con el comando » *.enable nsfw*');
+        return m.reply('🐉 El contenido *NSFW* está desactivado en este grupo.\n> Un owner puede activarlo con el comando » *.nsfw*');
     }
 
     const menuText = `
