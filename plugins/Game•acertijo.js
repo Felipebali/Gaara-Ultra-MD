@@ -3,88 +3,47 @@ const timeout = 30000; // 30 segundos
 
 const handler = async (m, { conn }) => {
     const chatSettings = global.db.data.chats[m.chat] || {};
-
-    if (!chatSettings.games) {
-        return conn.reply(m.chat, '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.', m);
-    }
+    if (!chatSettings.games) return conn.reply(m.chat, '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.', m);
 
     conn.tekateki = conn.tekateki || {};
     const id = m.chat;
+    if (id in conn.tekateki) return conn.reply(m.chat, '⚠️ Todavía hay acertijos sin responder en este chat', conn.tekateki[id][0]);
 
-    if (id in conn.tekateki) {
-        return conn.reply(m.chat, '⚠️ Todavía hay acertijos sin responder en este chat', conn.tekateki[id][0]);
-    }
-
-    // Lista de 30 acertijos
     const tekateki = [
-        { question: "¿Cuál es la capital de Francia?", response: "París" },
+        { question: "¿Cuál es la capital de Francia?", response: "parís" },
         { question: "¿2 + 2?", response: "4" },
-        { question: "¿Qué planeta es conocido como el planeta rojo?", response: "Marte" },
-        { question: "¿Cuál es el río más largo del mundo?", response: "Nilo" },
-        { question: "¿Quién escribió 'Romeo y Julieta'?", response: "Shakespeare" },
-        { question: "¿En qué año llegó el hombre a la luna?", response: "1969" },
-        { question: "¿Cuál es el animal más rápido del mundo?", response: "Guepardo" },
-        { question: "¿Qué gas necesitamos para respirar?", response: "Oxígeno" },
-        { question: "¿Cuál es la moneda de Japón?", response: "Yen" },
-        { question: "¿Cuál es la montaña más alta del mundo?", response: "Everest" },
-        { question: "¿Qué idioma se habla en Brasil?", response: "Portugués" },
-        { question: "¿Qué instrumento tiene teclas blancas y negras?", response: "Piano" },
-        { question: "¿Cuál es el océano más grande?", response: "Pacífico" },
-        { question: "¿Cuál es el símbolo químico del oro?", response: "Au" },
-        { question: "¿Qué animal es conocido como el rey de la selva?", response: "León" },
-        { question: "¿Cuántos colores tiene el arcoíris?", response: "7" },
-        { question: "¿Quién pintó la Mona Lisa?", response: "Da Vinci" },
-        { question: "¿Qué instrumento se usa para medir la temperatura?", response: "Termómetro" },
-        { question: "¿Cuál es el planeta más grande del sistema solar?", response: "Júpiter" },
-        { question: "¿Cómo se llama el satélite de la Tierra?", response: "Luna" },
-        { question: "¿Cuál es el país con la mayor población?", response: "China" },
-        { question: "¿Qué gas forma la mayor parte del aire?", response: "Nitrógeno" },
-        { question: "¿Qué animal pone huevos y da leche?", response: "Ornitorrinco" },
-        { question: "¿Qué metal se funde a 0°C?", response: "Ninguno" },
-        { question: "¿Cuál es el continente más grande?", response: "Asia" },
-        { question: "¿Cuántos días tiene un año bisiesto?", response: "366" },
-        { question: "¿Cuál es el símbolo químico del agua?", response: "H2O" },
-        { question: "¿Quién escribió 'Cien años de soledad'?", response: "Gabriel García Márquez" },
-        { question: "¿Cuál es el deporte más popular del mundo?", response: "Fútbol" },
-        { question: "¿Qué planeta tiene anillos?", response: "Saturno" }
+        { question: "¿Qué planeta es conocido como el planeta rojo?", response: "marte" },
+        // ...agregar más
     ];
 
     const json = tekateki[Math.floor(Math.random() * tekateki.length)];
-
     const caption = `
 ⷮ🚩 *ACERTIJOS*
 ✨️ *${json.question}*
-
 ⏱️ *Tiempo:* ${(timeout / 1000).toFixed(0)} segundos`.trim();
 
-    conn.tekateki[id] = [
-        await conn.reply(m.chat, caption, m),
-        json,
-        setTimeout(async () => {
-            if (conn.tekateki[id]) {
-                await conn.reply(m.chat, `🚩 Se acabó el tiempo!\n*Respuesta:* ${json.response}`, conn.tekateki[id][0]);
-            }
+    conn.tekateki[id] = { message: await conn.reply(m.chat, caption, m), answer: json.response.toLowerCase() };
+
+    // Terminar el juego si se acaba el tiempo
+    setTimeout(async () => {
+        if (conn.tekateki[id]) {
+            await conn.reply(m.chat, `🚩 Se acabó el tiempo!\n*Respuesta:* ${json.response}`, conn.tekateki[id].message);
             delete conn.tekateki[id];
-        }, timeout)
-    ];
+        }
+    }, timeout);
 };
 
-// Listener de mensajes para responder si es correcto o no
-export const after = async (m, { conn }) => {
+handler.all = async (m, { conn }) => {
     const id = m.chat;
     if (!conn.tekateki || !(id in conn.tekateki)) return;
 
-    const json = conn.tekateki[id][1];
-    const answer = json.response.toLowerCase().trim();
-    const userAnswer = m.text.toLowerCase().trim();
+    const userAnswer = m.text?.toLowerCase().trim();
+    const correctAnswer = conn.tekateki[id].answer;
 
-    if (userAnswer === answer) {
-        await conn.reply(m.chat, `🎉 Correcto! La respuesta es *${json.response}*`, m);
-        clearTimeout(conn.tekateki[id][3]);
+    if (!userAnswer) return;
+    if (userAnswer === correctAnswer) {
+        await conn.reply(m.chat, `🎉 Correcto! La respuesta es *${conn.tekateki[id].answer}*`, m);
         delete conn.tekateki[id];
-    } else {
-        // Opcional: puedes comentar esta línea si no querés avisar cuando la respuesta es incorrecta
-        await conn.sendMessage(m.chat, { text: `❌ Incorrecto, sigue intentando...` }, { quoted: m });
     }
 };
 
