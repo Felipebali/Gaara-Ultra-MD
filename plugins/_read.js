@@ -1,69 +1,40 @@
-// 🐾 FelixCat_Bot — Comando .read (ver mensajes "una vez")
-// Solo para el dueño, sin citar, sin respuestas automáticas
+// Este código fue hecho por https://github.com/Hidekijs, modificado por https://github.com/GataNina-Li.
 
-import { downloadContentFromMessage } from '@whiskeysockets/baileys'
+let { downloadContentFromMessage } = (await import('@whiskeysockets/baileys'))
 
-const handler = async (m, { conn, isOwner }) => {
-  if (!isOwner) return
+let handler = async (m, { conn }) => {
+    let quoted = m.quoted
+    if (!quoted) return conn.reply(m.chat, `*Responde a un mensaje ViewOnce para ver su contenido.*`, m)
 
-  const q = m.quoted
-  if (!q) {
-    await conn.sendMessage(m.chat, { text: '🐾 ¡Miau! Responde a un mensaje *ver una vez* para revelarlo.' }, { quoted: m })
-    return
-  }
+    try {
+        let viewOnceMessage = quoted.viewOnce ? quoted : quoted.mediaMessage?.imageMessage || quoted.mediaMessage?.videoMessage || quoted.mediaMessage?.audioMessage
+        let messageType = viewOnceMessage.mimetype || quoted.mtype
+        let stream = await downloadContentFromMessage(viewOnceMessage, messageType.split('/')[0])
 
-  try {
-    await m.react('⏳')
+        if (!stream) return conn.reply(m.chat, `*❌ No se pudo descargar el contenido.*`, m)
 
-    // Buscar el contenido del mensaje
-    let msg =
-      q.message?.viewOnceMessageV2Extension?.message ||
-      q.message?.viewOnceMessageV2?.message ||
-      q.message?.viewOnceMessage?.message ||
-      q.message ||
-      q.msg ||
-      q
+        let buffer = Buffer.from([])
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk])
+        }
 
-    const media =
-      msg?.imageMessage ||
-      msg?.videoMessage ||
-      msg?.audioMessage ||
-      msg?.documentMessage
+        if (messageType.includes('video')) {
+            await conn.sendMessage(m.chat, { video: buffer, caption: viewOnceMessage.caption || '', mimetype: 'video/mp4' }, { quoted: m })
 
-    if (!media) {
-      await m.react('❌')
-      await conn.sendMessage(m.chat, { text: '😿 No encontré contenido multimedia en ese mensaje.' })
-      return
+        } else if (messageType.includes('image')) {
+            await conn.sendMessage(m.chat, { image: buffer, caption: viewOnceMessage.caption || '' }, { quoted: m })
+
+        } else if (messageType.includes('audio')) {
+            await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: viewOnceMessage.ptt || false }, { quoted: m })
+        }
+
+    } catch {
+        conn.reply(m.chat, `*❌ No es un mensaje de imagen, video o audio ViewOnce.*`, m)
     }
-
-    // Descargar el contenido
-    const type = media.mimetype ? media.mimetype.split('/')[0] : 'file'
-    const stream = await downloadContentFromMessage(media, type)
-    let buffer = Buffer.from([])
-    for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
-
-    // Enviar el contenido sin citar
-    if (type === 'image') {
-      await conn.sendMessage(m.chat, { image: buffer, caption: media.caption || '' })
-    } else if (type === 'video') {
-      await conn.sendMessage(m.chat, { video: buffer, caption: media.caption || '', mimetype: 'video/mp4' })
-    } else if (type === 'audio') {
-      await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: media.ptt || false })
-    } else {
-      await conn.sendMessage(m.chat, { document: buffer, fileName: 'archivo_desconocido', mimetype: media.mimetype })
-    }
-
-    await m.react('✅')
-    await conn.sendMessage(m.chat, { text: '✨ El maullido reveló el secreto oculto. 🐾' })
-  } catch (e) {
-    await m.react('⚠️')
-    await conn.sendMessage(m.chat, { text: `❌ Error al intentar abrir el mensaje:\n${e.message}` })
-  }
 }
 
-handler.help = ['read']
-handler.tags = ['owner']
-handler.command = /^read$/i
-handler.owner = true
+handler.command = /^(readviewonce|read|viewonce|ver)$/i
+handler.owner = true // 🔹 Solo dueños
+handler.register = true
 
 export default handler
