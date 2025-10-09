@@ -4,7 +4,8 @@ let handler = async function (m, { conn, groupMetadata }) {
 
   // Verificar si quien ejecuta es administrador
   const senderParticipant = groupMetadata.participants.find(p => p.id === m.sender);
-  const senderIsAdmin = senderParticipant?.admin || senderParticipant?.superAdmin;
+  const senderIsAdmin = senderParticipant?.admin === 'admin' || senderParticipant?.admin === 'superadmin';
+  
   if (!senderIsAdmin) {
     return await conn.sendMessage(m.chat, {
       text: `❌ @${m.sender.split('@')[0]}, solo los administradores pueden usar TagAll.`,
