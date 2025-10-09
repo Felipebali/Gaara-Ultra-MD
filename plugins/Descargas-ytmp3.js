@@ -1,5 +1,6 @@
-import fetch from 'node-fetch'
 import yts from 'yt-search'
+import ytdl from 'ytdl-core'
+import { Readable } from 'stream'
 
 let handler = async (m, { conn, text, command, usedPrefix }) => {
   try {
@@ -12,18 +13,18 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
     let video = search.videos[0]
     if (!video) return conn.reply(m.chat, '☁️ No se encontró ningún resultado.', m)
 
-    // Descargar audio desde API gratuita
-    const apiUrl = `https://api.vihangayt.me/ytmp3?url=${encodeURIComponent(video.url)}`
-    const res = await fetch(apiUrl)
-    const json = await res.json()
+    // Descargar audio con ytdl-core (solo audio)
+    const stream = ytdl(video.url, { filter: 'audioonly', quality: 'highestaudio' })
+    const chunks = []
+    for await (const chunk of stream) chunks.push(chunk)
+    const audioBuffer = Buffer.concat(chunks)
 
-    if (!json || !json.url) return conn.reply(m.chat, '❌ No se pudo obtener el audio.', m)
+    // Descargar miniatura
+    const thumbnailBuffer = Buffer.from(await (await fetch(video.thumbnail)).arrayBuffer())
 
-    const audioBuffer = await (await fetch(json.url)).arrayBuffer()
-    const thumbnailBuffer = await (await fetch(video.thumbnail)).arrayBuffer()
-
+    // Enviar audio
     await conn.sendMessage(m.chat, {
-      audio: Buffer.from(audioBuffer),
+      audio: audioBuffer,
       fileName: `${video.title}.mp3`,
       mimetype: 'audio/mpeg',
       ptt: false,
@@ -32,7 +33,7 @@ let handler = async (m, { conn, text, command, usedPrefix }) => {
           title: video.title,
           body: `Canal: ${video.author?.name || "Desconocido"} | Duración: ${video.timestamp}`,
           mediaType: 2,
-          thumbnail: Buffer.from(thumbnailBuffer),
+          thumbnail: thumbnailBuffer,
           mediaUrl: video.url,
           sourceUrl: video.url
         }
