@@ -56,7 +56,6 @@ let handler = async (m, { conn }) => {
         { name: "Paraguay", emoji: "🇵🇾" },
         { name: "Ecuador", emoji: "🇪🇨" },
         { name: "Honduras", emoji: "🇭🇳" },
-        { name: "Corea del Sur", emoji: "🇰🇷" },
         { name: "Singapur", emoji: "🇸🇬" },
         { name: "Emiratos Árabes", emoji: "🇦🇪" },
         { name: "Arabia Saudita", emoji: "🇸🇦" },
@@ -64,7 +63,6 @@ let handler = async (m, { conn }) => {
         { name: "Iraq", emoji: "🇮🇶" },
         { name: "Pakistán", emoji: "🇵🇰" },
         { name: "Bangladesh", emoji: "🇧🇩" },
-        { name: "Noruega", emoji: "🇳🇴" },
         { name: "Islandia", emoji: "🇮🇸" },
         { name: "Luxemburgo", emoji: "🇱🇺" }
     ];
@@ -80,7 +78,7 @@ let handler = async (m, { conn }) => {
 
     if (!global.flagGame) global.flagGame = {};
     global.flagGame[m.chat] = {
-        answer: correct.name.toLowerCase(),
+        answer: correct.name?.toLowerCase(), // Protegido
         timeout: setTimeout(async () => {
             if (global.flagGame[m.chat]) {
                 const insultMessages = [
@@ -114,10 +112,13 @@ handler.before = async (m, { conn }) => {
 
     if (!m.text) return;
     const game = global.flagGame?.[m.chat];
-    if (!game) return;
+    if (!game || !game.answer) return;
 
-    const normalized = m.text.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    if (normalized === game.answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()) {
+    const userText = (m.text || '').toString();
+    const normalized = userText.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const answerNormalized = (game.answer || '').toString().replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+    if (normalized === answerNormalized) {
         clearTimeout(game.timeout);
         await conn.sendMessage(m.chat, { text: `✅ Correcto! La bandera es de *${game.answer}* 🎉` }, { quoted: m });
         delete global.flagGame[m.chat];
