@@ -7,22 +7,20 @@ const handler = async (m, { conn, args }) => {
         return await conn.reply(m.chat, `${emoji} Por favor escribe el número o @mención del usuario que deseas desbanear.\nEjemplo: .unbanuser 59898719147`, m);
     }
 
-    // Obtener el primer argumento
     let input = args[0];
 
-    // Si viene con @, lo quitamos
-    if (input.startsWith('@')) input = input.slice(1);
+    // Limpiar todos los caracteres que no sean dígitos
+    input = input.replace(/\D/g, '');
 
-    // Formar el JID completo
+    if (!input) return await conn.reply(m.chat, `${emoji} Formato de número inválido.`, m);
+
     const userJid = input + '@s.whatsapp.net';
-    const userJidLower = userJid.toLowerCase(); // evitar problemas de mayúsculas
+    const userJidLower = userJid.toLowerCase();
 
-    // Verificar si el usuario existe en la DB
     if (!db[userJidLower]) {
         return await conn.reply(m.chat, `${emoji} El usuario @${input} no está registrado en la base de datos.`, m, { mentions: [userJidLower] });
     }
 
-    // Desbanear usuario
     db[userJidLower].banned = false;
     db[userJidLower].banReason = '';
     db[userJidLower].bannedBy = null;
@@ -38,9 +36,9 @@ const handler = async (m, { conn, args }) => {
     if (global.db.write) await global.db.write();
 };
 
-handler.help = ['unbanuser <número o @usuario>'];
+handler.help = ['unbanuser <número>'];
 handler.command = ['unbanuser'];
 handler.tags = ['owner'];
-handler.rowner = true; // solo owner
+handler.rowner = true;
 
 export default handler;
