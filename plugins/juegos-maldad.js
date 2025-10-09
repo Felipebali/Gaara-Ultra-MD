@@ -1,4 +1,4 @@
-// plugins/juegos-maldad.js
+// plugins/reacciones.js
 
 let handler = async (m, { conn }) => {
   try {
@@ -7,10 +7,13 @@ let handler = async (m, { conn }) => {
     const chat = global.db.data.chats[m.chat];
     if (!chat.juegos) return; // Verificar si los juegos están activados
 
-    const text = m.text?.toLowerCase();
-    if (!text) return;
+    // Extraer texto del mensaje
+    let text = '';
+    if (m.message?.conversation) text = m.message.conversation.toLowerCase();
+    else if (m.message?.extendedTextMessage?.text) text = m.message.extendedTextMessage.text.toLowerCase();
+    else return;
 
-    // Lista de palabras clave y sus mensajes
+    // Lista de palabras clave y mensajes
     const palabrasClave = {
       '.zorra': [
         `😏 @user1 se acostó con @user2 😜`,
@@ -51,7 +54,7 @@ let handler = async (m, { conn }) => {
     mensaje = mensaje.replace('@user1', `@${m.sender.split('@')[0]}`)
                      .replace('@user2', `@${randomUser.split('@')[0]}`);
 
-    // Enviar mensaje mencionando a ambos
+    // Enviar mensaje mencionando a ambos sin citar
     await conn.sendMessage(m.chat, {
       text: mensaje,
       mentions: [m.sender, randomUser]
