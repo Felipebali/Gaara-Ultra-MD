@@ -1,19 +1,18 @@
 // plugins/juegos/reacciones.js
-
 let handler = async (m, { conn }) => {
   try {
     if (!m.isGroup) return; // Solo grupos
-
     const chat = global.db.data.chats[m.chat];
     if (!chat.juegos) return; // Solo si los juegos están activados
 
-    // Extraer texto del mensaje, soportando varios tipos
+    // Obtener texto sin importar tipo de mensaje
+    const type = Object.keys(m.message)[0];
     let text = '';
-    if (m.message?.conversation) text = m.message.conversation.toLowerCase();
-    else if (m.message?.extendedTextMessage?.text) text = m.message.extendedTextMessage.text.toLowerCase();
-    else return;
+    if (type === 'conversation') text = m.message.conversation.toLowerCase();
+    else if (type === 'extendedTextMessage') text = m.message.extendedTextMessage.text.toLowerCase();
+    else return; // No es un mensaje de texto
 
-    // Palabras clave y sus mensajes
+    // Palabras clave y mensajes
     const palabrasClave = {
       '.zorra': [
         `😏 @user1 se acostó con @user2 😜`,
@@ -23,14 +22,8 @@ let handler = async (m, { conn }) => {
       '.zorro': [
         `🦊 @user1 es un pillo junto a @user2 😏`,
         `😎 @user1 y @user2 planean algo travieso 🐾`
-      ],
-      '.guapo': [
-        `😍 @user1 tiene un ${Math.floor(Math.random() * 101)}% de nivel guapo según @user2 😎`
-      ],
-      '.tonto': [
-        `🤪 @user1 fue engañado por @user2 😅`,
-        `😂 @user1 y @user2 hicieron el ridículo juntos`
       ]
+      // Podés agregar más palabras aquí
     };
 
     // Revisar si el mensaje contiene alguna palabra clave
@@ -40,18 +33,16 @@ let handler = async (m, { conn }) => {
     // Obtener participantes del grupo
     const groupMetadata = await conn.groupMetadata(m.chat);
     const participants = groupMetadata.participants.map(u => u.id);
-
-    // Filtrar al que escribió el mensaje y al bot
     const others = participants.filter(u => u !== m.sender && u !== conn.user.jid);
-    if (others.length === 0) return;
+    if (!others.length) return;
 
     // Usuario al azar
     const randomUser = others[Math.floor(Math.random() * others.length)];
 
-    // Escoger mensaje al azar
+    // Mensaje aleatorio
     let mensaje = palabrasClave[palabra][Math.floor(Math.random() * palabrasClave[palabra].length)];
 
-    // Reemplazar placeholders con menciones
+    // Reemplazar placeholders
     mensaje = mensaje.replace('@user1', `@${m.sender.split('@')[0]}`)
                      .replace('@user2', `@${randomUser.split('@')[0]}`);
 
@@ -63,8 +54,8 @@ let handler = async (m, { conn }) => {
   }
 };
 
-handler.help = ['.zorra', '.zorro', '.guapo', '.tonto'];
+handler.help = ['.zorra', '.zorro'];
 handler.tags = ['fun', 'juegos'];
-handler.command = ['.zorra', '.zorro', '.guapo', '.tonto'];
+handler.command = ['.zorra', '.zorro'];
 
 export default handler;
