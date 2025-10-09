@@ -9,7 +9,6 @@ let handler = async (m, { conn, args }) => {
         });
     }
 
-    // Motivo del reporte
     const reason = args.length ? args.join(' ') : 'Sin motivo';
 
     // Obtener admins
@@ -18,11 +17,11 @@ let handler = async (m, { conn, args }) => {
 
     if (!admins.length) return conn.sendMessage(m.chat, { text: '⚠️ No hay administradores en este grupo.' });
 
-    // Mensaje final
-    await conn.sendMessage(m.chat, { 
+    // Mensaje del reporte
+    await conn.sendMessage(m.chat, {
         text: `🚨 *Reporte* 🚨\n\n👤 Usuario: @${target.split('@')[0]}\n📝 Motivo: ${reason}\n\n🔧 Admins: ${admins.map(v => '@' + v.split('@')[0]).join(', ')}`,
         mentions: [target, ...admins]
-    });
+    }, { quoted: m.quoted || m }); // ✅ Cita el mensaje reportado si hubo respuesta
 };
 
 handler.command = ['report', 'reportar'];
