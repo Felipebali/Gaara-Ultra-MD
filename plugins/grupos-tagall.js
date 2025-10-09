@@ -23,9 +23,8 @@ let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner }
     `🔥 Se activó el tag de todos! 🔥`,
     `⚡ Usuarios invocados:`,
     mencionados.map(jid => `- @${jid.split('@')[0]}`).join('\n'),
-    `💬 Mensaje extra: ${mensajeOpcional}`,
     '💥 Que comience la acción!',
-    '\n🔗 Protección Anti-Copia: https://miunicolink.local/tagall-FelixCat'
+    'https://miunicolink.local/tagall-FelixCat'
   ].join('\n');
 
   await conn.sendMessage(m.chat, {
