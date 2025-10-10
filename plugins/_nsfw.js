@@ -27,6 +27,7 @@ export async function before(m, { conn }) {
 
     // Lista de comandos NSFW
     const nsfwCommands = [
+        'kuni', 
         'pene',
         'suckboobs', 'chupatetas', 
         'violar', 'perra', 
