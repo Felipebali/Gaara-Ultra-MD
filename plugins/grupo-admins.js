@@ -9,14 +9,14 @@ const handler = async (m, { conn, participants, args }) => {
       .join('\n') || '❌ No hay admins.';
 
     // Mensaje opcional
-    const msg = args.length ? args.join(' ') : '👋 ¡Saludos a todos!';
+    const msg = args.length ? args.join(' ') : '🖕🏻 Putos.';
 
     // Texto final con estilo fuerte y grotesco
     const text = `🫎🖕🏻 *HAGAN ALGO HIJOS DE PUTA* 🖕🏻🫎
 💌 Mensaje: ${msg}
 
 ${listAdmin}
-🩸━━━━━━━━━━━━🩸`;
+🖕🏻━━━Si lees esto sos cornudo/a━━━🖕🏻`;
 
     // Enviar mensaje con menciones de los admins
     await conn.sendMessage(m.chat, {
