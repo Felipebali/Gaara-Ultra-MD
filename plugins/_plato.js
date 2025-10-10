@@ -1,80 +1,96 @@
-// plugins/juegos-plato.js
+// plugins/juegos-opciones.js
 let handler = async (m, { conn }) => {
     const chatSettings = global.db.data.chats[m.chat] || {};
     if (chatSettings.games === false) {
         return conn.sendMessage(m.chat, { text: '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.' }, { quoted: m });
     }
 
-    const platos = [
-        { name: "Pizza Napolitana", emoji: "🍕" },
-        { name: "Sushi Mixto", emoji: "🍣" },
-        { name: "Empanadas Caseras", emoji: "🥟" },
-        { name: "Hamburguesa Triple XL", emoji: "🍔" },
-        { name: "Sopita para el alma", emoji: "🍜" },
-        { name: "Guiso hecho por tu ex", emoji: "🔥" },
-        { name: "Sándwich de aire", emoji: "😹" },
-        { name: "Puré misterioso", emoji: "💩" },
-        { name: "Pasta con salsa radioactiva", emoji: "😈" },
+    // Lista de opciones variadas
+    const opciones = [
+        { name: "Pizza Napolitana", hint: "🍕" },
+        { name: "Sushi Mixto", hint: "🍣" },
+        { name: "Elefante", hint: "🐘" },
+        { name: "Guitarra", hint: "🎸" },
+        { name: "Harry Potter", hint: "⚡️" },
+        { name: "La Casa de Papel", hint: "🎭" },
+        { name: "Tacos Picantes", hint: "🌮" },
+        { name: "Star Wars", hint: "🌌" },
+        { name: "Perro", hint: "🐶" },
+        { name: "Panda", hint: "🐼" },
+        { name: "Coche de carreras", hint: "🏎️" },
+        { name: "Avión", hint: "✈️" },
+        { name: "Corazón", hint: "❤️" },
+        { name: "Iron Man", hint: "🤖" },
+        { name: "El Señor de los Anillos", hint: "💍" },
+        { name: "Frase: Carpe Diem", hint: "⌛️" },
+        { name: "Chocolate", hint: "🍫" },
+        { name: "Plátano", hint: "🍌" },
+        { name: "Gato", hint: "🐱" },
+        { name: "Reloj", hint: "⏰" }
     ];
 
-    // Elegir plato correcto
-    const correct = platos[Math.floor(Math.random() * platos.length)];
+    // Elegir opción correcta aleatoria
+    const correct = opciones[Math.floor(Math.random() * opciones.length)];
 
     // Mezclar opciones
-    let options = [correct.name];
-    while (options.length < 4) {
-        const opt = platos[Math.floor(Math.random() * platos.length)].name;
-        if (!options.includes(opt)) options.push(opt);
+    let choices = [correct.name];
+    while (choices.length < 4) {
+        const opt = opciones[Math.floor(Math.random() * opciones.length)].name;
+        if (!choices.includes(opt)) choices.push(opt);
     }
-    options = options.sort(() => Math.random() - 0.5);
+    choices = choices.sort(() => Math.random() - 0.5);
 
-    // Guardar en memoria
-    if (!global.platoGame) global.platoGame = {};
-    global.platoGame[m.chat] = {
+    // Guardar partida
+    if (!global.variosGame) global.variosGame = {};
+    global.variosGame[m.chat] = {
         answer: correct.name,
+        options: choices,
         timeout: setTimeout(async () => {
-            const game = global.platoGame?.[m.chat];
+            const game = global.variosGame?.[m.chat];
             if (game?.answer) {
-                const msg = '⏰ Se acabó el tiempo! La respuesta correcta era';
-                await conn.sendMessage(m.chat, { text: `${msg} *${correct.name}* ${correct.emoji}` }, { quoted: m });
-                delete global.platoGame[m.chat];
+                const msgs = ['💀 Se te acabó el tiempo!', '🤡 Ni lo intentaste!', '😹 Patético, era', '🫠 Sos un desastre!'];
+                await conn.sendMessage(m.chat, { text: `${msgs[Math.floor(Math.random() * msgs.length)]} *${correct.name}* ${correct.hint}` }, { quoted: m });
+                delete global.variosGame[m.chat];
             }
         }, 30000)
     };
 
-    let text = `🍽️ *Adivina el plato*:\n\n${correct.emoji}\n\nOpciones:`;
-    options.forEach((o, i) => text += `\n${i + 1}. ${o}`);
-    text += `\n\nResponde con el número o el nombre del plato correcto. Tienes 30 segundos!`;
+    // Mensaje inicial
+    let text = `🎲 *Adivina la opción correcta*:\n\n${correct.hint}\nOpciones:`;
+    choices.forEach((o,i)=> text += `\n${i+1}. ${o}`);
+    text += `\n\nResponde con el número o el nombre correcto. Tienes 30 segundos!`;
 
     await conn.sendMessage(m.chat, { text }, { quoted: m });
 };
 
-handler.command = ['plato'];
-handler.help = ['plato'];
+handler.command = ['plato', 'opcion', 'varios'];
 handler.tags = ['juegos'];
-handler.group = false;
+handler.group = true;
 
 handler.before = async (m, { conn }) => {
-    const game = global.platoGame?.[m.chat];
+    const game = global.variosGame?.[m.chat];
     if (!game?.answer || !m?.text) return;
 
-    const normalizedUser = m.text.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const normalizedAnswer = game.answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const normalizedUser = m.text.replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
+    const normalizedAnswer = game.answer.replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
 
-    if (normalizedUser === normalizedAnswer || m.text === '1' || m.text === '2' || m.text === '3' || m.text === '4') {
-        clearTimeout(game.timeout);
-        const opciones = Object.keys(game).filter(k => k !== 'timeout');
-        await conn.sendMessage(m.chat, { text: `✅ Correcto! El plato era *${game.answer}* 🎉` }, { quoted: m });
-        delete global.platoGame[m.chat];
+    // Comprobar si respondió con número
+    const index = parseInt(m.text);
+    let chosen = '';
+    if (!isNaN(index) && index >= 1 && index <= game.options.length) {
+        chosen = game.options[index-1].replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
     } else {
-        const insults = [
-            '❌ Ups, esa no es!',
-            '🙃 Casi, pero no es esa!',
-            '🤔 Intentá de nuevo!',
-            '😬 Nooo, fijate bien!',
-            '💀 Fallaste, era otro!'
-        ];
-        await conn.sendMessage(m.chat, { text: insults[Math.floor(Math.random() * insults.length)] }, { quoted: m });
+        chosen = normalizedUser;
+    }
+
+    if (chosen === normalizedAnswer) {
+        clearTimeout(game.timeout);
+        const hint = opciones.find(p => p.name === game.answer)?.hint || '';
+        await conn.sendMessage(m.chat, { text: `✅ Correcto! Era *${game.answer}* ${hint} 🎉` }, { quoted: m });
+        delete global.variosGame[m.chat];
+    } else {
+        const insults = ['❌ Fallaste!', '🙃 Casi, pero no!', '🤔 Intentá de nuevo!', '😹 No era esa!', '💀 Sos un desastre!'];
+        await conn.sendMessage(m.chat, { text: insults[Math.floor(Math.random()*insults.length)] }, { quoted: m });
     }
 };
 
