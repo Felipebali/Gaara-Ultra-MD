@@ -24,6 +24,8 @@ let handler = async (m, { conn }) => {
 😸 *.adivinanza* → Resuelve adivinanzas
 🏛️ *.capital* → Adivina la capital de un país
 🎯 *.trivia* → Preguntas de cultura general
+✨ *.consejo* → Te da un consejo aleatorio
+💭 *.pensar <pregunta>* → Bola mágica que responde tu pregunta
 `;
         } else {
             menuText += `⚠️ *Mini-juegos desactivados.* *Menciona a un admin* para que los activé 🔴\n`;
