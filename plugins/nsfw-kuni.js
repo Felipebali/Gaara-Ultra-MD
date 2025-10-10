@@ -19,7 +19,9 @@ let handler = async (m, { conn }) => {
         const api = await fetch(urlAPI);
         const res = await api.json();
 
-        if (!res.url) throw new Error('URL de imagen/GIF no encontrada');
+        if (!res.url) {
+            throw new Error('No se encontró una URL de imagen válida.');
+        }
 
         // Descargar la imagen/GIF a buffer
         const imgBuffer = await (await fetch(res.url)).arrayBuffer();
