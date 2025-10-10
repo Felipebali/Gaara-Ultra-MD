@@ -1,7 +1,8 @@
 // demote.js (.d)
-let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
+let handler = async (m, { conn, isAdmin, isBotAdmin, isOwner }) => {
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
-    if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.');
+    // Permitir admins o owners
+    if (!isAdmin && !isOwner) return m.reply('❌ Solo administradores o dueños pueden usar este comando.');
     if (!isBotAdmin) return m.reply('❌ Necesito ser administrador para degradar.');
 
     const user = (m.mentionedJid && m.mentionedJid[0]) || (m.quoted && m.quoted.sender);
@@ -21,7 +22,7 @@ let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
 
 handler.command = ['d'];
 handler.group = true;
-handler.admin = true;
+handler.admin = false; // Lo manejamos dentro del handler
 handler.botAdmin = true;
 
 export default handler;
