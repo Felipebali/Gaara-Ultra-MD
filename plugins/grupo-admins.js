@@ -1,18 +1,22 @@
 const handler = async (m, { conn, participants, groupMetadata, args }) => {
   try {
-     // Administradores del grupo
-    const groupAdmins = participants.filter(p => p.admin);
-    const listAdmin = groupAdmins.map((v, i) => `🔹 @${v.id.split('@')[0]}`).join('\n');
+    // Foto de perfil del grupo
+    const pp = await conn.profilePictureUrl(m.chat, 'image').catch(() => null) || './src/catalogo.jpg';
+
+    // Administradores del grupo
+    const groupAdmins = participants.filter(p => p.admin || p.admin === 'superadmin');
+    const listAdmin = groupAdmins.map((v, i) => `🔹 @${v.id.split('@')[0]}`).join('\n') || 'No hay admins.';
 
     // Dueño del grupo
-    const ownerGroup = groupMetadata.owner || m.chat.split('-')[0] + '@s.whatsapp.net';
+    const ownerGroup = groupMetadata?.owner || m.chat.split('-')[0] + '@s.whatsapp.net';
+
+    // Owner del bot (mencionado siempre)
+    const botOwner = '+59898719147@s.whatsapp.net'; // Cambiar si es necesario
 
     // Mensaje opcional
     const msg = args.length ? args.join(' ') : 'Hola a todos 👋';
 
-    // Owner del bot (mencionado siempre)
-    const botOwner = '+59898719147@s.whatsapp.net'; // Cambiar si hay otro
-
+    // Texto final
     const text = `✨ *Admins del Grupo* ✨
 
 ${listAdmin}
@@ -21,7 +25,10 @@ ${listAdmin}
 
 ⚡ Owner del Bot: @${botOwner.split('@')[0]}`;
 
-    await conn.sendFile(m.chat, pp, 'admins.jpg', text, m, false, {
+    // Enviar mensaje con foto y menciones
+    await conn.sendMessage(m.chat, {
+      image: { url: pp },
+      caption: text,
       mentions: [...groupAdmins.map(v => v.id), ownerGroup, botOwner]
     });
   } catch (e) {
