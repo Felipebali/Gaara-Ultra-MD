@@ -1,65 +1,51 @@
 let handler = async (m, { conn, participants, isAdmin, isOwner }) => {
-    // Si no mencionó ni citó, nada que hacer
-    if (!m.mentionedJid?.length && !m.quoted) return;
+    // Verifica si se mencionó o citó
+    if (!m.mentionedJid?.length && !(m.quoted && m.quoted.sender)) return;
 
-    // Obtener usuario a eliminar y normalizar
-    let user = m.mentionedJid?.[0] ? m.mentionedJid[0] : m.quoted.sender;
-    user = user?.replace?.('@c.us', '@s.whatsapp.net');
-
-    // Normalizar JIDs importantes
-    const groupInfo = await conn.groupMetadata(m.chat);
-    const ownerGroup = (groupInfo.owner || '') .replace?.('@c.us', '@s.whatsapp.net') || m.chat.split`-`[0] + '@s.whatsapp.net';
-    const ownerBot = (global.owner && global.owner[0] ? global.owner[0] : '') + '@s.whatsapp.net';
-    const me = m.sender.replace('@c.us', '@s.whatsapp.net'); // tu JID actual (quien ejecuta el comando)
-    const botJid = conn.user.jid;
-
-    // Tu número protegido (ya me diste el +59898719147)
-    const tuProtegido = '59898719147@s.whatsapp.net';
-
-    // Lista de protegidos (bot, creador, dueño del grupo, vos)
-    const protegidos = [botJid, ownerGroup, ownerBot, tuProtegido];
-
-    // Normalizar participantes del grupo
-    const groupMembers = participants.map(p => p.id.replace('@c.us', '@s.whatsapp.net'));
-
-    // Si el objetivo no está en el grupo, salimos (silencioso)
-    if (!groupMembers.includes(user)) return;
-
-    // Solo admins/owners pueden usar el comando
-    if (!(isAdmin || isOwner)) return;
-
-    // Si el objetivo es protegido, respondemos con mensaje y NO eliminamos
-    if (protegidos.includes(user)) {
-        // Si intentan eliminarte a vos
-        if (user === tuProtegido) {
-            return conn.reply(m.chat, `😼 ¿Estás loco/loca? No te puedo eliminar.`, m);
-        }
-        // Si intentan eliminar al creador del bot
-        if (user === ownerBot) {
-            return conn.reply(m.chat, `🤖 ¿Cómo voy a eliminar a mi creador? Ni lo sueñes.`, m);
-        }
-        // Si intentan eliminar al dueño del grupo
-        if (user === ownerGroup) {
-            return conn.reply(m.chat, `👑 Ese es el dueño del grupo, imposible sacarlo.`, m);
-        }
-        // Si intentan eliminar al propio bot
-        if (user === botJid) {
-            return conn.reply(m.chat, `🙃 ¿Quieres que me elimine? No puedo hacerlo.`, m);
-        }
-
-        // Mensaje por defecto para cualquier otro protegido
-        return conn.reply(m.chat, `❌ No puedo eliminar a ese usuario, está protegido.`, m);
+    // Obtener usuario a eliminar
+    let user;
+    if (m.mentionedJid?.length) {
+        user = m.mentionedJid[0];
+    } else if (m.quoted && m.quoted.sender) {
+        user = m.quoted.sender;
+    } else {
+        return; // nada que hacer
     }
 
-    // Si no es protegido, procedemos a expulsar (silencioso)
+    // Normalizar JID
+    user = user.replace('@c.us', '@s.whatsapp.net');
+
+    // Normalizar participantes
+    const groupMembers = participants.map(p => p.id.replace('@c.us', '@s.whatsapp.net'));
+    if (!groupMembers.includes(user)) return;
+
+    // Normalizar datos importantes
+    const groupInfo = await conn.groupMetadata(m.chat);
+    const ownerGroup = (groupInfo.owner || '').replace('@c.us', '@s.whatsapp.net') || m.chat.split`-`[0] + '@s.whatsapp.net';
+    const ownerBot = (global.owner && global.owner[0] ? global.owner[0] : '') + '@s.whatsapp.net';
+    const me = '59898719147@s.whatsapp.net'; // tu número protegido
+    const botJid = conn.user.jid.replace('@c.us', '@s.whatsapp.net');
+
+    // Lista de protegidos
+    const protegidos = [botJid, ownerGroup, ownerBot, me];
+
+    // Solo admins/owners pueden usar
+    if (!(isAdmin || isOwner)) return;
+
+    // Comprobar si es protegido
+    if (protegidos.includes(user)) {
+        if (user === me) return conn.reply(m.chat, '😼 ¿Estás loco/loca? No te puedo eliminar.', m);
+        if (user === ownerBot) return conn.reply(m.chat, '🤖 ¿Cómo voy a eliminar a mi creador? Ni lo sueñes.', m);
+        if (user === ownerGroup) return conn.reply(m.chat, '👑 Ese es el dueño del grupo, imposible sacarlo.', m);
+        if (user === botJid) return conn.reply(m.chat, '🙃 ¿Quieres que me elimine? No puedo hacerlo.', m);
+        return conn.reply(m.chat, '❌ No puedo eliminar a ese usuario, está protegido.', m);
+    }
+
+    // Expulsión silenciosa del resto
     try {
         await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
-        // Si querés, podés descomentar la siguiente línea para confirmar:
-        // conn.reply(m.chat, `💥 Usuario eliminado.`, m);
     } catch (e) {
         console.error(e);
-        // Opcional: enviar error solo si querés notificar
-        // conn.reply(m.chat, `❌ No pude sacarlo… Seguramente no tengo permisos suficientes.`, m);
     }
 };
 
