@@ -1,40 +1,39 @@
-const handler = async (m, { conn, isAdmin, isOwner }) => {
+const handler = async (m, { conn, isAdmin }) => {
   const emoji = '🔪';
+  const sender = m.sender.replace(/\D/g, '');
+
+  const groupInfo = await conn.groupMetadata(m.chat);
+  const ownerGroup = groupInfo.owner.replace(/\D/g, '');
+  const botJid = conn.user.jid.replace(/\D/g, '');
+
+  // Lista de números owners/protegidos
+  const ownersBot = ['59898719147','59896026646']; // dueños del bot
 
   // ---------- PERMISO ----------
-  if (!isAdmin && !isOwner) return conn.reply(m.chat, '❌ Solo admins del grupo o dueños del bot pueden usar este comando.', m);
+  // Permite: admins del grupo, dueños del bot, dueño del grupo
+  if (!isAdmin && !ownersBot.includes(sender) && sender !== ownerGroup) {
+    return conn.reply(m.chat, '❌ Solo admins, dueño del grupo o dueños del bot pueden usar este comando.', m);
+  }
 
   // ---------- DETECTAR USUARIO ----------
   let user = m.mentionedJid?.[0] || m.quoted?.sender;
   if (!user) return conn.reply(m.chat, '📌 Debes mencionar o citar un mensaje para expulsar.', m);
 
-  // ---------- NORMALIZAR ----------
   const normalize = jid => String(jid || '').replace(/\D/g, '');
   const userNorm = normalize(user);
-  const botNorm = normalize(conn.user?.jid);
-  const groupInfo = await conn.groupMetadata(m.chat);
-  const ownerGroupNorm = normalize(groupInfo.owner || m.chat.split`-`[0]);
 
   // ---------- PROTEGIDOS ----------
-  const protectedList = [
-    '59898719147', // Feli
-    '59896026646', // otro owner
-    botNorm,
-    ownerGroupNorm
-  ];
-
-  // Buscar participante real
-  const participant = groupInfo.participants.find(p => normalize(p.jid) === userNorm) || {};
-  const targetJid = normalize(participant.jid || user);
-
-  // Bloquear si está protegido
-  if (protectedList.some(p => targetJid.endsWith(p))) {
+  const protectedList = [...ownersBot, botJid, ownerGroup];
+  if (protectedList.includes(userNorm)) {
     return conn.reply(m.chat, '😎 Es imposible eliminar a alguien protegido.', m);
   }
 
-  // Si es admin y quien ejecuta no es owner -> bloquear
+  // Comprobar si es admin del grupo
+  const participant = groupInfo.participants.find(p => normalize(p.jid) === userNorm) || {};
   const targetIsAdmin = !!participant.admin;
-  if (targetIsAdmin && !isOwner) {
+
+  // Bloquear expulsión de otros admins si no sos owner del bot
+  if (targetIsAdmin && !ownersBot.includes(sender)) {
     return conn.reply(m.chat, '❌ No puedes expulsar a otro administrador. Solo los dueños del bot pueden hacerlo.', m);
   }
 
@@ -52,7 +51,7 @@ const handler = async (m, { conn, isAdmin, isOwner }) => {
 handler.help = ['k'];
 handler.tags = ['grupo'];
 handler.command = ['k','echar','hechar','sacar','ban'];
-handler.admin = true;    // meta-info, la lógica permite owner aunque no admin
+handler.admin = true;    
 handler.group = true;
 handler.register = true;
 handler.botAdmin = true;
