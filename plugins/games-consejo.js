@@ -1,12 +1,10 @@
 // plugins/consejo.js
-let usados = {}; // Lleva registro de consejos usados por chat
+let usados = {}; // Registro de consejos usados por chat
 
 let handler = async (m, { conn }) => {
     try {
         const chat = global.db.data.chats[m.chat] || {};
-        if (!chat.games) {
-            return await conn.sendMessage(m.chat, { text: '❌ Los juegos están desactivados. Usa .juegos para activarlos.' });
-        }
+        if (!chat.games) return await conn.sendMessage(m.chat, { text: '❌ Los juegos están desactivados. Usa .juegos para activarlos.' });
 
         const consejos = [
             "💡 Recuerda tomar agua durante el día.",
@@ -65,7 +63,6 @@ let handler = async (m, { conn }) => {
 
         let consejo;
         if (disponibles.length === 0) {
-            // Todos usados, reiniciar
             usados[m.chat] = [];
             consejo = consejos[Math.floor(Math.random() * consejos.length)];
         } else {
@@ -74,11 +71,21 @@ let handler = async (m, { conn }) => {
 
         usados[m.chat].push(consejo);
 
-        await conn.sendMessage(m.chat, { text: `📌 Consejo: ${consejo}` });
+        // Mensaje minimalista y atractivo
+        const mensaje = `
+✨ 🐾 *CONSEJO DEL DÍA - FELIXCAT* 🐾 ✨
+
+💡 Consejo:
+> ${consejo}
+
+🌟 Que tengas un día increíble 😸
+`;
+
+        await conn.sendMessage(m.chat, { text: mensaje });
 
     } catch (e) {
         console.error(e);
-        await m.reply('✖️ Error al generar un consejo.');
+        await conn.sendMessage(m.chat, { text: '✖️ Ocurrió un error al generar el consejo.' });
     }
 };
 
