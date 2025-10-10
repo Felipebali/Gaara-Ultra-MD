@@ -3,13 +3,9 @@ import fetch from 'node-fetch';
 let handler = async (m, { conn }) => {
     let chat = global.db.data.chats[m.chat] || {};
 
-    // Comprobar si NSFW está activado
-    if (m.isGroup && !chat.nsfw) {
-        return m.reply('❌ Los comandos NSFW están desactivados en este chat.');
-    }
+    if (m.isGroup && !chat.nsfw) return m.reply('❌ Los comandos NSFW están desactivados en este chat.');
 
     try {
-        // Array de endpoints hentai (Kuni + similares)
         const endpoints = [
             'https://api.waifu.pics/nsfw/kuni',
             'https://api.waifu.pics/nsfw/pussy',
@@ -19,12 +15,15 @@ let handler = async (m, { conn }) => {
             'https://api.waifu.pics/nsfw/tits'
         ];
 
-        // Elegir uno al azar
         const urlAPI = endpoints[Math.floor(Math.random() * endpoints.length)];
         const api = await fetch(urlAPI);
         const res = await api.json();
 
-        // Frases turbias hardcore aleatorias
+        if (!res.url) throw new Error('URL de imagen/GIF no encontrada');
+
+        // Descargar la imagen/GIF a buffer
+        const imgBuffer = await (await fetch(res.url)).arrayBuffer();
+
         const frases = [
             "Dejá que te domine, disfrutalo sin pensar 💦",
             "Que rico, sentí cada movimiento 😈",
@@ -40,18 +39,15 @@ let handler = async (m, { conn }) => {
 
         const frase = frases[Math.floor(Math.random() * frases.length)];
 
-        // Mandar mensaje con imagen/GIF + frase
+        // Mandar mensaje usando buffer
         await conn.sendMessage(m.chat, {
-            image: { url: res.url },
+            image: Buffer.from(imgBuffer),
             caption: frase
         }, { quoted: m });
 
-        // Reacción con emoji 🍆
+        // Reacción con 🍆
         await conn.sendMessage(m.chat, {
-            react: {
-                text: '🍆',
-                key: m.key
-            }
+            react: { text: '🍆', key: m.key }
         });
 
     } catch (error) {
@@ -64,4 +60,4 @@ handler.help = ['kuni'];
 handler.tags = ['nsfw'];
 handler.command = /^kuni$/i;
 
-export default handler; 
+export default handler;
