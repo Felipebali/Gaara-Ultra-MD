@@ -25,7 +25,7 @@ const handler = async (m, { conn, isAdmin, isOwner }) => {
   ];
 
   if (protectedList.includes(user)) {
-    return conn.reply(m.chat, '❌ Este usuario está protegido y no puede ser expulsado.', m);
+    return conn.reply(m.chat, 'Es imposible eliminar a alguien protegido. 😎', m);
   }
 
   // Comprobar si el objetivo es admin del grupo
