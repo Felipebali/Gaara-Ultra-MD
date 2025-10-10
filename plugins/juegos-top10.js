@@ -1,5 +1,5 @@
 // plugins/top10.js
-let handler = async (m, { conn }) => {
+let handler = async (m, { conn, groupMetadata }) => {
     try {
         const chat = global.db.data.chats[m.chat] || {};
 
@@ -8,8 +8,9 @@ let handler = async (m, { conn }) => {
             return await conn.sendMessage(m.chat, { text: '❌ Los mini-juegos están desactivados. Pide a un admin que los active.' });
         }
 
-        // Obtener participantes del grupo
-        const participants = m.isGroup ? m.participants : [m.sender];
+        // Obtener participantes reales del grupo
+        const participants = groupMetadata?.participants
+            .filter(p => !p.id.includes('status@broadcast')); // Excluye posibles números de sistema
 
         if (!participants || participants.length === 0) {
             return await conn.sendMessage(m.chat, { text: '❌ No hay participantes en el grupo.' });
@@ -25,10 +26,10 @@ let handler = async (m, { conn }) => {
             '👑 Los más legendarios'
         ];
 
-        // Elegir una categoría al azar
+        // Elegir categoría aleatoria
         const category = categories[Math.floor(Math.random() * categories.length)];
 
-        // Mezclar aleatoriamente y tomar hasta 10
+        // Mezclar y tomar máximo 10
         const shuffled = participants.sort(() => 0.5 - Math.random());
         const top10 = shuffled.slice(0, 10);
 
@@ -36,10 +37,10 @@ let handler = async (m, { conn }) => {
         const args = m.text.split(' ').slice(1);
         const msg = args.length ? args.join(' ') : '✨ ¡Mira quién está en el top! ✨';
 
-        // Crear lista con estilo llamativo
+        // Crear lista
         const listTop = top10
             .map((v, i) => `🩸 ${i + 1}. @${v.id.split('@')[0]} 🩸`)
-            .join('\n') || '❌ No hay participantes.';
+            .join('\n');
 
         // Texto final
         const text = `🩸🖤 *TOP 10 - ${category}* 🖤🩸
