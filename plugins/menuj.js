@@ -29,7 +29,7 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 ✨ *.consejo* → Te da un consejo aleatorio
 💭 *.pensar <pregunta>* → Bola mágica que responde tu pregunta
 🔢 *.numero* → Genera un número aleatorio
-
+👑 *.top10* → Top 10 divertidos del grupo
 🍽️ *.plato* → Adivina la opción correcta
    🟢 Puede ser comida, objetos o personajes
 ────────────────────────────
