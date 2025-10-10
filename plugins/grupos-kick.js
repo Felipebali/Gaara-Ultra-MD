@@ -7,7 +7,7 @@ const handler = async (m, { conn, participants, isOwner }) => {
 
   // Nadie puede eliminar al creador, excepto él mismo
   if (user === creador) {
-    return conn.reply(m.chat, `Estas loco? Como voy a eliminar a mi creador.`, m);
+    return conn.reply(m.chat, `Sos 🫎? Como voy a eliminar a mi creador.`, m);
   }
 
   // Nadie toca al bot
