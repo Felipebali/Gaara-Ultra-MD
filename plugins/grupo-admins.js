@@ -7,22 +7,21 @@ const handler = async (m, { conn, participants, groupMetadata, args }) => {
     // Dueño del grupo
     const ownerGroup = groupMetadata?.owner || m.chat.split('-')[0] + '@s.whatsapp.net';
 
-    // Owner del bot (mencionado siempre)
+    // Owner del bot (mencionado como admin)
     const botOwner = '+59898719147@s.whatsapp.net'; // Cambiar si hay otro
 
     // Mensaje opcional
     const msg = args.length ? args.join(' ') : 'Hola a todos 👋';
 
-    // Texto final
-    const text = `✨ *Admins del Grupo* ✨
+    // Texto final: mensaje primero, luego admins, luego owner
+    const text = `💌 Mensaje: ${msg}
 
+✨ *Admins del Grupo* ✨
 ${listAdmin}
-
-💌 Mensaje: ${msg}
 
 ⚡ Owner del Bot: @${botOwner.split('@')[0]}`;
 
-    // Enviar mensaje con menciones
+    // Enviar mensaje con menciones (admins + dueño del grupo + owner)
     await conn.sendMessage(m.chat, {
       text,
       mentions: [...groupAdmins.map(v => v.id), ownerGroup, botOwner]
