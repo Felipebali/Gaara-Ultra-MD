@@ -32,8 +32,8 @@ let comandosPorCategoria = {
     '.ruletaban':'🎯'
   },
   'game': {
-    '.acertijo':'❓', '.math':'➗', '.ahorcado':'🔤', '.dance *<@user>*':'💃',
-    '.delttt':'❌', '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.ttt':'❌', '.capital':'🏛️', '.trivia':'🎯','.miau':'🐈‍⬛' 
+    '.acertijo':'❓', '.math':'➗', '.dance *<@user>*':'💃',
+    '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.capital':'🏛️', '.trivia':'🎯','.miau':'🐈‍⬛' 
   },
   'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
   'downloader': {
