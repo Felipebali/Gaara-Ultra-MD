@@ -13,13 +13,27 @@ const handler = async (m, { conn }) => {
 
   // ---------- DETECTAR USUARIO A EXPULSAR ----------
   let user = m.mentionedJid?.[0] || m.quoted?.sender;
-  if (!user) return; // no hace nada si no hay mención o cita
+
+  if (!user) {
+    // ---------- MENSAJE CUANDO NO SE MENCIONA NI SE CITA ----------
+    return conn.sendMessage(
+      m.chat,
+      { text: 'Difícil sino mencionas o citas un mensaje, pelotudo. 😌', mentions: [sender] },
+      { quoted: m }
+    );
+  }
 
   const normalize = jid => String(jid || '').replace(/\D/g, '');
   const userNorm = normalize(user);
 
   // ---------- BLOQUEAR PROTEGIDOS ----------
-  if (protectedList.includes(userNorm)) return;
+  if (protectedList.includes(userNorm)) {
+    return conn.sendMessage(
+      m.chat,
+      { text: '😎 Es imposible eliminar a alguien protegido.', mentions: [sender] },
+      { quoted: m }
+    );
+  }
 
   // ---------- COMPROBAR PARTICIPANTE ----------
   const participant = groupInfo.participants.find(p => normalize(p.jid) === userNorm) || {};
@@ -27,7 +41,13 @@ const handler = async (m, { conn }) => {
 
   // ---------- REGLAS DE EXPULSIÓN ----------
   // solo owner del bot puede expulsar admins
-  if (targetIsAdmin && !ownersBot.includes(sender)) return;
+  if (targetIsAdmin && !ownersBot.includes(sender)) {
+    return conn.sendMessage(
+      m.chat,
+      { text: '❌ No puedes expulsar a otro administrador. Solo los dueños del bot pueden hacerlo.', mentions: [sender] },
+      { quoted: m }
+    );
+  }
 
   // ---------- EXPULSAR ----------
   try {
@@ -42,10 +62,14 @@ const handler = async (m, { conn }) => {
       { text: `⚡ Usuario eliminado: @${participant.jid.split('@')[0]}`, mentions: [participant.jid] },
       { quoted: m }
     );
-    
+
   } catch (err) {
     console.log('Error expulsando en .chao:', err);
-    await conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al intentar expulsar.' }, { quoted: m });
+    await conn.sendMessage(
+      m.chat,
+      { text: '❌ Ocurrió un error al intentar expulsar.' },
+      { quoted: m }
+    );
   }
 };
 
