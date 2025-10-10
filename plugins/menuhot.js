@@ -20,7 +20,8 @@ let handler = async (m, { conn }) => {
 ┃ 🐾 .sexo/sex @tag 🔥
 ┃ 🐾 .tetas 👙
 ┃ 🐾 .culo 🍑
-┃ 🥛 .cum 💦
+┃ 🐾 .cum 💦
+┃ 🐾 .pies 👣
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 > 👑 Powered by FelixCat 🥷🏽
     `.trim();
