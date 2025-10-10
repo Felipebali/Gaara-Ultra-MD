@@ -26,6 +26,7 @@ let handler = async (m, { conn }) => {
 🎯 *.trivia* → Preguntas de cultura general
 ✨ *.consejo* → Te da un consejo aleatorio
 💭 *.pensar <pregunta>* → Bola mágica que responde tu pregunta
+🔢 *.numero* → Genera un número aleatorio
 `;
         } else {
             menuText += `⚠️ *Mini-juegos desactivados.* *Menciona a un admin* para que los activé 🔴\n`;
