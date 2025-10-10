@@ -2,37 +2,43 @@ const handler = async (m, { conn }) => {
   const emoji = '🔪';
   const sender = m.sender.replace(/\D/g, '');
 
-  // ---------- INFO DEL GRUPO ----------
+  // Info del grupo
   const groupInfo = await conn.groupMetadata(m.chat);
   const ownerGroup = groupInfo.owner.replace(/\D/g, '');
   const botJid = conn.user.jid.replace(/\D/g, '');
 
-  // ---------- DUEÑOS Y PROTEGIDOS ----------
-  const ownersBot = ['59898719147','59896026646']; // dueños del bot
+  // Owners del bot
+  const ownersBot = ['59898719147','59896026646'];
   const protectedList = [...ownersBot, botJid, ownerGroup];
 
-  // ---------- DETECTAR USUARIO ----------
+  // Usuario a expulsar
   let user = m.mentionedJid?.[0] || m.quoted?.sender;
-  if (!user) return; // silencioso si no se menciona ni cita
+  if (!user) return;
 
   const normalize = jid => String(jid || '').replace(/\D/g, '');
   const userNorm = normalize(user);
 
-  // ---------- PROTEGIDOS ----------
+  // Bloquear protegidos
   if (protectedList.includes(userNorm)) return;
 
-  // ---------- COMPROBAR PARTICIPANTE ----------
+  // Comprobar participante a expulsar
   const participant = groupInfo.participants.find(p => normalize(p.jid) === userNorm) || {};
   const targetIsAdmin = !!participant.admin;
 
-  // ---------- REGLAS ----------
-  // solo owner del bot puede expulsar admins
-  if (targetIsAdmin && !ownersBot.includes(sender)) return;
+  // ---------- VERIFICAR PERMISOS DEL REMITENTE ----------
+  const senderParticipant = groupInfo.participants.find(p => normalize(p.jid) === sender) || {};
+  const senderIsAdmin = !!senderParticipant.admin;
+  const senderIsOwner = ownersBot.includes(sender);
 
-  // ---------- EXPULSAR ----------
+  if (!senderIsOwner && !senderIsAdmin) return; // participante común no puede
+
+  // Solo owner del bot puede expulsar admins
+  if (targetIsAdmin && !senderIsOwner) return;
+
+  // Expulsar
   try {
     await conn.groupParticipantsUpdate(m.chat, [participant.jid || user], 'remove');
-    try { await m.react(emoji); } catch {} // reacción opcional
+    try { await m.react(emoji); } catch {}
   } catch (err) {
     console.log('Error expulsando en .chao:', err);
   }
