@@ -1,32 +1,50 @@
 const handler = async (m, { conn, isAdmin, isOwner }) => {
-  const emoji = '😎';
+  const emoji = '🔪';
 
   // Solo admins o dueños del bot
-  if (!isAdmin && !isOwner) return conn.reply(m.chat, `❌ Solo admins o dueños pueden usar esto.`, m);
+  if (!isAdmin && !isOwner) return conn.reply(m.chat, '❌ Solo admins del grupo o dueños del bot pueden usar este comando.', m);
 
   // Detectar usuario a expulsar
   let user = m.mentionedJid?.[0] || m.quoted?.sender;
-  if (!user) return conn.reply(m.chat, `📌 Debes mencionar o citar un mensaje para expulsar.`, m);
+  if (!user) return conn.reply(m.chat, '📌 Debes mencionar o citar un mensaje para expulsar.', m);
 
-  // Validaciones básicas
+  // Normalizar JIDs
+  const normalize = jid => jid?.includes('@') ? jid : jid + '@s.whatsapp.net';
+  user = normalize(user);
+  const botJid = normalize(conn.user.jid);
+
+  // Metadata del grupo
   const groupInfo = await conn.groupMetadata(m.chat);
-  const ownerGroup = groupInfo.owner || m.chat.split`-`[0] + '@s.whatsapp.net';
-  const ownerBot = global.owner.map(o => o[0] + '@s.whatsapp.net');
+  const ownerGroup = normalize(groupInfo.owner || (m.chat.split`-`[0] + '@s.whatsapp.net'));
 
-  if ([conn.user.jid, ownerGroup, ...ownerBot].includes(user)) 
-    return conn.reply(m.chat, `❌ No puedo expulsar a este usuario.`, m);
+  // Lista de protegidos (dueño del bot + tu número Feli + dueño del grupo + el bot)
+  const protectedList = [
+    botJid,
+    ownerGroup,
+    '+59898719147@s.whatsapp.net' // tu número protegido
+  ];
 
-  // Expulsar
-  await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
+  if (protectedList.includes(user)) {
+    return conn.reply(m.chat, '❌ Este usuario está protegido y no puede ser expulsado.', m);
+  }
 
-  // Reaccionar con emoji
-  await m.react(emoji);
+  // Comprobar si el objetivo es admin del grupo
+  const participant = groupInfo.participants.find(p => p.jid === user) || {};
+  const targetIsAdmin = !!(participant.admin);
 
-  // Borrar mensaje del comando para dejar el chat limpio
+  // Si el objetivo es admin y quien ejecuta no es owner => denegar
+  if (targetIsAdmin && !isOwner) {
+    return conn.reply(m.chat, '❌ No puedes expulsar a otro administrador. Solo los dueños del bot pueden hacerlo.', m);
+  }
+
+  // Expulsar y limpiar chat
   try {
-    await conn.deleteMessage(m.chat, m.key);
-  } catch (e) {
-    console.log('No se pudo borrar el mensaje del comando:', e);
+    await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
+    try { await m.react(emoji); } catch (e) {}
+    try { await conn.deleteMessage(m.chat, m.key); } catch (e) {}
+  } catch (err) {
+    console.log('Error expulsando:', err);
+    return conn.reply(m.chat, '❌ Ocurrió un error al intentar expulsar. Asegúrate de que el bot sea administrador y tenga permisos.', m);
   }
 };
 
