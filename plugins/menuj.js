@@ -4,9 +4,11 @@ let handler = async (m, { conn }) => {
         const chatSettings = global.db.data.chats[m.chat] || {};
         const gamesEnabled = chatSettings.games !== false; // Por defecto activados
 
-        let menuText = `╭━━━〔 🎮 MINI-JUEGOS FELIXCAT 🐾 〕━━━⬣
-┃ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
-╰━━━━━━━━━━━━━━━━━━━━━━━━⬣
+        let menuText = `╔═════════════════════╗
+      🎮  MINI-JUEGOS FELIXCAT 🐾
+╚═════════════════════╝
+Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
+────────────────────────────
 `;
 
         if (gamesEnabled) {
@@ -27,12 +29,19 @@ let handler = async (m, { conn }) => {
 ✨ *.consejo* → Te da un consejo aleatorio
 💭 *.pensar <pregunta>* → Bola mágica que responde tu pregunta
 🔢 *.numero* → Genera un número aleatorio
+
+🍽️ *.plato* → Adivina la opción correcta
+   🟢 Puede ser comida, objetos o personajes
+────────────────────────────
 `;
         } else {
-            menuText += `⚠️ *Mini-juegos desactivados.* *Menciona a un admin* para que los activé 🔴\n`;
+            menuText += `⚠️ *Mini-juegos desactivados.*  
+Menciona a un admin para activarlos 🔴
+────────────────────────────
+`;
         }
 
-        menuText += `\n👑 *Powered by FelixCat 🐾*`;
+        menuText += `👑 *Powered by FelixCat 🐾*`;
 
         await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 
