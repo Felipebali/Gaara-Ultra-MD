@@ -1,36 +1,27 @@
-// creado Por Xzzys26 adaptado para Gaara-Ultra-MD
-
+// Creado por Xzzys26 adaptado para Gaara-Ultra-MD
 let handler = async (m, { conn, participants, usedPrefix, command, isAdmin, isOwner }) => {
   // Verifica si se mencionó o respondió a alguien
-  if (!m.mentionedJid[0] && !m.quoted) {
+  if (!m.mentionedJid?.length && !m.quoted) {
     return conn.reply(m.chat, `📌 *¿A quién quieres que elimine?*  
 No has mencionado ni respondido a nadie...  
 No juegues conmigo. ☠️`);
   }
 
-  let user = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted.sender;
+  // Obtener usuario y normalizar JID
+  let user = m.mentionedJid?.[0] ? m.mentionedJid[0] : m.quoted.sender;
+  user = user.replace('@c.us', '@s.whatsapp.net');
 
   const groupInfo = await conn.groupMetadata(m.chat);
-  const ownerGroup = groupInfo.owner || m.chat.split`-`[0] + '@s.whatsapp.net';
+  const ownerGroup = groupInfo.owner.replace('@c.us', '@s.whatsapp.net') || m.chat.split`-`[0] + '@s.whatsapp.net';
   const ownerBot = global.owner[0] + '@s.whatsapp.net';
 
-  // Protecciones especiales estilo Gaara ⚡
-  if (user === conn.user.jid) {
-    return conn.reply(m.chat, `🙃 ¿Quieres que me saque yo mismo?  
-No seas ridículo.`);
-  }
-
-  if (user === ownerGroup) {
-    return conn.reply(m.chat, `👑 Ese es el dueño del grupo.  
-Ni lo sueñes...`);
-  }
-
-  if (user === ownerBot) {
-    return conn.reply(m.chat, `🛡️ Ese es mi creador, no lo voy a tocar.`);
-  }
+  // Protecciones especiales
+  if (user === conn.user.jid) return conn.reply(m.chat, `🙃 ¿Quieres que me saque yo mismo? No seas ridículo.`);
+  if (user === ownerGroup) return conn.reply(m.chat, `👑 Ese es el dueño del grupo. Ni lo sueñes...`);
+  if (user === ownerBot) return conn.reply(m.chat, `🛡️ Ese es mi creador, no lo voy a tocar.`);
 
   // Verificar que el usuario está en el grupo
-  const groupMembers = participants.map(p => p.id);
+  const groupMembers = participants.map(p => p.id.replace('@c.us', '@s.whatsapp.net'));
   if (!groupMembers.includes(user)) {
     return conn.reply(m.chat, `❌ Esa persona ni siquiera está en el grupo.`);
   }
@@ -59,5 +50,4 @@ handler.group = true;
 handler.botAdmin = true;
 handler.register = true;
 
-// ❌ Eliminamos handler.admin porque ahora la verificación la hace dentro
 export default handler;
