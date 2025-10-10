@@ -1,38 +1,38 @@
 const handler = async (m, { conn, isAdmin, isOwner }) => {
   const emoji = '🔪';
 
-  // Solo admins o dueños del bot
-  if (!isAdmin && !isOwner) return conn.reply(m.chat, '❌ Solo admins del grupo o dueños del bot pueden usar este comando.', m);
+  if (!isAdmin && !isOwner) 
+    return conn.reply(m.chat, '❌ Solo admins del grupo o dueños del bot pueden usar este comando.', m);
 
   // Detectar usuario a expulsar
   let user = m.mentionedJid?.[0] || m.quoted?.sender;
   if (!user) return conn.reply(m.chat, '📌 Debes mencionar o citar un mensaje para expulsar.', m);
 
-  // Normalizar JIDs
-  const normalize = jid => jid?.includes('@') ? jid : jid + '@s.whatsapp.net';
+  // Normalizar JIDs a minúsculas y con sufijo
+  const normalize = jid => (jid?.toLowerCase()?.includes('@') ? jid.toLowerCase() : jid.toLowerCase() + '@s.whatsapp.net');
   user = normalize(user);
   const botJid = normalize(conn.user.jid);
 
   // Metadata del grupo
   const groupInfo = await conn.groupMetadata(m.chat);
-  const ownerGroup = normalize(groupInfo.owner || (m.chat.split`-`[0] + '@s.whatsapp.net'));
+  const ownerGroup = normalize(groupInfo.owner || (m.chat.split`-`[0]));
 
-  // Lista de protegidos (dueño del bot + tu número Feli + dueño del grupo + el bot)
+  // Lista de protegidos
   const protectedList = [
     botJid,
     ownerGroup,
-    '+59898719147@s.whatsapp.net' // tu número protegido
+    normalize('+59898719147') // tu número protegido
   ];
 
+  // Verificar protección
   if (protectedList.includes(user)) {
     return conn.reply(m.chat, 'Es imposible eliminar a alguien protegido. 😎', m);
   }
 
   // Comprobar si el objetivo es admin del grupo
-  const participant = groupInfo.participants.find(p => p.jid === user) || {};
+  const participant = groupInfo.participants.find(p => normalize(p.jid) === user) || {};
   const targetIsAdmin = !!(participant.admin);
 
-  // Si el objetivo es admin y quien ejecuta no es owner => denegar
   if (targetIsAdmin && !isOwner) {
     return conn.reply(m.chat, '❌ No puedes expulsar a otro administrador. Solo los dueños del bot pueden hacerlo.', m);
   }
