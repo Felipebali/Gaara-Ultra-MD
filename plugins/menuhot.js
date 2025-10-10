@@ -23,6 +23,7 @@ let handler = async (m, { conn }) => {
 ┃ 🐾 .cum 💦
 ┃ 🐾 .pies 👣
 ┃ 🐾 .nalgada 🍑
+┃ 🐾 .coño 🔞
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 > 👑 Powered by FelixCat 🥷🏽
     `.trim();
