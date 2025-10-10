@@ -29,7 +29,7 @@ let handler = async (m, { conn }) => {
         { name: "Reloj", hint: "⏰" }
     ];
 
-    // Elegir opción correcta aleatoria
+    // Elegir opción correcta
     const correct = opciones[Math.floor(Math.random() * opciones.length)];
 
     // Mezclar opciones
@@ -40,16 +40,17 @@ let handler = async (m, { conn }) => {
     }
     choices = choices.sort(() => Math.random() - 0.5);
 
-    // Guardar partida
+    // Guardar partida en global con toda la info necesaria
     if (!global.variosGame) global.variosGame = {};
     global.variosGame[m.chat] = {
         answer: correct.name,
+        hint: correct.hint,
         options: choices,
         timeout: setTimeout(async () => {
             const game = global.variosGame?.[m.chat];
             if (game?.answer) {
                 const msgs = ['💀 Se te acabó el tiempo!', '🤡 Ni lo intentaste!', '😹 Patético, era', '🫠 Sos un desastre!'];
-                await conn.sendMessage(m.chat, { text: `${msgs[Math.floor(Math.random() * msgs.length)]} *${correct.name}* ${correct.hint}` }, { quoted: m });
+                await conn.sendMessage(m.chat, { text: `${msgs[Math.floor(Math.random() * msgs.length)]} *${game.answer}* ${game.hint}` }, { quoted: m });
                 delete global.variosGame[m.chat];
             }
         }, 30000)
@@ -85,8 +86,7 @@ handler.before = async (m, { conn }) => {
 
     if (chosen === normalizedAnswer) {
         clearTimeout(game.timeout);
-        const hint = opciones.find(p => p.name === game.answer)?.hint || '';
-        await conn.sendMessage(m.chat, { text: `✅ Correcto! Era *${game.answer}* ${hint} 🎉` }, { quoted: m });
+        await conn.sendMessage(m.chat, { text: `✅ Correcto! Era *${game.answer}* ${game.hint} 🎉` }, { quoted: m });
         delete global.variosGame[m.chat];
     } else {
         const insults = ['❌ Fallaste!', '🙃 Casi, pero no!', '🤔 Intentá de nuevo!', '😹 No era esa!', '💀 Sos un desastre!'];
