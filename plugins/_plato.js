@@ -5,31 +5,55 @@ let handler = async (m, { conn }) => {
         return conn.sendMessage(m.chat, { text: '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.' }, { quoted: m });
     }
 
-    // Lista de opciones variadas
+    // Lista ampliada de opciones variadas
     const opciones = [
+        // Comida
         { name: "Pizza Napolitana", hint: "🍕" },
         { name: "Sushi Mixto", hint: "🍣" },
-        { name: "Elefante", hint: "🐘" },
-        { name: "Guitarra", hint: "🎸" },
-        { name: "Harry Potter", hint: "⚡️" },
-        { name: "La Casa de Papel", hint: "🎭" },
         { name: "Tacos Picantes", hint: "🌮" },
-        { name: "Star Wars", hint: "🌌" },
-        { name: "Perro", hint: "🐶" },
-        { name: "Panda", hint: "🐼" },
-        { name: "Coche de carreras", hint: "🏎️" },
-        { name: "Avión", hint: "✈️" },
-        { name: "Corazón", hint: "❤️" },
-        { name: "Iron Man", hint: "🤖" },
-        { name: "El Señor de los Anillos", hint: "💍" },
-        { name: "Frase: Carpe Diem", hint: "⌛️" },
         { name: "Chocolate", hint: "🍫" },
         { name: "Plátano", hint: "🍌" },
+        { name: "Helado", hint: "🍨" },
+        { name: "Hamburguesa", hint: "🍔" },
+
+        // Animales
+        { name: "Elefante", hint: "🐘" },
+        { name: "Perro", hint: "🐶" },
+        { name: "Panda", hint: "🐼" },
         { name: "Gato", hint: "🐱" },
-        { name: "Reloj", hint: "⏰" }
+        { name: "León", hint: "🦁" },
+        { name: "Tigre", hint: "🐯" },
+        { name: "Delfín", hint: "🐬" },
+
+        // Objetos
+        { name: "Guitarra", hint: "🎸" },
+        { name: "Reloj", hint: "⏰" },
+        { name: "Avión", hint: "✈️" },
+        { name: "Coche de carreras", hint: "🏎️" },
+        { name: "Laptop", hint: "💻" },
+
+        // Personajes
+        { name: "Harry Potter", hint: "⚡️" },
+        { name: "Iron Man", hint: "🤖" },
+        { name: "Homero Simpson", hint: "🍩" },
+        { name: "Mickey Mouse", hint: "🐭" },
+        { name: "Naruto", hint: "🍥" },
+
+        // Películas / series
+        { name: "La Casa de Papel", hint: "🎭" },
+        { name: "Star Wars", hint: "🌌" },
+        { name: "El Señor de los Anillos", hint: "💍" },
+        { name: "Avengers", hint: "🛡️" },
+        { name: "Matrix", hint: "🟩" },
+
+        // Frases / expresiones
+        { name: "Carpe Diem", hint: "⌛️" },
+        { name: "Hakuna Matata", hint: "🦁" },
+        { name: "No Pain No Gain", hint: "💪" },
+        { name: "Hasta la vista", hint: "🤖" }
     ];
 
-    // Elegir opción correcta
+    // Elegir opción correcta aleatoria
     const correct = opciones[Math.floor(Math.random() * opciones.length)];
 
     // Mezclar opciones
@@ -40,7 +64,7 @@ let handler = async (m, { conn }) => {
     }
     choices = choices.sort(() => Math.random() - 0.5);
 
-    // Guardar partida en global con toda la info necesaria
+    // Guardar partida en memoria
     if (!global.variosGame) global.variosGame = {};
     global.variosGame[m.chat] = {
         answer: correct.name,
@@ -58,7 +82,7 @@ let handler = async (m, { conn }) => {
 
     // Mensaje inicial
     let text = `🎲 *Adivina la opción correcta*:\n\n${correct.hint}\nOpciones:`;
-    choices.forEach((o,i)=> text += `\n${i+1}. ${o}`);
+    choices.forEach((o, i) => text += `\n${i + 1}. ${o}`);
     text += `\n\nResponde con el número o el nombre correcto. Tienes 30 segundos!`;
 
     await conn.sendMessage(m.chat, { text }, { quoted: m });
