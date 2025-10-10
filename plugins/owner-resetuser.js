@@ -31,15 +31,19 @@ const handler = async (m, { conn, text }) => {
         }
     });
 
+    // Eliminar al usuario de banlist y lista negra
+    if (global.db.data.banlist) delete global.db.data.banlist[userJid];
+    if (global.db.data.blacklist) delete global.db.data.blacklist[userJid];
+
     // Guardar cambios en la base de datos
     if (global.db.write) await global.db.write();
 
-    // Mensaje de éxito limpio
-    conn.sendMessage(m.chat, { text: `${done} Éxito. Todos los datos y advertencias del usuario fueron eliminados de la base de datos.` });
+    // Mensaje de éxito
+    conn.sendMessage(m.chat, { text: `${done} Éxito. Todos los datos, advertencias, banlist y blacklist del usuario fueron eliminados.` });
 };
 
 handler.tags = ['owner'];
 handler.command = ['r','deletedatauser','resetuser','borrardatos'];
-handler.owner = true; // SOLO owner
+handler.owner = true;
 
 export default handler;
