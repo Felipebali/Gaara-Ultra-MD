@@ -115,7 +115,7 @@ const lidAddHandler = async (m, { conn, args, isOwner }) => {
 
 lidAddHandler.help = ['lid add'];
 lidAddHandler.tags = ['owner'];
-lidAddHandler.command = ['lid add','lidadd'];
+lidAddHandler.command = ['lidadd','lidadd'];
 lidAddHandler.owner = true;
 
 // ----------------- Handler .lid remove -----------------
