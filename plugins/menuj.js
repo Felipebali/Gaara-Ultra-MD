@@ -16,13 +16,10 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 🎲 *Juegos Disponibles:*
 
 🧠 *.math* → Operaciones matemáticas
-✖️⭕ *.ttt* → Tic-Tac-Toe
-🔄 *.delttt* → Reiniciar Tic-Tac-Toe
 ✊✋✌️ *.ppt <@user>* → Piedra, papel o tijera
 💃🕺 *.dance <@user>* → Bailar con amigo
 🌍 *.bandera* → Adivina la bandera
 🎁 *.acertijo* → Resolver acertijos
-😵 *.ahorcado* → Adivina antes de perder
 😸 *.adivinanza* → Resuelve adivinanzas
 🏛️ *.capital* → Adivina la capital de un país
 🎯 *.trivia* → Preguntas de cultura general
