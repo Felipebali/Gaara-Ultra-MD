@@ -1,62 +1,81 @@
-// plugins/plato.js
+// plugins/juegos-plato.js
 let handler = async (m, { conn }) => {
-    let chat = global.db?.data?.chats[m.chat];
-    if (!chat || !chat.games) {
-        return await m.reply('🎮 Los mini-juegos están *desactivados* en este chat.\nActívalos con: *.juegos*');
+    const chatSettings = global.db.data.chats[m.chat] || {};
+    if (chatSettings.games === false) {
+        return conn.sendMessage(m.chat, { text: '⚠️ Los juegos están desactivados en este chat. Usa .juegos para activarlos.' }, { quoted: m });
     }
 
     const platos = [
-        { nombre: '🍕 Pizza napolitana', rarity: '🟢 Común' },
-        { nombre: '🍣 Sushi mixto', rarity: '🟢 Común' },
-        { nombre: '🥟 Empanadas caseras', rarity: '🟢 Común' },
-        { nombre: '🍔 Hamburguesa Triple XL', rarity: '🔵 Especial' },
-        { nombre: '☠️ Fideos con gusto a gas', rarity: '🔴 Maldito' },
-        { nombre: '🐀 Rata frita con papas', rarity: '🔴 Maldito' },
-        { nombre: '🦗 Ensalada de grillos', rarity: '🟣 Épico' },
-        { nombre: '😹 Sándwich de aire', rarity: '🟣 Épico' },
-        { nombre: '🍜 Sopita para el alma', rarity: '🟢 Común' },
-        { nombre: '🔥 Guiso hecho por tu ex', rarity: '🔵 Especial' },
-        { nombre: '💩 Puré misterioso (no preguntes)', rarity: '🔴 Maldito' },
-        { nombre: '😈 Pasta con salsa radioactiva', rarity: '🔴 Maldito' },
-        { nombre: '🧟‍♂️ Carne zombie premium', rarity: '🔵 Especial' }
+        { name: "Pizza Napolitana", emoji: "🍕" },
+        { name: "Sushi Mixto", emoji: "🍣" },
+        { name: "Empanadas Caseras", emoji: "🥟" },
+        { name: "Hamburguesa Triple XL", emoji: "🍔" },
+        { name: "Sopita para el alma", emoji: "🍜" },
+        { name: "Guiso hecho por tu ex", emoji: "🔥" },
+        { name: "Sándwich de aire", emoji: "😹" },
+        { name: "Puré misterioso", emoji: "💩" },
+        { name: "Pasta con salsa radioactiva", emoji: "😈" },
     ];
 
-    // Elegir 3 platos aleatorios
-    let opciones = [];
-    while(opciones.length < 3){
-        let random = platos[Math.floor(Math.random() * platos.length)];
-        if(!opciones.includes(random)) opciones.push(random);
+    // Elegir plato correcto
+    const correct = platos[Math.floor(Math.random() * platos.length)];
+
+    // Mezclar opciones
+    let options = [correct.name];
+    while (options.length < 4) {
+        const opt = platos[Math.floor(Math.random() * platos.length)].name;
+        if (!options.includes(opt)) options.push(opt);
     }
+    options = options.sort(() => Math.random() - 0.5);
 
-    // Mostrar opciones enumeradas
-    await m.reply(`🍽️ *Elige tu plato*:\n${opciones.map((p,i)=>`${i+1}. ${p.nombre}`).join('\n')}\n\nResponde con el número de tu elección.`);
+    // Guardar en memoria
+    if (!global.platoGame) global.platoGame = {};
+    global.platoGame[m.chat] = {
+        answer: correct.name,
+        timeout: setTimeout(async () => {
+            const game = global.platoGame?.[m.chat];
+            if (game?.answer) {
+                const msg = '⏰ Se acabó el tiempo! La respuesta correcta era';
+                await conn.sendMessage(m.chat, { text: `${msg} *${correct.name}* ${correct.emoji}` }, { quoted: m });
+                delete global.platoGame[m.chat];
+            }
+        }, 30000)
+    };
 
-    // Guardamos la partida temporal en memoria global
-    if(!global.db.data.games) global.db.data.games = {};
-    global.db.data.games[m.sender] = { opciones, mId: m.key.id };
-};
+    let text = `🍽️ *Adivina el plato*:\n\n${correct.emoji}\n\nOpciones:`;
+    options.forEach((o, i) => text += `\n${i + 1}. ${o}`);
+    text += `\n\nResponde con el número o el nombre del plato correcto. Tienes 30 segundos!`;
 
-// Comando para manejar la elección del usuario
-let choiceHandler = async (m, { conn }) => {
-    if(!global.db.data.games?.[m.sender]) return; // no hay juego activo
-    let partida = global.db.data.games[m.sender];
-
-    // Determinar elección
-    let eleccion = parseInt(m.text);
-    if(isNaN(eleccion) || eleccion < 1 || eleccion > partida.opciones.length) return;
-
-    let plato = partida.opciones[eleccion-1];
-
-    await m.reply(`🍽️ *Elegiste:* ${plato.nombre}\n✨ Rareza: ${plato.rarity}`);
-
-    // Limpiar partida
-    delete global.db.data.games[m.sender];
+    await conn.sendMessage(m.chat, { text }, { quoted: m });
 };
 
 handler.command = ['plato'];
-handler.group = true;
+handler.help = ['plato'];
+handler.tags = ['juegos'];
+handler.group = false;
 
-choiceHandler.command = ['1','2','3']; // los números de las opciones
-choiceHandler.group = true;
+handler.before = async (m, { conn }) => {
+    const game = global.platoGame?.[m.chat];
+    if (!game?.answer || !m?.text) return;
 
-export default [handler, choiceHandler];
+    const normalizedUser = m.text.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const normalizedAnswer = game.answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+    if (normalizedUser === normalizedAnswer || m.text === '1' || m.text === '2' || m.text === '3' || m.text === '4') {
+        clearTimeout(game.timeout);
+        const opciones = Object.keys(game).filter(k => k !== 'timeout');
+        await conn.sendMessage(m.chat, { text: `✅ Correcto! El plato era *${game.answer}* 🎉` }, { quoted: m });
+        delete global.platoGame[m.chat];
+    } else {
+        const insults = [
+            '❌ Ups, esa no es!',
+            '🙃 Casi, pero no es esa!',
+            '🤔 Intentá de nuevo!',
+            '😬 Nooo, fijate bien!',
+            '💀 Fallaste, era otro!'
+        ];
+        await conn.sendMessage(m.chat, { text: insults[Math.floor(Math.random() * insults.length)] }, { quoted: m });
+    }
+};
+
+export default handler;
