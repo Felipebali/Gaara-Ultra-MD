@@ -1,5 +1,5 @@
 const handler = async (m, { conn, isAdmin, isOwner }) => {
-  const emoji = '🔪';
+  const emoji = '😎';
 
   // Solo admins o dueños del bot
   if (!isAdmin && !isOwner) return conn.reply(m.chat, `❌ Solo admins o dueños pueden usar esto.`, m);
@@ -19,17 +19,14 @@ const handler = async (m, { conn, isAdmin, isOwner }) => {
   // Expulsar
   await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
 
-  // Reaccionar
+  // Reaccionar con emoji
   await m.react(emoji);
 
-  // Responder y luego borrar mensaje original del comando para limpiar chat
-  const sentMsg = await conn.reply(m.chat, `✅ Usuario expulsado ${emoji}`, m);
+  // Borrar mensaje del comando para dejar el chat limpio
   try {
-    await conn.deleteMessage(m.chat, m.key); // Borra mensaje que activó el comando
-    // Opcional: borrar también el mensaje de confirmación después de 5 segundos
-    setTimeout(() => conn.deleteMessage(m.chat, sentMsg.key), 5000);
+    await conn.deleteMessage(m.chat, m.key);
   } catch (e) {
-    console.log('No se pudo borrar mensajes:', e);
+    console.log('No se pudo borrar el mensaje del comando:', e);
   }
 };
 
