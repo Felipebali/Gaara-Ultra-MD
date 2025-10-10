@@ -1,51 +1,42 @@
-// Creado por Xzzys26 adaptado para Gaara-Ultra-MD
-let handler = async (m, { conn, participants, usedPrefix, command, isAdmin, isOwner }) => {
-  // Verifica si se mencionó o respondió a alguien
-  if (!m.mentionedJid?.length && !m.quoted) {
-    return conn.reply(m.chat, `📌 *¿A quién quieres que elimine?*  
-No has mencionado ni respondido a nadie...  
-No juegues conmigo. ☠️`);
-  }
+let handler = async (m, { conn, participants, isAdmin, isOwner }) => {
+    // Verifica si se mencionó o respondió a alguien
+    if (!m.mentionedJid?.length && !m.quoted) {
+        return conn.reply(m.chat, `📌 *¿A quién quieres que elimine?*  
+No has mencionado ni respondido a nadie... ☠️`);
+    }
 
-  // Obtener usuario y normalizar JID
-  let user = m.mentionedJid?.[0] ? m.mentionedJid[0] : m.quoted.sender;
-  user = user.replace('@c.us', '@s.whatsapp.net');
+    // Obtener usuario a eliminar
+    let user = m.mentionedJid?.[0] ? m.mentionedJid[0] : m.quoted.sender;
+    user = user.replace('@c.us', '@s.whatsapp.net');
 
-  const groupInfo = await conn.groupMetadata(m.chat);
-  const ownerGroup = groupInfo.owner.replace('@c.us', '@s.whatsapp.net') || m.chat.split`-`[0] + '@s.whatsapp.net';
-  const ownerBot = global.owner[0] + '@s.whatsapp.net';
+    const groupInfo = await conn.groupMetadata(m.chat);
+    const ownerGroup = groupInfo.owner.replace('@c.us', '@s.whatsapp.net') || m.chat.split`-`[0] + '@s.whatsapp.net';
+    const ownerBot = global.owner[0] + '@s.whatsapp.net';
+    const me = m.sender.replace('@c.us', '@s.whatsapp.net'); // tu propio JID
 
-  // Protecciones especiales
-  if (user === conn.user.jid) return conn.reply(m.chat, `🙃 ¿Quieres que me saque yo mismo? No seas ridículo.`);
-  if (user === ownerGroup) return conn.reply(m.chat, `👑 Ese es el dueño del grupo. Ni lo sueñes...`);
-  if (user === ownerBot) return conn.reply(m.chat, `🛡️ Ese es mi creador, no lo voy a tocar.`);
+    // Lista de protegidos
+    const protegidos = [conn.user.jid, ownerGroup, ownerBot, me, '59892682421@s.whatsapp.net'];
 
-  // Verificar que el usuario está en el grupo
-  const groupMembers = participants.map(p => p.id.replace('@c.us', '@s.whatsapp.net'));
-  if (!groupMembers.includes(user)) {
-    return conn.reply(m.chat, `❌ Esa persona ni siquiera está en el grupo.`);
-  }
+    if (protegidos.includes(user)) return; // no puede eliminar a los protegidos
 
-  // Verificación: solo admins o owners del bot pueden usar el comando
-  if (!(isAdmin || isOwner)) {
-    return conn.reply(m.chat, `❌ Solo administradores o mi dueño pueden usar este comando.`);
-  }
+    // Verificar que el usuario está en el grupo
+    const groupMembers = participants.map(p => p.id.replace('@c.us', '@s.whatsapp.net'));
+    if (!groupMembers.includes(user)) return;
 
-  // Ejecuta la expulsión
-  try {
-    await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
-    conn.reply(m.chat, `💥 *Eliminado.*  
-He decidido que ya no pertenezcas aquí.`);
-  } catch (e) {
-    console.error(e);
-    conn.reply(m.chat, `❌ No pude sacarlo…  
-Seguramente no tengo permisos suficientes.`);
-  }
+    // Solo admins o owners pueden usar el comando
+    if (!(isAdmin || isOwner)) return;
+
+    // Ejecuta la expulsión en silencio
+    try {
+        await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
+    } catch (e) {
+        console.error(e);
+    }
 };
 
 handler.help = ['kick'];
 handler.tags = ['grupo'];
-handler.command = ['k', 'echar', 'sacar', 'ban'];
+handler.command = ['k','echar','sacar','ban'];
 handler.group = true;
 handler.botAdmin = true;
 handler.register = true;
