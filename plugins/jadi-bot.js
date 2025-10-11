@@ -1,36 +1,26 @@
-// código creado x The Carlos 👑 y Modificado Por Xzzys26 Para Gaara-Ultra-MD 
+// Código creado por The Carlos 👑 y modificado por Xzzys26 para Gaara-Ultra-MD
 async function handler(m, { conn: stars, usedPrefix }) {
   const maxSubBots = 324;
   const conns = Array.isArray(global.conns) ? global.conns : [];
 
-  const isConnOpen = (c) => {
-    try {
-      return c?.ws?.socket?.readyState === 1;
-    } catch {
-      return !!c?.user?.id;
-    }
-  };
+  const isConnOpen = c => c?.ws?.socket?.readyState === 1 || !!c?.user?.id;
 
-  const unique = new Map();
+  const uniqueUsers = new Map();
   for (const c of conns) {
-    if (!c || !c.user) continue;
-    if (!isConnOpen(c)) continue;
-
-    const jidRaw = c.user.jid || c.user.id || '';
-    if (!jidRaw) continue;
-
-    unique.set(jidRaw, c);
+    if (!c?.user || !isConnOpen(c)) continue;
+    const jid = c.user.jid || c.user.id;
+    if (!jid) continue;
+    uniqueUsers.set(jid, c);
   }
 
-  const users = [...unique.values()];
+  const users = [...uniqueUsers.values()];
   const totalUsers = users.length;
   const availableSlots = Math.max(0, maxSubBots - totalUsers);
 
   const title = `⚡『 𝙎𝙐𝘽-𝘽𝙊𝙏𝙎 𝙊𝙉𝙇𝙄𝙉𝙀 』⚡`;
-
   let responseMessage = '';
 
-  if (totalUsers === 0) {
+  if (!totalUsers) {
     responseMessage = `╭━━━〔 *${title}* 〕━━━╮
 ┃ ⚡ Sub-Bots activos: *0*
 ┃ ❌ Nadie conectado todavía
@@ -39,18 +29,16 @@ async function handler(m, { conn: stars, usedPrefix }) {
 
 > 📌 Conéctate ahora y forma parte de la red Ultra.`;
   } else {
-    const listado = users
-      .map((v, i) => {
-        const num = v.user.jid.replace(/[^0-9]/g, '');
-        const nombre = v?.user?.name || v?.user?.pushName || '🌟 𝙎𝙪𝙗-𝘽𝙤𝙩';
-        const waLink = `https://wa.me/${num}?text=${usedPrefix}code`;
-        return `╭━━━〔 ⚡ 𝙎𝙐𝘽-𝘽𝙊𝙏 #${i + 1} 〕━━━╮
+    const listado = users.map((v, i) => {
+      const num = v.user.jid.replace(/\D/g, '');
+      const nombre = v.user.name || v.user.pushName || '🌟 Sub-Bot';
+      const waLink = `https://wa.me/${num}?text=${usedPrefix}code`;
+      return `╭━━━〔 ⚡ 𝙎𝙐𝘽-𝘽𝙊𝙏 #${i + 1} 〕━━━╮
 ┃ 👤 Usuario: @${num}
 ┃ ⚡️ Nombre: ${nombre}
 ┃ 🔗 Link: ${waLink}
 ╰━━━━━━━━━━━━━━━━━━━━━━╯`;
-      })
-      .join('\n\n');
+    }).join('\n\n');
 
     responseMessage = `╭━━━〔 *${title}* 〕━━━╮
 ┃ 📜 Total conectados: *${totalUsers}*
@@ -63,25 +51,14 @@ ${listado}`.trim();
   const imageUrl = 'https://files.catbox.moe/sq6q0q.jpg'; // Cambia si quieres
 
   const fkontak = {
-    key: {
-      participants: "0@s.whatsapp.net",
-      remoteJid: "status@broadcast",
-      fromMe: false,
-      id: "Halo",
-    },
-    message: {
-      contactMessage: {
-        displayName: "Subbot",
-        vcard: "BEGIN:VCARD\nVERSION:3.0\nN:;Subbot;;;\nFN:Subbot\nEND:VCARD",
-      },
-    },
+    key: { participants: "0@s.whatsapp.net", remoteJid: "status@broadcast", fromMe: false, id: "Halo" },
+    message: { contactMessage: { displayName: "Subbot", vcard: "BEGIN:VCARD\nVERSION:3.0\nN:;Subbot;;;\nFN:Subbot\nEND:VCARD" } },
   };
 
+  // Generar menciones únicas
   const mentions = typeof stars.parseMention === 'function'
     ? stars.parseMention(responseMessage)
-    : [...new Set(
-        (responseMessage.match(/@(\d{5,16})/g) || []).map(v => v.replace('@', '') + '@s.whatsapp.net')
-      )];
+    : [...new Set((responseMessage.match(/@(\d{5,16})/g) || []).map(v => v.replace('@', '') + '@s.whatsapp.net'))];
 
   try {
     await stars.sendMessage(
