@@ -14,6 +14,16 @@ let preguntasHeavy = [
     "👹 ¿Cuál ha sido tu impulso más salvaje y prohibido?"
 ];
 
+let respuestasRoleplay = [
+    "😈 Wow… atrevido.",
+    "🔥 No esperaba eso, humano.",
+    "👿 Eso arde en el infierno.",
+    "😏 Interesante… sigo observando.",
+    "😈 Ja, ja… eso me gusta.",
+    "🔥 Valiente… pero peligroso.",
+    "👿 Hum… intrigante."
+];
+
 let handler = async (m, { conn }) => {
     let chat = global.db.data.chats[m.chat];
 
@@ -37,13 +47,37 @@ let handler = async (m, { conn }) => {
 
     let buttonMessage = {
         text: pregunta,
-        footer: 'Roleplay Demonio 🔥 Nivel 3',
+        footer: 'Roleplay Demonio 🔥 Nivel 3 — Responde y arde 👿',
         buttons: buttons,
         headerType: 1
     };
 
-    await conn.sendMessage(m.chat, buttonMessage);
+    // Enviar pregunta
+    let sentMsg = await conn.sendMessage(m.chat, buttonMessage);
+
+    // Guardar mensaje para detectar respuestas
+    global.db.data.chats[m.chat].ultimaPregunta = sentMsg.key.id;
 };
+
+// Detectar respuesta de usuario
+export async function before(m, { conn }) {
+    let chat = global.db.data.chats[m.chat];
+
+    if (!chat.nsfw) return true; // Si NSFW desactivado, todo normal
+
+    // Revisar si hay pregunta pendiente
+    if (chat.ultimaPregunta && m.quoted && m.quoted.id === chat.ultimaPregunta) {
+        // Elegir feedback aleatorio
+        let index = randomInt(0, respuestasRoleplay.length);
+        let feedback = respuestasRoleplay[index];
+
+        // Enviar feedback
+        await conn.sendMessage(m.chat, { text: feedback });
+        return true;
+    }
+
+    return true;
+}
 
 handler.help = ['pregunta'];
 handler.tags = ['fun', 'nsfw'];
