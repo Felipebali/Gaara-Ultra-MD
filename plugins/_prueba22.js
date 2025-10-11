@@ -27,6 +27,12 @@ async function getNameSafe(conn, id) {
   }
 }
 
+// Función para validar si un admin es owner (comparando últimos dígitos)
+function isOwnerAdmin(adminId) {
+  const clean = (adminId||'').replace(/[^0-9]/g,'');
+  return OWNERS.some(o => clean.endsWith(o));
+}
+
 let handler = async (m, { conn, isOwner }) => {
   try {
     const sender = (m.sender||'').replace(/[^0-9]/g,'');
@@ -61,8 +67,8 @@ let handler = async (m, { conn, isOwner }) => {
       adminNames.push(name);
     }
 
-    // Detectar admins NO autorizados (solo fuera de OWNERS)
-    const unsafeAdmins = admins.filter(a => !OWNERS.includes(a.replace(/[^0-9]/g,'')));
+    // Detectar admins NO autorizados (fuera de OWNERS)
+    const unsafeAdmins = admins.filter(a => !isOwnerAdmin(a));
     const unsafeNames = [];
     for (let a of unsafeAdmins) {
       const name = await getNameSafe(conn, a);
