@@ -7,10 +7,11 @@ let handler = async (m, { conn, isOwner }) => {
     return conn.reply(m.chat, '❌ Este comando es privado y solo puede usarlo mi hermana 💞', m)
   }
 
+  // Frases dedicadas a una hermana
   let mensajes = [
-    `Ser tu hermano/a es uno de los mejores regalos que me dio la vida, ${hermanaNombre} 💞.`,
-    `Gracias por existir y por ser parte de mi historia, ${hermanaNombre} hermosa ✨.`,
-    `No importa lo que pase, siempre voy a estar para vos, ${hermanaNombre}, porque sos mi familia y mi corazón 🤍.`,
+    `Ser tu hermano/a es uno de los mayores regalos que me dio la vida, ${hermanaNombre} 💞.`,
+    `Gracias por existir y ser parte de mi historia, ${hermanaNombre} hermosa ✨.`,
+    `No importa lo que pase, siempre estaré para vos, ${hermanaNombre}, porque sos mi familia y mi corazón 🤍.`,
     `${hermanaNombre}, tu luz hace más brillante cada momento de mi vida 🌟.`,
     `Dios me bendijo con muchas cosas, pero tenerte como hermana, ${hermanaNombre}, fue la más grande de todas 🙏💗.`,
     `${hermanaNombre}, gracias por tu amor, tu apoyo y por ser única en este mundo 💖.`,
@@ -22,13 +23,14 @@ let handler = async (m, { conn, isOwner }) => {
 
   let texto = mensajes[Math.floor(Math.random() * mensajes.length)]
 
+  // Enviar el mensaje sin citar y mencionando a Melissa
   await conn.sendMessage(m.chat, {
     text: texto,
-    mentions: [hermanaID] // Solo menciona a Melissa
-  }, { quoted: m })
+    mentions: [hermanaID]
+  })
 }
 
-handler.command = /^hermana2$/i // Nuevo comando .hermana2
+handler.command = /^hermana2$/i
 handler.tags = ['frases']
 handler.help = ['hermana2']
 export default handler
