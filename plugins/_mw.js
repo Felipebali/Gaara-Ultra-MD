@@ -39,12 +39,11 @@ let handler = async (m, { conn, isOwner }) => {
 
 ⚙️ SISTEMA TÁCTICO
 • radar         - Escanea actividad
-• logins        - Últimos inicios
+• spy @user     - Revisar actividad
 • shield        - Protege bot
 • mode          - Cambia modo
 
 🔒 SEGURIDAD
-• spy @user           - Revisar actividad
 • watchlist add @user - Agregar vigilancia
 • watchlist remove @  - Quitar vigilancia
 • trap @user          - Seguimiento especial
