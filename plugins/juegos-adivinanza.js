@@ -38,18 +38,19 @@ const handler = async (m, { conn }) => {
 
   const adivinanza = adivinanzas[Math.floor(Math.random() * adivinanzas.length)];
   conn.adivinanza = conn.adivinanza || {};
-  conn.adivinanza[m.chat] = adivinanza;
+  conn.adivinanza[m.chat] = {
+    ...adivinanza,
+    timeout: setTimeout(() => {
+      if (conn.adivinanza[m.chat]) {
+        conn.sendMessage(m.chat, { text: `⏰ Tiempo terminado.\nLa respuesta era: *${adivinanza.respuesta}* 😸` });
+        delete conn.adivinanza[m.chat];
+      }
+    }, 30000)
+  };
 
   await conn.sendMessage(m.chat, {
     text: `❓ *Adivinanza FelixCat* 🐾\n\n${adivinanza.pregunta}\n\n⌛ Tienes 30 segundos para responder.`
   }, { quoted: m });
-
-  setTimeout(() => {
-    if (conn.adivinanza[m.chat]) {
-      conn.sendMessage(m.chat, { text: `⏰ Tiempo terminado.\nLa respuesta era: *${adivinanza.respuesta}* 😸` });
-      delete conn.adivinanza[m.chat];
-    }
-  }, 30000);
 }
 
 handler.before = async (m, { conn }) => {
@@ -57,10 +58,17 @@ handler.before = async (m, { conn }) => {
   const juego = conn.adivinanza[m.chat];
   if (!juego) return;
 
-  if (m.text.toLowerCase().trim() === juego.respuesta.toLowerCase()) {
+  const respuestaUsuario = m.text.toLowerCase().trim();
+  const respuestaCorrecta = juego.respuesta.toLowerCase();
+
+  if (respuestaUsuario === respuestaCorrecta) {
+    clearTimeout(juego.timeout);
     await conn.sendMessage(m.chat, { text: `🎉 ¡Correcto, ${m.pushName}! Era *${juego.respuesta}* 😺` });
     delete conn.adivinanza[m.chat];
+  } else {
+    await conn.sendMessage(m.chat, { text: `❌ Incorrecto, ${m.pushName}. Intenta de nuevo.` });
   }
+
   return true;
 }
 
