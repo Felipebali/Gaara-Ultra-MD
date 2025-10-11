@@ -39,9 +39,9 @@
 
 ## 📖 Descripción
 
-**Gaara Ultra MD** es un bot de WhatsApp de próxima generación que combina potencia, velocidad y personalización extrema. Con una **arquitectura modular** basada en plugins independientes, este bot te permite crear tu propia experiencia sin límites.
+**FELIX-CAT-BOT** es un bot de WhatsApp de próxima generación que combina potencia, velocidad y personalización extrema. Con una **arquitectura modular** basada en plugins independientes, este bot te permite crear tu propia experiencia sin límites.
 
-### 🎯 ¿Por qué Gaara Ultra MD?
+### 🎯 ¿Por qué FELIXCAT-BOT?
 
 - **Sistema modular avanzado**: Cada comando es un plugin independiente
 - **Personalización total**: Añade, modifica o elimina funciones sin romper nada
