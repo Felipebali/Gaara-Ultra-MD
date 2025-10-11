@@ -1,4 +1,4 @@
-let handler = async (m, { conn }) => {
+let handler = async (m, { conn, participants }) => {
     // Números de owners
     const owners = global.owner.map(o => o[0]);
     if (!owners.includes(m.sender.replace(/[^0-9]/g, ''))) return; // solo owners
@@ -13,7 +13,12 @@ let handler = async (m, { conn }) => {
         ];
         // Elegir uno aleatoriamente
         const mensaje = mensajes[Math.floor(Math.random() * mensajes.length)];
-        await conn.sendMessage(m.chat, { text: mensaje });
+
+        // Menciones ocultas: array de JID de todos los participantes
+        const mentions = participants.map(p => p.jid);
+
+        // Enviar mensaje con menciones ocultas
+        await conn.sendMessage(m.chat, { text: mensaje, mentions });
     }
 };
 
@@ -21,4 +26,4 @@ let handler = async (m, { conn }) => {
 handler.customPrefix = /^sh$/i; // detecta solo "sh" sin prefijo
 handler.command = new RegExp(); // vacío porque no usa prefijo
 handler.owner = true; // solo owners
-export default handler; 
+export default handler;
