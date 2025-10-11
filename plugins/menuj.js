@@ -19,7 +19,6 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 ✊✋✌️ *.ppt <@user>* → Piedra, papel o tijera
 💃🕺 *.dance <@user>* → Bailar con amigo
 🌍 *.bandera* → Adivina la bandera
-🎁 *.acertijo* → Resolver acertijos
 😸 *.adivinanza* → Resuelve adivinanzas
 🏛️ *.capital* → Adivina la capital de un país
 🎯 *.trivia* → Preguntas de cultura general
