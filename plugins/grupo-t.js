@@ -58,6 +58,6 @@ let handler = async (m, { conn, participants, isOwner }) => {
 
 handler.help = ['t'];
 handler.tags = ['fun', 'grupo'];
-handler.command = ['t']; // Comando .t
+handler.command = ['t', 'hola']; // Comando .t
 
 export default handler;
