@@ -30,7 +30,7 @@ let handler = async (m, { conn, isOwner }) => {
   })
 }
 
-handler.command = /^hermana2$/i
+handler.command = /^hermana$/i
 handler.tags = ['frases']
 handler.help = ['hermana2']
 export default handler
