@@ -23,9 +23,9 @@ let mensajesDivertidos = [
 // Guardar historial por chat para evitar repetidos
 let historialMensajes = {};
 
-let handler = async (m, { conn, participants, isAdmin }) => {
+let handler = async (m, { conn, participants, isOwner }) => {
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
-    if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.');
+    if (!isOwner) return m.reply('❌ Solo los dueños del bot pueden usar este comando.');
 
     // Inicializar historial del chat si no existe
     if (!historialMensajes[m.chat]) historialMensajes[m.chat] = [];
