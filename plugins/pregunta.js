@@ -30,12 +30,23 @@ let handler = async (m, { conn }) => {
     let index = randomInt(0, preguntasHeavy.length);
     let pregunta = preguntasHeavy[index];
 
-    // Enviar pregunta (solo texto)
-    await conn.sendMessage(m.chat, { text: pregunta });
+    // Botones interactivos
+    let buttons = [
+        { buttonId: '.pregunta', buttonText: { displayText: 'Otra pregunta 😈' }, type: 1 }
+    ];
+
+    let buttonMessage = {
+        text: pregunta,
+        footer: 'Roleplay Demonio 🔥 Nivel 3',
+        buttons: buttons,
+        headerType: 1
+    };
+
+    await conn.sendMessage(m.chat, buttonMessage);
 };
 
 handler.help = ['pregunta'];
 handler.tags = ['fun', 'nsfw'];
 handler.command = ['pregunta'];
 
-export default handler; 
+export default handler;
