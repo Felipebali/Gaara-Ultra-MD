@@ -1,10 +1,10 @@
 import { exec } from 'child_process';
 
 let handler = async (m, { conn }) => {
-  const emoji4 = '🩸';
+  const emoji4 = '🐈‍⬛';
   const msm = '⚠️';
 
-  m.reply(`🐾 *Felix-Cat está preparando su hechizo de actualización...*\n😼 Maullando suavemente...`);
+  m.reply(`🐾 *Felix-Cat está preparando su maullido de actualización...*\n😼 Maullando suavemente...`);
 
   exec('git pull', (err, stdout, stderr) => {
     if (err) {
