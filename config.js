@@ -14,8 +14,10 @@ global.botNumber = '' //Número del bot opcional
 global.owner = [
   ['59898719147', 'Feli', true], // tu número como dueño
   ['59896026646', 'G', true], 
+  ['59892682421', 'Bot', true], 
   ['119069730668723', 'FeliLID', true], // tu LID
-  ['262573496758272', 'GerLID', true] 
+  ['262573496758272', 'GerLID', true], 
+  ['170777177522428', 'BotLID', true] 
 ]
 
 global.mods = []
