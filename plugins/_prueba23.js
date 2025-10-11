@@ -1,10 +1,10 @@
 // plugin avisos.js
-// Avisos de cambios en grupo + comando .avisos toggle solo para admins
+// Avisos de cambios en grupo + comando .avisos toggle solo para admins, sin citar mensaje
 global.groupData = global.groupData || {};
 
 const handler = async (m, { conn, isAdmin, isGroup }) => {
     if (!isGroup) return;
-    if (!isAdmin) return conn.reply(m.chat, '❌ Solo admins pueden usar este comando.', m);
+    if (!isAdmin) return conn.reply(m.chat, '❌ Solo admins pueden usar este comando.');
 
     // Inicializamos la configuración del chat si no existe
     global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {};
@@ -13,7 +13,9 @@ const handler = async (m, { conn, isAdmin, isGroup }) => {
     // Toggle: activa/desactiva avisos
     chatSettings.avisos = !chatSettings.avisos;
     const estado = chatSettings.avisos ? '✅ Activados' : '❌ Desactivados';
-    conn.reply(m.chat, `📢 Avisos ${estado}.`, m);
+    
+    // Informar el estado sin citar mensaje
+    await conn.sendMessage(m.chat, { text: `📢 Avisos ${estado}.` });
 
     global.db.data.chats[m.chat] = chatSettings;
 
