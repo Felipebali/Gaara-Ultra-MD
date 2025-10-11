@@ -1,5 +1,5 @@
 // plugins/shield.js
-// .shield — Detector de INTEGRIDAD DEL GRUPO con nombres limpios
+// .shield — Detector de INTEGRIDAD DEL GRUPO definitivo
 // Owners: +59898719147, +59896026646
 
 const OWNERS = ['59898719147','59896026646'];
@@ -13,7 +13,7 @@ const ANSI = {
   cyan: "\x1b[36m"
 };
 
-// Función segura para obtener nombres, devuelve 'Desconocido' si no hay
+// Función segura para obtener nombres
 async function getNameSafe(conn, id) {
   try {
     if (conn.getName) {
@@ -30,9 +30,12 @@ async function getNameSafe(conn, id) {
 let handler = async (m, { conn, isOwner }) => {
   try {
     const sender = (m.sender||'').replace(/[^0-9]/g,'');
-    const ok = isOwner || OWNERS.includes(sender);
-    if (!ok) return conn.sendMessage(m.chat, { text: "🚫 ACCESO DENEGADO — Solo owners." }, { quoted: null });
-    if (!m.isGroup) return conn.sendMessage(m.chat, { text: "❗ .shield sólo funciona en grupos." }, { quoted: null });
+    if (!(isOwner || OWNERS.includes(sender))) {
+      return conn.sendMessage(m.chat, { text: "🚫 ACCESO DENEGADO — Solo owners." }, { quoted: null });
+    }
+    if (!m.isGroup) {
+      return conn.sendMessage(m.chat, { text: "❗ .shield sólo funciona en grupos." }, { quoted: null });
+    }
 
     const meta = await conn.groupMetadata(m.chat);
     const subject = meta.subject || '(sin nombre)';
@@ -50,19 +53,23 @@ let handler = async (m, { conn, isOwner }) => {
 
     // Admins
     const admins = participants.filter(p => (p.admin || p.isAdmin || p.isSuperAdmin)).map(p => (p.id || p.jid || null)).filter(Boolean);
+
+    // Listado de admins con nombres
     const adminNames = [];
     for (let a of admins) {
       const name = await getNameSafe(conn, a);
       adminNames.push(name);
     }
 
-    // Detectar admins que no estén en OWNERS
-    const unsafeAdmins = admins.filter(a => !OWNERS.includes(a));
+    // Detectar admins NO autorizados (solo fuera de OWNERS)
+    const unsafeAdmins = admins.filter(a => !OWNERS.includes(a.replace(/[^0-9]/g,'')));
     const unsafeNames = [];
     for (let a of unsafeAdmins) {
-      unsafeNames.push(await getNameSafe(conn, a));
+      const name = await getNameSafe(conn, a);
+      unsafeNames.push(name);
     }
 
+    // Preparar reporte
     const report = [];
     report.push("🛡️ *SHIELD — INTEGRIDAD DEL GRUPO* 🛡️");
     report.push(`🏷️ Nombre: ${subject}`);
@@ -92,7 +99,7 @@ let handler = async (m, { conn, isOwner }) => {
     report.push("📝 Nota: este comando *NO* realiza cambios. Solo informa la configuración actual.");
     report.push("🔎 Ejecutado por: owner (modo sigilo)");
 
-    // Log en consola
+    // Consola
     console.log(ANSI.cyan+ANSI.bold+"=== SHIELD — INTEGRIDAD EJECUTADA ==="+ANSI.reset);
     console.log(ANSI.yellow+"Grupo:"+ANSI.reset, subject);
     console.log(ANSI.green+"Admins:"+ANSI.reset, adminNames.join(", "));
