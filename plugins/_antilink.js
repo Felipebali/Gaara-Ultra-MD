@@ -2,12 +2,13 @@
  * Anti-Link FelixCat-Bot - Config Personalizada
  * ✅ Borra cualquier link
  * ✅ Expulsa solo si usuario común envía link de grupo
- * ✅ PERMITE Instagram, TikTok y YouTube
+ * ✅ Permite Instagram, TikTok y YouTube
+ * ✅ Envía aviso de expulsión, sin mencionar al usuario
  */
 
 const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
 const anyLinkRegex = /https?:\/\/[^\s]+/i // Detecta cualquier link
-const allowedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i // ✅ Links permitidos
+const allowedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i // Links permitidos
 const tagallLink = 'https://miunicolink.local/tagall-FelixCat'
 
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
@@ -24,38 +25,28 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     const isAllowedLink = allowedLinks.test(m.text)
     const isTagallLink = m.text.includes(tagallLink)
 
-    // ⛔ No hay link -> no hace nada
+    // No hay link -> no hace nada
     if (!isAnyLink && !isGroupLink && !isTagallLink) return true
 
-    // ✅ Permitir links de Instagram / TikTok / YouTube
+    // Permitir links de Instagram / TikTok / YouTube
     if (isAllowedLink) return true
 
-    const name = m.pushName || m.sender.split('@')[0]
-
     try {
-        // 🗑️ Borra mensaje
+        // Borra el mensaje
         await conn.sendMessage(m.chat, { delete: m.key })
 
-        // 👑 Admins -> solo advertencia
-        if (isAdmin) {
-            await conn.sendMessage(m.chat, { 
-                text: `⚠️ ${name}, recordá que no se permiten links aquí.`
-            })
-            return true
-        }
-
-        // 🚫 Expulsión por link de grupo
+        // Expulsión por link de grupo si no es admin
         if (!isAdmin && isGroupLink) {
             await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
             await conn.sendMessage(m.chat, { 
-                text: `🚫 ${name} fue expulsado por enviar link de grupo.`
+                text: `🚫 Un usuario fue expulsado por enviar un link de grupo.`
             })
             return true
         }
 
-        // ❗ Cualquier otro link se borra
+        // Cualquier otro link se borra y envía aviso
         await conn.sendMessage(m.chat, { 
-            text: `⚠️ ${name}, no se permiten links aquí. Mensaje eliminado.`
+            text: `⚠️ Un link no permitido fue eliminado.`
         })
 
     } catch (e) {
@@ -65,7 +56,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     return true
 }
 
-// ✅ Comando para activar/desactivar Anti-Link
+// Comando para activar/desactivar Anti-Link
 export async function antilinkCommand(m, { conn, isAdmin }) {
     if (!m.isGroup) return
     if (!isAdmin) return m.reply("❌ Solo admins pueden usar este comando.")
