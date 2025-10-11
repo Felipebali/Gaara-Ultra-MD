@@ -4,6 +4,7 @@
  * ✅ Expulsa solo si usuario común envía link de grupo
  * ✅ Permite Instagram, TikTok y YouTube
  * ✅ Envía aviso de expulsión, sin mencionar al usuario
+ * ✅ Mensaje especial para link de tagall
  */
 
 const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
@@ -34,6 +35,14 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     try {
         // Borra el mensaje
         await conn.sendMessage(m.chat, { delete: m.key })
+
+        // Link de tagall -> mensaje especial
+        if (isTagallLink) {
+            await conn.sendMessage(m.chat, { 
+                text: `⚠️ No compartas el link de tagall aquí.`
+            })
+            return true
+        }
 
         // Expulsión por link de grupo si no es admin
         if (!isAdmin && isGroupLink) {
