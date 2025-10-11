@@ -23,18 +23,19 @@ const preguntasTrivia = [
   { pregunta: "¿Qué instrumento mide la temperatura?", opciones: ["A) Barómetro", "B) Termómetro", "C) Higrómetro", "D) Anemómetro"], respuesta: "B" }
 ]
 
-let handler = async (m, { conn, usedPrefix }) => {
+let handler = async (m, { conn }) => {
   if (activeTrivia[m.chat]) return conn.reply(m.chat, "❗ Ya hay una trivia en curso. Espera a que termine.", m)
 
   const pregunta = preguntasTrivia[Math.floor(Math.random() * preguntasTrivia.length)]
   const texto = `🎯 *Trivia de Conocimiento* 🎯\n\n${pregunta.pregunta}\n\n${pregunta.opciones.join('\n')}\n\nResponde con la letra correcta (A, B, C o D).`
 
   await conn.reply(m.chat, texto, m)
-  activeTrivia[m.chat] = { ...pregunta, autor: m.sender }
+  activeTrivia[m.chat] = { ...pregunta }
 
-  setTimeout(() => {
+  // Timeout
+  activeTrivia[m.chat].timeout = setTimeout(() => {
     if (activeTrivia[m.chat]) {
-      conn.reply(m.chat, "⏰ Tiempo agotado. Nadie respondió.", null)
+      conn.reply(m.chat, `⏰ Tiempo agotado. La respuesta correcta era: *${pregunta.respuesta}*.`)
       delete activeTrivia[m.chat]
     }
   }, 30000)
@@ -44,22 +45,20 @@ handler.command = /^trivia$/i
 handler.group = true
 export default handler
 
-// 🔹 Captura todas las respuestas
+// Captura todas las respuestas
 handler.all = async function (m) {
-  const conn = global.conn // 🔥 solución clave: obtiene conexión global del bot
+  const conn = global.conn
   if (!m.text || !activeTrivia[m.chat]) return
   const juego = activeTrivia[m.chat]
 
-  const texto = m.text.trim().toUpperCase()
-  if (!["A", "B", "C", "D"].includes(texto)) return
+  const respuestaUsuario = m.text.trim().toUpperCase()
+  if (!["A", "B", "C", "D"].includes(respuestaUsuario)) return
 
-  // Solo responde si es el mismo jugador o si querés permitir que todos participen, quita esta condición
-  if (m.sender !== juego.autor) return
-
-  if (texto === juego.respuesta) {
-    await conn.reply(m.chat, `✅ ¡Correcto, ${m.pushName || "usuario"}! La respuesta era *${juego.respuesta})*.`, null)
+  if (respuestaUsuario === juego.respuesta) {
+    clearTimeout(juego.timeout)
+    await conn.reply(m.chat, `✅ ¡Correcto, ${m.pushName || "usuario"}! La respuesta era *${juego.respuesta}*.`)
+    delete activeTrivia[m.chat]
   } else {
-    await conn.reply(m.chat, `❌ Incorrecto, ${m.pushName || "usuario"}. La respuesta correcta era *${juego.respuesta})*.`, null)
+    await conn.reply(m.chat, `❌ Incorrecto, ${m.pushName || "usuario"}. Intenta de nuevo.`)
   }
-  delete activeTrivia[m.chat]
 }
