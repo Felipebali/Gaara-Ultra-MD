@@ -11,7 +11,8 @@ let handler = async (m, { conn, participants }) => {
         const mensajes = [
             "🫡 Hola, pueden hacer silencio mi creador esta durmiendo! 😴",
             "😮‍💨 Hagan silencio, gracias! 🥰",
-            "🫎 Cornudos y cornudas hagan caso cierren el orto! 😎"
+            "🫎 Cornudos y cornudas hagan caso cierren el orto! 😎", 
+            "🖕🏻 No se callan ni por casualidad manga de giles 🫠" 
         ];
 
         // Elegir un índice aleatorio que no sea igual al último
