@@ -7,21 +7,24 @@ let handler = async (m, { conn }) => {
         return m.reply('🐉 El contenido *NSFW* está desactivado en este grupo.\n> Solo el OWNER puede activarlo con el comando » *.nsfw*');
     }
 
+    // Determinar a quién se refiere
     let who;
-    if (m.mentionedJid.length > 0) who = m.mentionedJid[0];
+    if (m.mentionedJid && m.mentionedJid.length > 0) who = m.mentionedJid[0];
     else if (m.quoted) who = m.quoted.sender;
     else who = m.sender;
 
-    let name = conn.getName(who);
-    let name2 = conn.getName(m.sender);
+    // Obtener nombres
+    let nameTarget = await conn.getName(who);   // Nombre del usuario mencionado o citado
+    let nameSender = await conn.getName(m.sender); // Nombre de quien envía el mensaje
 
+    // Construir mensaje
     let str;
-    if (m.mentionedJid.length > 0) {
-        str = `\`${name2}\` *está haciendo un 69 con* \`${name || who}\`.`;
+    if (m.mentionedJid && m.mentionedJid.length > 0) {
+        str = `*${nameSender}* está haciendo un 69 con *${nameTarget}*`;
     } else if (m.quoted) {
-        str = `\`${name2}\` *hizo un 69 con* \`${name || who}\`.`;
+        str = `*${nameSender}* hizo un 69 con *${nameTarget}*`;
     } else {
-        str = `\`${name2}\` *está haciendo un 69! >.<*`.trim();
+        str = `*${nameSender}* está haciendo un 69! >.<`;
     }
 
     if (m.isGroup) {
@@ -37,8 +40,14 @@ let handler = async (m, { conn }) => {
             'https://telegra.ph/file/1083c19087f6997ec8095.mp4'
         ];
         const video = videos[Math.floor(Math.random() * videos.length)];
-        let mentions = [who];
-        conn.sendMessage(m.chat, { video: { url: video }, gifPlayback: true, caption: str, mentions }, { quoted: m });
+
+        // Las menciones deben ser el JID, pero el texto muestra el nombre
+        const mentions = [who];
+        await conn.sendMessage(
+            m.chat, 
+            { video: { url: video }, gifPlayback: true, caption: str, mentions }, 
+            { quoted: m }
+        );
     }
 };
 
