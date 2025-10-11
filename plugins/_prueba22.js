@@ -1,5 +1,5 @@
 // plugins/shield.js
-// .shield — Detector de INTEGRIDAD DEL GRUPO (no analiza mensajes)
+// .shield — Detector de INTEGRIDAD DEL GRUPO con nombres
 // Owners: +59898719147, +59896026646
 // - Informa: nombre, descripción, foto (si existe), miembros, admins, permisos críticos
 // - Señala admins que NO están en la lista de owners (posible vulnerabilidad)
@@ -15,6 +15,17 @@ const ANSI = {
   yellow: "\x1b[33m",
   cyan: "\x1b[36m"
 };
+
+// Función segura para obtener nombres
+async function getNameSafe(conn, id) {
+  try {
+    if (conn.getName) return await conn.getName(id);
+    if (conn.contacts && conn.contacts[id]) return conn.contacts[id].name || id;
+    return id;
+  } catch {
+    return id;
+  }
+}
 
 let handler = async (m, { conn, isOwner }) => {
   try {
@@ -36,50 +47,45 @@ let handler = async (m, { conn, isOwner }) => {
     const desc = (meta.desc && meta.desc.toString && meta.desc.toString()) || meta.desc || '(sin descripción)';
     const owner = (meta.owner || meta.creator || '').replace(/[^0-9]/g,'') || null;
 
-    // Intentar obtener foto del grupo (varias APIs usan distintos métodos)
+    // Foto del grupo
     let photo;
     try {
-      if (conn.profilePictureUrl) {
-        photo = await conn.profilePictureUrl(m.chat).catch(()=>null);
-      } else if (conn.getProfilePicture) {
-        photo = await conn.getProfilePicture(m.chat).catch(()=>null);
-      } else {
-        photo = null;
-      }
-    } catch(e){
-      photo = null;
-    }
+      if (conn.profilePictureUrl) photo = await conn.profilePictureUrl(m.chat).catch(()=>null);
+      else if (conn.getProfilePicture) photo = await conn.getProfilePicture(m.chat).catch(()=>null);
+      else photo = null;
+    } catch(e){ photo = null; }
     const photoLabel = photo ? "✅ Foto de grupo disponible" : "— Sin foto de grupo";
 
     // Participantes y admins
     const participants = meta.participants || [];
     const totalMembers = participants.length;
-    const admins = participants.filter(p => (p.admin === 'admin' || p.admin === 'superadmin' || p.isAdmin || p.isSuperAdmin || p.admin)).map(p => (p.id || p.jid || p).toString());
+    const admins = participants.filter(p => (p.admin === 'admin' || p.admin === 'superadmin' || p.isAdmin || p.isSuperAdmin || p.admin))
+      .map(p => (p.id || p.jid || p).toString());
     const adminCount = admins.length;
 
-    // Permisos críticos (varían entre implementaciones: announce/restrict/onlyAdmins can send/change)
-    // Comprobamos varios campos comunes y damos un diagnóstico conservador.
-    const announce = typeof meta.announce !== 'undefined' ? !!meta.announce : (typeof meta.announce === 'undefined' ? null : !!meta.announce);
+    // Permisos críticos
+    const announce = typeof meta.announce !== 'undefined' ? !!meta.announce : null;
     const restrict = typeof meta.restrict !== 'undefined' ? !!meta.restrict : null;
-    // Algunas implementaciones usan `msgSend` / `onlyAdmins` / `groupSetting` - comprobamos de forma defensiva:
-    const onlyAdminsCanSend = (announce === true); // si announce==true en muchas libs => solo admins envían mensajes
-    const onlyAdminsCanEditInfo = (restrict === true); // si restrict==true => solo admins pueden cambiar info
+    const onlyAdminsCanSend = announce === true;
+    const onlyAdminsCanEditInfo = restrict === true;
 
-    // Detectar admins que no estén en OWNERS (posible riesgo)
-    const unsafeAdmins = admins
-      .map(a => a.replace(/[^0-9]/g,''))
-      .filter(id => id && !OWNERS.includes(id));
+    // Detectar admins que no estén en OWNERS
+    const unsafeAdmins = admins.map(a => a.replace(/[^0-9]/g,'')).filter(id => id && !OWNERS.includes(id));
 
-    // Preparar listado legible de admins (nombres cuando sea posible)
+    // Preparar listado legible de admins
     const adminNames = [];
     for (let a of admins.slice(0,20)) {
       const clean = (a||'').replace(/[^0-9]/g,'');
-      try {
-        const n = await (conn.getName ? conn.getName(clean) : Promise.resolve(clean));
-        adminNames.push(`${n} (${clean})`);
-      } catch {
-        adminNames.push(clean);
-      }
+      const name = await getNameSafe(conn, clean);
+      adminNames.push(`${name} (${clean})`);
+    }
+
+    // Preparar listado legible de admins no autorizados
+    const unsafeNames = [];
+    for (let i = 0; i < Math.min(unsafeAdmins.length, 20); i++) {
+      const id = unsafeAdmins[i];
+      const name = await getNameSafe(conn, id);
+      unsafeNames.push(`${name} (${id})`);
     }
 
     // Preparar reporte
@@ -99,13 +105,7 @@ let handler = async (m, { conn, isOwner }) => {
     if (owner) lines.push(`• Owner del grupo: ${owner}`);
     lines.push("");
 
-    if (unsafeAdmins.length) {
-      // obtener nombres para los admins no autorizados (máx 8)
-      const unsafeNames = [];
-      for (let i = 0; i < Math.min(unsafeAdmins.length, 8); i++) {
-        const id = unsafeAdmins[i];
-        try { unsafeNames.push(await conn.getName(id)); } catch { unsafeNames.push(id); }
-      }
+    if (unsafeNames.length) {
       lines.push("⚠️ Vulnerabilidad detectada: Admins NO autorizados");
       lines.push(unsafeNames.join("\n"));
       lines.push("");
@@ -118,7 +118,7 @@ let handler = async (m, { conn, isOwner }) => {
     lines.push("📝 Nota: este comando *NO* realiza cambios. Solo informa la configuración actual.");
     lines.push("🔎 Ejecutado por: owner (modo sigilo)");
 
-    // Log en consola con ANSI
+    // Log en consola
     console.log(ANSI.cyan + ANSI.bold + "=== SHIELD — INTEGRIDAD EJECUTADA ===" + ANSI.reset);
     console.log(ANSI.yellow + "Grupo:" + ANSI.reset, subject);
     console.log(ANSI.green + "Admins (muestra parcial):" + ANSI.reset, adminNames.slice(0,8));
