@@ -13,11 +13,11 @@ let handler = async (m, { conn }) => {
     else if (m.quoted) who = m.quoted.sender;
     else who = m.sender;
 
-    // Obtener nombres
-    let nameTarget = await conn.getName(who);   // Nombre del usuario mencionado o citado
-    let nameSender = await conn.getName(m.sender); // Nombre de quien envía el mensaje
+    // Obtener nombres, fallback si no encuentra nombre
+    let nameTarget = (await conn.getName(who)) || who.split('@')[0];
+    let nameSender = (await conn.getName(m.sender)) || m.sender.split('@')[0];
 
-    // Construir mensaje
+    // Construir mensaje usando nombres
     let str;
     if (m.mentionedJid && m.mentionedJid.length > 0) {
         str = `*${nameSender}* está haciendo un 69 con *${nameTarget}*`;
@@ -41,11 +41,12 @@ let handler = async (m, { conn }) => {
         ];
         const video = videos[Math.floor(Math.random() * videos.length)];
 
-        // Las menciones deben ser el JID, pero el texto muestra el nombre
+        // Menciones: siempre el JID, el texto muestra el nombre
         const mentions = [who];
+
         await conn.sendMessage(
-            m.chat, 
-            { video: { url: video }, gifPlayback: true, caption: str, mentions }, 
+            m.chat,
+            { video: { url: video }, gifPlayback: true, caption: str, mentions },
             { quoted: m }
         );
     }
