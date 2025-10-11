@@ -48,7 +48,7 @@ async function handler(m, { conn: stars, usedPrefix }) {
 ${listado}`.trim();
   }
 
-  const imageUrl = 'https://files.catbox.moe/sq6q0q.jpg'; // Cambia si quieres
+  const imageUrl = 'https://files.catbox.moe/in2ou9.jpg'; // Cambia si quieres
 
   const fkontak = {
     key: { participants: "0@s.whatsapp.net", remoteJid: "status@broadcast", fromMe: false, id: "Halo" },
