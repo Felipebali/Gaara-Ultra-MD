@@ -39,7 +39,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
         // Link de tagall -> mensaje especial
         if (isTagallLink) {
             await conn.sendMessage(m.chat, { 
-                text: `⚠️ No compartas el link de tagall aquí.`
+                text: `Qué compartís el tagall inútil 😮‍💨`
             })
             return true
         }
