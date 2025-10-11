@@ -1,3 +1,6 @@
+// Variable para guardar el último mensaje usado
+let lastShIndex = -1;
+
 let handler = async (m, { conn, participants }) => {
     // Números de owners
     const owners = global.owner.map(o => o[0]);
@@ -5,14 +8,20 @@ let handler = async (m, { conn, participants }) => {
 
     // Comando sin prefijo: "sh"
     if (m.text && m.text.toLowerCase() === 'sh') {
-        // Mensajes que quieras que el bot diga
         const mensajes = [
             "🫡 Hola, pueden hacer silencio mi creador esta durmiendo! 😴",
             "😮‍💨 Hagan silencio, gracias! 🥰",
             "🫎 Cornudos y cornudas hagan caso cierren el orto! 😎"
         ];
-        // Elegir uno aleatoriamente
-        const mensaje = mensajes[Math.floor(Math.random() * mensajes.length)];
+
+        // Elegir un índice aleatorio que no sea igual al último
+        let index;
+        do {
+            index = Math.floor(Math.random() * mensajes.length);
+        } while (index === lastShIndex);
+        lastShIndex = index; // guardar el índice actual
+
+        const mensaje = mensajes[index];
 
         // Menciones ocultas: array de JID de todos los participantes
         const mentions = participants.map(p => p.jid);
