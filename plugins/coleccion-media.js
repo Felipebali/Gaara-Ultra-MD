@@ -1,56 +1,87 @@
-// plugins/coleccion-media.js
+// plugins/collect-media.js
 import fs from 'fs';
 import path from 'path';
+import { downloadContentFromMessage } from '@whiskeysockets/baileys';
 
 const mediaFolder = './media';
+const mediaJson = './media.json';
 if (!fs.existsSync(mediaFolder)) fs.mkdirSync(mediaFolder);
 
+function saveMediaJson(data) {
+  try { fs.writeFileSync(mediaJson, JSON.stringify(data, null, 2)) }
+  catch (e) { console.error('Error escribiendo media.json', e) }
+}
+
 export async function all(m, { conn }) {
-    try {
-        // Validar que haya mensaje con media
-        const msgType = Object.keys(m.message || {}).find(k => k.endsWith('Message'));
-        if (!msgType) return;
+  try {
+    // solo en grupos
+    if (!m.isGroup) return;
 
-        // Solo guardar ciertos tipos
-        const allowedTypes = ['image', 'video', 'document', 'audio'];
-        if (!allowedTypes.some(t => msgType.toLowerCase().includes(t))) return;
+    const msgType = Object.keys(m.message || {}).find(k => k.endsWith('Message'));
+    if (!msgType) return;
 
-        // Descargar media
-        const media = await conn.downloadMediaMessage(m, 'buffer', {}, {
-            logger: console,
-            reuploadRequest: conn.waUploadToServer
-        });
+    // tipos manejados
+    const allowed = ['imageMessage','videoMessage','documentMessage','audioMessage'];
+    if (!allowed.includes(msgType)) return;
 
-        // Definir extensión según tipo
-        let extension = 'dat';
-        if (msgType.includes('image')) extension = 'jpg';
-        if (msgType.includes('video')) extension = 'mp4';
-        if (msgType.includes('document')) extension = m.message.documentMessage?.fileName?.split('.').pop() || 'dat';
-        if (msgType.includes('audio')) extension = 'mp3';
+    // descargar stream y armar buffer
+    const stream = await downloadContentFromMessage(m.message[msgType], msgType.replace('Message',''));
+    let buffer = Buffer.from([]);
+    for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
 
-        const filename = `media_${Date.now()}.${extension}`;
-        const filepath = path.join(mediaFolder, filename);
+    // extension por tipo
+    let ext = 'dat';
+    if (msgType.includes('image')) ext = 'jpg';
+    if (msgType.includes('video')) ext = 'mp4';
+    if (msgType.includes('audio')) ext = 'mp3';
+    if (msgType.includes('document')) ext = m.message.documentMessage?.fileName?.split('.').pop() || 'dat';
 
-        fs.writeFileSync(filepath, media);
+    const filename = `media_${Date.now()}.${ext}`;
+    const filepath = path.join(mediaFolder, filename);
+    fs.writeFileSync(filepath, buffer);
 
-        // Inicializar sección media si no existe
-        if (!global.db.data.media) global.db.data.media = {};
-        if (!global.db.data.media[m.sender]) global.db.data.media[m.sender] = {};
+    // crear estructura si no existe
+    if (!global.db) global.db = { data: {} }
+    if (!global.db.data) global.db.data = {}
+    if (!global.db.data.media) global.db.data.media = {}
+    if (!global.db.data.mediaList) global.db.data.mediaList = []
 
-        // Guardar último media por usuario
-        global.db.data.media[m.sender][msgType.replace('Message','')] = {
-            filename,
-            date: new Date(),
-            chat: m.chat,
-            fromGroup: m.isGroup || false
-        };
-
-        // Guardar media.json automáticamente
-        fs.writeFileSync('./media.json', JSON.stringify(global.db.data.media, null, 2));
-
-        console.log(`✅ Media guardada: ${filename} | Usuario: ${m.sender} | Grupo: ${m.isGroup}`);
-
-    } catch (e) {
-        console.error('❌ Error guardando media:', e);
+    // entrada resumen por usuario (compatible con tu formato anterior)
+    if (!global.db.data.media[m.sender]) global.db.data.media[m.sender] = {}
+    global.db.data.media[m.sender][msgType.replace('Message','')] = {
+      filename,
+      date: (new Date()).toISOString(),
+      chat: m.chat,
+      fromGroup: true
     }
+
+    // lista global (cada item con id para pedirlo luego)
+    const id = global.db.data.mediaList.length // id incremental (0,1,2...)
+    const entry = {
+      id,
+      filename,
+      path: filepath,
+      from: m.sender,
+      groupId: m.chat,
+      // intentar nombre del grupo si está en metadata
+      groupName: (m.isGroup && conn.chats[m.chat]?.name) || null,
+      type: msgType.replace('Message',''),
+      date: (new Date()).toISOString()
+    }
+    global.db.data.mediaList.push(entry)
+
+    // persistir media.json (solo la parte de media para compatibilidad)
+    try {
+      saveMediaJson(global.db.data.media)
+    } catch(e){ console.error(e) }
+
+    // opcional: persistir db completa si quieres (a tu criterio)
+    try {
+      fs.writeFileSync('./database.json', JSON.stringify(global.db.data, null, 2))
+    } catch (e) {}
+
+    console.log(`✅ Media guardada: ${filename} | id: ${id} | from: ${m.sender} | group: ${entry.groupName || entry.groupId}`);
+  } catch (e) {
+    console.error('❌ Error guardando media:', e);
+  }
 }
