@@ -12,8 +12,8 @@ export async function before(m, { conn }) {
     if (!chat.antiLink2) return true
 
     const who = m.sender
-    const name = await conn.getName(who)  // ✅ Obtenemos el nombre
-    const mention = `@${who.split("@")[0]}` // La mención para que WhatsApp pinguee al usuario
+    const name = await conn.getName(who)  // ✅ Nombre real
+    const mentions = [who]                 // ✅ Para que WhatsApp haga la mención real
 
     const isIG = IG_REGEX.test(m.text)
     const isTT = TT_REGEX.test(m.text)
@@ -21,16 +21,13 @@ export async function before(m, { conn }) {
 
     if (isIG || isTT || isYT) {
         try {
-            // Borra el mensaje
             await conn.sendMessage(m.chat, { delete: m.key })
 
-            // Frases distintas según sea admin o no
             let msg = m.isAdmin
-                ? `${mention} (${name}), admin, nada de Instagram, TikTok ni YouTube aquí`
-                : `${mention} (${name}), nada de Instagram, TikTok ni YouTube aquí`
+                ? `${name}, admin, nada de Instagram, TikTok ni YouTube aquí`
+                : `${name}, nada de Instagram, TikTok ni YouTube aquí`
 
-            // Envía aviso
-            await conn.sendMessage(m.chat, { text: msg })
+            await conn.sendMessage(m.chat, { text: msg, mentions })
         } catch(e){
             console.error("Error en antilink2:", e)
         }
