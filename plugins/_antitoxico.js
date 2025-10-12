@@ -2,9 +2,9 @@
 import fs from 'fs';
 import path from 'path';
 
-let toxicWords = ['tonto','idiota','estúpido','burro','feo','mierda','gil']; // palabras ofensivas
+// Lista de palabras ofensivas
+let toxicWords = ['tonto','idiota','estúpido','burro','feo','mierda','gil'];
 
-// --- Handler para detectar lenguaje tóxico ---
 let handler = async (m, { conn }) => {
     if (!m.text) return; // solo textos
     const chat = global.db.data.chats[m.chat] || {};
@@ -14,14 +14,14 @@ let handler = async (m, { conn }) => {
     const found = toxicWords.find(word => text.includes(word));
     if (!found) return; // si no encontró nada, no hace nada
 
-    let who = m.sender; // usuario que envió el mensaje
+    let who = m.sender;
     let userMention = `@${who.split("@")[0]}`;
 
-    // Mensaje de aviso
+    // Mensaje de advertencia
     let response = `⚠️ ${userMention}, cuidado con tu lenguaje, no se permiten insultos en este grupo.`;
 
-    // Enviar aviso con mención
     try {
+        // Enviar aviso con mención
         await conn.sendMessage(m.chat, { text: response, mentions: [who] });
         // Opcional: borrar mensaje tóxico
         // await conn.sendMessage(m.chat, { delete: m.key });
@@ -30,7 +30,7 @@ let handler = async (m, { conn }) => {
     }
 };
 
-// --- Comando para activar/desactivar AntiTóxico ---
+// Comando para activar/desactivar AntiTóxico
 export async function antitoxicoCommand(m, { conn, isAdmin }) {
     if (!m.isGroup) return;
     if (!isAdmin) return m.reply("❌ Solo los admins pueden usar este comando.");
@@ -41,14 +41,14 @@ export async function antitoxicoCommand(m, { conn, isAdmin }) {
     chat.antitoxico = !chat.antitoxico;
 
     await conn.sendMessage(m.chat, {
-        text: `✅ Anti-Tóxico ahora está *${chat.antitoxico ? "activado" : "desactivado"}* en este grupo.`
+        text: `✅ Anti-Tóxico ahora está *${chat.antitoxico ? "activado" : "desactivado"}* para *todos los miembros del grupo*, incluyendo admins.`
     });
 }
 
-// --- Configuración del handler ---
+// Configuración del handler
 handler.help = ['antitoxico'];
 handler.tags = ['mod'];
-handler.command = ['antitoxico']; // se puede usar como toggle
+handler.command = ['antitoxico'];
 handler.group = true;
 
-export default handler; 
+export default handler;
