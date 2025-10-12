@@ -1,4 +1,9 @@
 // plugins/_welcome.js
+/**
+ * Welcome minimalista para FelixCat-Bot
+ * Solo menciona al usuario que entra, sin paréntesis ni nombres extra
+ */
+
 export async function onGroupUpdate({ update, conn }) {
     const { participants, action, id: chat } = update;
     if (!participants || !participants.length) return;
@@ -8,13 +13,9 @@ export async function onGroupUpdate({ update, conn }) {
 
     // Aseguramos que exista la data del chat
     if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
-    const chatData = global.db.data.chats[chat];
-
-    // Si no quieres depender de la activación, comenta esta línea
-    // if (!chatData.welcome) return;
 
     for (let user of participants) {
-        const who = user;
+        const who = user; // Número del participante
 
         const welcomeMessages = [
             `🎉 Bienvenido/a @${who.split("@")[0]} al grupo! Disfruta tu estadía.`,
@@ -26,7 +27,7 @@ export async function onGroupUpdate({ update, conn }) {
 
         await conn.sendMessage(chat, {
             text,
-            mentions: [who] // Solo la mención, nada de paréntesis
+            mentions: [who] // Solo la mención
         });
     }
 }
