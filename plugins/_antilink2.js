@@ -1,10 +1,6 @@
-/**
- * Anti-Link2 FelixCat-Bot - Borra IG, TikTok y YouTube con mención
- */
-
+// plugins/antilink2.js
 const blockedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i
 
-// Función que corre antes de cada mensaje
 export async function before(m, { conn, isBotAdmin }) {
   if (!m?.text) return true
   if (m.isBaileys && m.fromMe) return true
@@ -12,19 +8,15 @@ export async function before(m, { conn, isBotAdmin }) {
   if (!isBotAdmin) return true
 
   const chat = global.db?.data?.chats?.[m.chat]
-  if (!chat?.antiLink2) return true // activado con .antilink2
+  if (!chat?.antiLink2) return true
 
   const who = m.sender
   const mentions = [who]
 
-  const isBlockedLink = blockedLinks.test(m.text)
-  if (!isBlockedLink) return true
+  if (!blockedLinks.test(m.text)) return true
 
   try {
-    // Borra el mensaje
     await conn.sendMessage(m.chat, { delete: m.key })
-
-    // Mensaje de aviso con mención
     await conn.sendMessage(m.chat, {
       text: `⚠️ @${who.split('@')[0]}, ese link de Instagram, TikTok o YouTube no está permitido.`,
       mentions
@@ -36,19 +28,22 @@ export async function before(m, { conn, isBotAdmin }) {
   return true
 }
 
-// Comando para activar/desactivar Anti-Link2
-export const antilink2Command = {
-  command: ['antilink2'],
-  desc: 'Activa o desactiva el Anti-Link para IG, TikTok y YouTube',
-  group: true,
-  admin: true, // solo admins pueden activar/desactivar
-  async handler(m, { conn }) {
-    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
-    const chat = global.db.data.chats[m.chat]
-    chat.antiLink2 = !chat.antiLink2
+// Comando .antilink2
+export const handler = async (m, { conn, isAdmin }) => {
+  if (!m.isGroup) return
+  if (!isAdmin) return m.reply("❌ Solo admins pueden usar este comando.")
 
-    await conn.sendMessage(m.chat, { 
-      text: `✅ Anti-Link2 ahora está *${chat.antiLink2 ? "activado" : "desactivado"}*.`
-    })
-  }
+  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
+  const chat = global.db.data.chats[m.chat]
+
+  chat.antiLink2 = !chat.antiLink2
+
+  await conn.sendMessage(m.chat, { 
+    text: `✅ Anti-Link2 ahora está *${chat.antiLink2 ? "activado" : "desactivado"}*.`
+  })
 }
+
+handler.command = ['antilink2']
+handler.group = true
+handler.admin = true
+export default handler
