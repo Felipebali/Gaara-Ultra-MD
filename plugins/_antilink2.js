@@ -27,12 +27,12 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
         // Mensaje según si es admin o no
         if (isAdmin) {
             await conn.sendMessage(m.chat, {
-                text: `⚠️ @${who.split("@")[0]} (${name}), admin, nada de Instagram, TikTok ni YouTube aquí.`,
+                text: `⚠️ @${who.split("@")[0]}, admin, nada de Instagram, TikTok ni YouTube aquí.`,
                 mentions: [who]
             })
         } else {
             await conn.sendMessage(m.chat, {
-                text: `⚠️ @${who.split("@")[0]} (${name}), ese link quedó borrado porque molesta.`,
+                text: `⚠️ @${who.split("@")[0]}, ese link quedó borrado porque molesta.`,
                 mentions: [who]
             })
         }
