@@ -1,6 +1,9 @@
 import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
-let handler = async (m, { conn }) => {
+let handler = async (m, { conn, isOwner }) => {
+    // Solo owner
+    if (!isOwner) return m.reply('⛔ Este comando es exclusivo del *Owner* del bot.')
+
     try {
         if (!m.quoted) return m.reply('⚠️ Responde a una imagen o video de *visualización única* (view once).')
 
@@ -10,12 +13,12 @@ let handler = async (m, { conn }) => {
 
         if (!media.viewOnce) return m.reply('❌ Ese mensaje no es de *view once*.')
         
-        // Descargar contenido
+        // Descargar el contenido
         let stream = await downloadContentFromMessage(media, type.includes('image') ? 'image' : 'video')
         let buffer = Buffer.from([])
         for await (let chunk of stream) buffer = Buffer.concat([buffer, chunk])
 
-        // Enviar media sin restricciones
+        // Enviar media removiendo view once
         if (type.includes('image')) {
             await conn.sendMessage(m.chat, { image: buffer, caption: media.caption || '' }, { quoted: m })
         } else if (type.includes('video')) {
@@ -32,6 +35,6 @@ let handler = async (m, { conn }) => {
 
 handler.command = ['viewonce', 'vo', 'ver']
 handler.help = ['viewonce']
-handler.tags = ['tools']
+handler.tags = ['owner'] // Queda en menú owner
 
 export default handler
