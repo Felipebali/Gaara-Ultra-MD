@@ -1,26 +1,36 @@
-const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+// plugins/viewonce.js
+import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
-async function viewonceCommand(sock, chatId, message) {
-    // Extract quoted imageMessage or videoMessage from your structure
-    const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    const quotedImage = quoted?.imageMessage;
-    const quotedVideo = quoted?.videoMessage;
+let handler = async (m, { conn, isOwner, isAdmin }) => {
+    try {
+        if (!isOwner && !isAdmin) return m.reply('❌ Solo owner o admins pueden usar esto.')
+        if (!m.quoted) return m.reply('⚠️ Responde a una foto o video de *ViewOnce*.')
 
-    if (quotedImage && quotedImage.viewOnce) {
-        // Download and send the image
-        const stream = await downloadContentFromMessage(quotedImage, 'image');
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-        await sock.sendMessage(chatId, { image: buffer, fileName: 'media.jpg', caption: quotedImage.caption || '' }, { quoted: message });
-    } else if (quotedVideo && quotedVideo.viewOnce) {
-        // Download and send the video
-        const stream = await downloadContentFromMessage(quotedVideo, 'video');
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-        await sock.sendMessage(chatId, { video: buffer, fileName: 'media.mp4', caption: quotedVideo.caption || '' }, { quoted: message });
-    } else {
-        await sock.sendMessage(chatId, { text: '❌ Please reply to a view-once image or video.' }, { quoted: message });
+        const quotedMsg = m.quoted?.message?.viewOnceMessage
+        if (!quotedMsg) return m.reply('❌ Ese mensaje no es ViewOnce.')
+
+        const innerMsg = quotedMsg.message
+        const type = Object.keys(innerMsg)[0] // imageMessage o videoMessage
+        const media = innerMsg[type]
+
+        const stream = await downloadContentFromMessage(media, type.includes('image') ? 'image' : 'video')
+        let buffer = Buffer.from([])
+        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
+
+        await conn.sendMessage(m.chat,
+            type.includes('image')
+                ? { image: buffer, caption: media.caption || '' }
+                : { video: buffer, caption: media.caption || '' },
+            { quoted: m }
+        )
+
+    } catch (e) {
+        console.error('Error viewonce:', e)
+        m.reply('❌ Error al procesar el contenido ViewOnce.')
     }
 }
 
-module.exports = viewonceCommand; 
+handler.command = ['viewonce', 'vo', 'ver']
+handler.tags = ['tools']
+
+export default handler
