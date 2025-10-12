@@ -1,29 +1,36 @@
-// plugins/viewonce.js
-import { downloadContentFromMessage } from '@whiskeysockets/baileys'
+import { downloadContentFromMessage, proto } from '@whiskeysockets/baileys'
 
 let handler = async (m, { conn, isAdmin, isOwner }) => {
     try {
-        if (!m.quoted) return m.reply('⚠️ Responde a un mensaje *ViewOnce* (foto o video) para usar este comando.')
+        if (!m.quoted) return m.reply('⚠️ Responde a una foto o video de visualización única (ViewOnce).')
 
-        const msg = await m.getQuotedObj()
-        const type = Object.keys(msg.message)[0]
-        const media = msg.message[type]
+        let msg = await m.getQuotedObj()
+        let type = Object.keys(msg.message)[0]
+        let media
 
-        if (!media.viewOnce) return m.reply('❌ Ese mensaje no es de *ViewOnce*.')
+        if (msg.message.viewOnceMessage) {
+            // Extraemos la media real del viewOnce
+            media = msg.message.viewOnceMessage.message[type.replace('ViewOnceMessage', '')]
+        } else {
+            media = msg.message[type]
+        }
 
-        // Descargar contenido
-        const stream = await downloadContentFromMessage(media, type.includes('image') ? 'image' : 'video')
+        if (!media || !media.viewOnce) return m.reply('❌ Ese mensaje no es de ViewOnce.')
+
+        // Determinamos si es imagen o video
+        let mediaType = type.includes('image') ? 'image' : type.includes('video') ? 'video' : null
+        if (!mediaType) return m.reply('❌ Solo funciona con fotos o videos ViewOnce.')
+
+        // Descargamos el contenido
+        const stream = await downloadContentFromMessage(media, mediaType)
         let buffer = Buffer.from([])
         for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
 
-        // Enviar media sin restricciones
-        if (type.includes('image')) {
-            await conn.sendMessage(m.chat, { image: buffer, caption: media.caption || '' }, { quoted: m })
-        } else if (type.includes('video')) {
-            await conn.sendMessage(m.chat, { video: buffer, caption: media.caption || '' }, { quoted: m })
-        } else {
-            return m.reply('❌ Solo funciona con fotos o videos ViewOnce.')
-        }
+        // Enviamos media
+        await conn.sendMessage(m.chat, mediaType === 'image'
+            ? { image: buffer, caption: media.caption || '' }
+            : { video: buffer, caption: media.caption || '' }, 
+            { quoted: m })
 
     } catch (e) {
         console.error(e)
@@ -31,11 +38,7 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
     }
 }
 
-handler.command = ['viewonce','vo','ver']
+handler.command = ['viewonce', 'vo', 'ver']
 handler.tags = ['tools']
-
-// Opcional: permitir solo admins o owners
-handler.admin = true // true = solo admins pueden usarlo
-handler.owner = true // true = solo owners pueden usarlo
-
+handler.owner = true // solo owner y admin podés agregar un check adicional si querés
 export default handler
