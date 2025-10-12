@@ -19,7 +19,7 @@ export async function onGroupUpdate({ update, conn }) {
 
         await conn.sendMessage(chat, {
             text,
-            mentions: [who]
+            mentions: [who] // Solo la mención, nada de paréntesis
         });
     }
 }
