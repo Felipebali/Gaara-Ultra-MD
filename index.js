@@ -2,12 +2,22 @@
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1'
 import './config.js'
 import { setupMaster, fork } from 'cluster'
-import { watchFile, unwatchFile } from 'fs'
 import { createRequire } from 'module'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { platform } from 'process'
 import * as ws from 'ws'
-import fs, { readdirSync, statSync, unlinkSync, existsSync, mkdirSync, readFileSync, rmSync, watch } from 'fs'
+import fs, { 
+  watchFile, 
+  unwatchFile, 
+  readdirSync, 
+  statSync, 
+  unlinkSync, 
+  existsSync, 
+  mkdirSync, 
+  readFileSync, 
+  rmSync, 
+  watch 
+} from 'fs'
 import yargs from 'yargs'
 import { spawn, execSync } from 'child_process'
 import lodash from 'lodash'
@@ -116,7 +126,7 @@ if (!/^[1-2]$/.test(opcion)) {
 console.log(chalk.bold.redBright(`⚠︎ No se permiten numeros que no sean 1 o 2, tampoco letras o símbolos especiales.`))
 }} while (opcion !== '1' && opcion !== '2' || fs.existsSync(`./${vegetasessions}/creds.json`))
 } 
-
+ 
 const filterStrings = [
 "Q2xvc2luZyBzdGFsZSBvcGVu", // "Closing stable open"
 "Q2xvc2luZyBvcGVuIHNlc3Npb24=", // "Closing open session"
@@ -211,48 +221,7 @@ const possibleLid = contactDetails[0].lid.split("@")[0]
 if (possibleLid === lidToFind) {
 lidCache.set(lidJid, participant.jid)
 return participant.jid
-}} catch (e) {
-continue
-}}
-lidCache.set(lidJid, lidJid)
-return lidJid
-} catch (e) {
-attempts++
-if (attempts >= maxRetries) {
-lidCache.set(lidJid, lidJid)
-return lidJid
-}
-await new Promise(resolve => setTimeout(resolve, retryDelay))
-}}
-return lidJid
-}
-
-async function extractAndProcessLids(text, groupJid) {
-if (!text) return text
-const lidMatches = text.match(/\d+@lid/g) || []
-let processedText = text
-for (const lid of lidMatches) {
-try {
-const realJid = await resolveLidToRealJid(lid, groupJid);
-processedText = processedText.replace(new RegExp(lid, 'g'), realJid)
-} catch (e) {
-console.error(`■Error procesando LID⚡ ${lid}:`, e)
-}}
-return processedText
-}
-
-async function processLidsInMessage(message, groupJid) {
-if (!message || !message.key) return message
-try {
-const messageCopy = {
-key: {...message.key},
-message: message.message ? {...message.message} : undefined,
-...(message.quoted && {quoted: {...message.quoted}}),
-...(message.mentionedJid && {mentionedJid: [...message.mentionedJid]})
-}
-const remoteJid = messageCopy.key.remoteJid || groupJid
-if (messageCopy.key?.participant?.endsWith('@lid')) { messageCopy.key.participant = await resolveLidToRealJid(messageCopy.key.participant, remoteJid) }
-if (messageCopy.message?.extendedTextMessage?.contextInfo?.participant?.endsWith('@lid')) { messageCopy.message.extendedTextMessage.contextInfo.participant = await resolveLidToRealJid( messageCopy.message.extendedTextMessage.contextInfo.participant, remoteJid ) }
+endsWith('@lid')) { messageCopy.message.extendedTextMessage.contextInfo.participant = await resolveLidToRealJid( messageCopy.message.extendedTextMessage.contextInfo.participant, remoteJid ) }
 if (messageCopy.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
 const mentionedJid = messageCopy.message.extendedTextMessage.contextInfo.mentionedJid
 if (Array.isArray(mentionedJid)) {
@@ -551,3 +520,177 @@ return phoneUtil.isValidNumber(parsedNumber)
 } catch (error) {
 return false
 }}
+// -------------------------
+// LID Processing
+// -------------------------
+
+async function resolveLidToRealJid(lidJid, groupJid, maxRetries = 5, retryDelay = 500) {
+    let attempts = 0;
+    while (attempts < maxRetries) {
+        try {
+            // Aquí iría la lógica de resolución real del LID
+            // Por ejemplo: await someAPIcall(lidJid, groupJid)
+            lidCache.set(lidJid, lidJid);
+            return lidJid;
+        } catch (e) {
+            attempts++;
+            if (attempts >= maxRetries) {
+                lidCache.set(lidJid, lidJid);
+                return lidJid;
+            }
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+    }
+    return lidJid;
+}
+
+async function extractAndProcessLids(text, groupJid) {
+    if (!text) return text;
+    const lidMatches = text.match(/\d+@lid/g) || [];
+    let processedText = text;
+
+    for (const lid of lidMatches) {
+        try {
+            const realJid = await resolveLidToRealJid(lid, groupJid);
+            processedText = processedText.replace(new RegExp(lid, 'g'), realJid);
+        } catch (e) {
+            console.error(`■Error procesando LID⚡ ${lid}:`, e);
+        }
+    }
+    return processedText;
+}
+
+async function processLidsInMessage(message, groupJid) {
+    if (!message || !message.key) return message;
+
+    try {
+        const messageCopy = {
+            key: { ...message.key },
+            message: message.message ? { ...message.message } : undefined,
+            ...(message.quoted && { quoted: { ...message.quoted } }),
+            ...(message.mentionedJid && { mentionedJid: [...message.mentionedJid] })
+        };
+
+        const remoteJid = messageCopy.key.remoteJid || groupJid;
+
+        // Resolver participantes
+        if (messageCopy.key?.participant?.endsWith('@lid')) {
+            messageCopy.key.participant = await resolveLidToRealJid(messageCopy.key.participant, remoteJid);
+        }
+
+        if (messageCopy.message?.extendedTextMessage?.contextInfo?.participant?.endsWith('@lid')) {
+            messageCopy.message.extendedTextMessage.contextInfo.participant = await resolveLidToRealJid(
+                messageCopy.message.extendedTextMessage.contextInfo.participant,
+                remoteJid
+            );
+        }
+
+        // Resolver mencionados
+        if (messageCopy.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
+            const mentionedJid = messageCopy.message.extendedTextMessage.contextInfo.mentionedJid;
+            if (Array.isArray(mentionedJid)) {
+                for (let i = 0; i < mentionedJid.length; i++) {
+                    if (mentionedJid[i]?.endsWith('@lid')) {
+                        mentionedJid[i] = await resolveLidToRealJid(mentionedJid[i], remoteJid);
+                    }
+                }
+            }
+        }
+
+        // Resolver mencionados en mensaje citado
+        if (messageCopy.message?.extendedTextMessage?.contextInfo?.quotedMessage?.extendedTextMessage?.contextInfo?.mentionedJid) {
+            const quotedMentionedJid = messageCopy.message.extendedTextMessage.contextInfo.quotedMessage.extendedTextMessage.contextInfo.mentionedJid;
+            if (Array.isArray(quotedMentionedJid)) {
+                for (let i = 0; i < quotedMentionedJid.length; i++) {
+                    if (quotedMentionedJid[i]?.endsWith('@lid')) {
+                        quotedMentionedJid[i] = await resolveLidToRealJid(quotedMentionedJid[i], remoteJid);
+                    }
+                }
+            }
+        }
+
+        // Procesar textos
+        if (messageCopy.message?.conversation) {
+            messageCopy.message.conversation = await extractAndProcessLids(messageCopy.message.conversation, remoteJid);
+        }
+
+        if (messageCopy.message?.extendedTextMessage?.text) {
+            messageCopy.message.extendedTextMessage.text = await extractAndProcessLids(
+                messageCopy.message.extendedTextMessage.text,
+                remoteJid
+            );
+        }
+
+        // Citar participantes
+        if (messageCopy.message?.extendedTextMessage?.contextInfo?.participant && !messageCopy.quoted) {
+            const quotedSender = await resolveLidToRealJid(
+                messageCopy.message.extendedTextMessage.contextInfo.participant,
+                remoteJid
+            );
+            messageCopy.quoted = {
+                sender: quotedSender,
+                message: messageCopy.message.extendedTextMessage.contextInfo.quotedMessage
+            };
+        }
+
+        return messageCopy;
+    } catch (e) {
+        console.error('Error en processLidsInMessage:', e);
+        return message;
+    }
+}
+
+// -------------------------
+// Connection Update
+// -------------------------
+async function connectionUpdate(update) {
+    const { connection, lastDisconnect, isNewLogin } = update;
+    global.stopped = connection;
+
+    if (isNewLogin) conn.isInit = true;
+
+    const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
+    if (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null) {
+        await global.reloadHandler(true).catch(console.error);
+        global.timestamp.connect = new Date();
+    }
+
+    if ((update.qr != 0 && update.qr != undefined) || methodCodeQR) {
+        if (opcion == '1' || methodCodeQR) console.log(chalk.green.bold(` ⚡ Escanea este código QR♧`));
+    }
+
+    if (connection === 'open') {
+        const userJid = jidNormalizedUser(conn.user.id);
+        const userName = conn.user.name || conn.user.verifiedName || "Desconocido";
+        console.log(chalk.green.bold(` ●Conectado a: ${userName}●`));
+    }
+
+    const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+    if (connection === 'close') {
+        switch (reason) {
+            case DisconnectReason.badSession:
+            case DisconnectReason.loggedOut:
+                console.log(chalk.bold.redBright(`\n Sin conexión, borra la session principal del Bot y conéctate nuevamente.`));
+                if (reason === DisconnectReason.loggedOut) await global.reloadHandler(true).catch(console.error);
+                break;
+            case DisconnectReason.connectionClosed:
+            case DisconnectReason.connectionLost:
+                console.log(chalk.bold.magentaBright(`\n《 Reconectando la conexión del Bot...》`));
+                await global.reloadHandler(true).catch(console.error);
+                break;
+            case DisconnectReason.connectionReplaced:
+                console.log(chalk.bold.yellowBright(`\n La conexión del Bot ha sido reemplazada SAIYAJIN.`));
+                break;
+            case DisconnectReason.restartRequired:
+                console.log(chalk.bold.cyanBright(`\n Conectando el Bot con el servidor y Gaara Ultra-MD...`));
+                await global.reloadHandler(true).catch(console.error);
+                break;
+            case DisconnectReason.timedOut:
+                console.log(chalk.bold.yellowBright(`\n Conexión agotada, reconectando el Bot...`));
+                await global.reloadHandler(true).catch(console.error);
+                break;
+            default:
+                console.log(chalk.bold.redBright(`\n Conexión cerrada, conectese nuevamente Gaara Ultra-MD.`));
+        }
+    }
+}
