@@ -1,102 +1,83 @@
 // plugins/radar.js
-// Radar de mensajes + .radar + .rareset
+// Radar Omega - Conteo de mensajes con menciones
 // Owners: +59898719147, +59896026646
 
 const OWNERS = ['59898719147','59896026646'];
 
 if (!global.activityLog) global.activityLog = {};
 
-// -----------------------------
-// before(m) -> cuenta mensajes automáticamente
-export async function before(m, { conn }) {
-  try {
-    if (!m || !m.isGroup) return true;
-    if (m.isBaileys && m.fromMe) return true;
-
-    const chat = m.chat;
-    const sender = (m.sender || '').replace(/[^0-9]/g,'');
-
-    if (!global.activityLog[chat]) global.activityLog[chat] = { counts: {}, lastUpdated: Date.now() };
-    const room = global.activityLog[chat];
-    room.counts[sender] = (room.counts[sender] || 0) + 1;
-    room.lastUpdated = Date.now();
-
-    return true;
-  } catch (e) {
-    console.error('radar.before error', e);
-    return true;
-  }
-}
-
-// -----------------------------
-// Handler principal (radar + rareset)
 let handler = async (m, { conn, isOwner }) => {
   try {
     const senderNumber = (m.sender||'').replace(/[^0-9]/g,'');
     const ownerCheck = isOwner || OWNERS.includes(senderNumber);
     if (!ownerCheck) return conn.sendMessage(m.chat, { text: "🚫 ACCESO DENEGADO — Solo owners." }, { quoted: null });
-    if (!m.isGroup) return conn.sendMessage(m.chat, { text: "❗ El comando solo funciona en grupos." }, { quoted: null });
+    if (!m.isGroup) return conn.sendMessage(m.chat, { text: "❗ El comando .radar solo funciona en *grupos*." }, { quoted: null });
 
     const chat = m.chat;
+    if (!global.activityLog[chat]) global.activityLog[chat] = { counts: {} };
+    const room = global.activityLog[chat];
 
-    // Si es .rareset -> reinicia el conteo
-    if (m.text.startsWith('.rareset')) {
-      global.activityLog[chat] = { counts: {}, lastUpdated: Date.now() };
-      return conn.sendMessage(chat, { text: '✅ Conteo de mensajes reiniciado.' }, { quoted: null });
-    }
+    const counts = room.counts || {};
+    const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    const topN = entries.slice(0,5); // top 5
+    const total = Object.values(counts).reduce((a,b)=>a+b,0);
 
-    // -----------------------------
-    // Comando .radar -> mostrar conteo
-    const room = global.activityLog[chat] || { counts: {} };
-    const totalMsgs = Object.values(room.counts || {}).reduce((a,b)=>a+b,0);
-    if (!totalMsgs) return conn.sendMessage(chat, { text: '📭 No hay mensajes contabilizados todavía.' }, { quoted: null });
-
-    // Obtener participantes para mencionar
+    // Obtener metadata del grupo
     let participants = [];
-    try {
+    try { 
       const meta = await conn.groupMetadata(chat);
-      participants = (meta.participants || []).map(p => p.id);
-    } catch (e) {
-      participants = Object.keys(room.counts || {}).map(id => id+'@s.whatsapp.net');
+      participants = meta.participants.map(p=>p.id);
+    } catch{}
+
+    // Top emisores con nombre y mención
+    let topNames = [];
+    for (let [user,count] of topN) {
+      try { topNames.push({ name: await conn.getName(user), count }); } 
+      catch { topNames.push({ name: user, count }); }
     }
 
-    // Construir listado
-    const list = participants.map(jid=>{
-      const id = jid.replace(/[^0-9]/g,'');
-      const count = room.counts[id] || 0;
-      return { jid, id, count };
-    });
+    // Usuarios silenciosos (hasta 5)
+    let silentIds = participants.filter(u => !(u in counts)).slice(0,5);
+    let silentNames = [];
+    for (let s of silentIds) {
+      try { silentNames.push(await conn.getName(s)); } catch { silentNames.push(s); }
+    }
 
-    // Añadir cualquier usuario que haya hablado pero no esté en participantes
-    Object.keys(room.counts || {}).forEach(id=>{
-      const jid = id+'@s.whatsapp.net';
-      if (!list.find(x=>x.id===id)) list.push({ jid, id, count: room.counts[id] });
-    });
-
-    // Orden descendente
-    list.sort((a,b)=>b.count-a.count);
-
-    // Texto del reporte
+    // Construir reporte
     let report = [];
-    report.push('🛰️ *RADAR OMEGA - CONTEO DIARIO* 🛰️');
+    report.push("🛰️ *RADAR OMEGA - CONTEO DIARIO* 🛰️");
     report.push(`📡 Grupo: ${chat}`);
-    report.push(`📊 Total mensajes registrados: ${totalMsgs}`);
-    report.push('');
-    report.push('🏆 *Ranking de actividad:*');
-    list.forEach((u,i)=>{
-      const pos = (i<9)?`0${i+1}`:`${i+1}`;
-      report.push(`${pos}) @${u.id} — ${u.count} msg`);
+    report.push(`📊 Total mensajes registrados: ${total}`);
+    report.push("");
+    report.push("🏆 Ranking de actividad:");
+    if (!topNames.length) report.push("• (sin datos de emisores)");
+    else topNames.forEach((t,i)=>{
+      report.push(`${i+1}) @${t.name.split("@")[0]} — ${t.count} msg`);
     });
+    if (silentNames.length) report.push(`\n🤫 Miembros silenciosos: ${silentNames.map(n=>`@${n.split("@")[0]}`).join(', ')}`);
 
-    const mentions = list.map(x=>x.jid);
-    await conn.sendMessage(chat, { text: report.join('\n'), mentions }, { quoted: null });
+    await conn.sendMessage(chat, { text: report.join("\n"), mentions: [...topNames.map(t=>t.name), ...silentNames] }, { quoted: null });
 
-  } catch(e) {
-    console.error('radar.handler error', e);
-    try { await conn.sendMessage(m.chat, { text: '⚠️ Error ejecutando comando.' }, { quoted: null }); } catch {}
+  } catch(e){
+    console.error("Error en .radar:", e);
+    try { await conn.sendMessage(m.chat, { text: "⚠️ Error ejecutando .radar." }, { quoted: null }); } catch{}
   }
 };
 
-handler.command = ['radar','scan','rareset'];
+handler.command = ['radar','scan'];
 handler.owner = true;
+
+// === Comando para resetear el radar ===
+export async function rareset(m, { conn, isOwner }) {
+  const senderNumber = (m.sender||'').replace(/[^0-9]/g,'');
+  const ownerCheck = isOwner || OWNERS.includes(senderNumber);
+  if (!ownerCheck) return conn.sendMessage(m.chat, { text: "🚫 ACCESO DENEGADO — Solo owners." }, { quoted: null });
+  if (!m.isGroup) return conn.sendMessage(m.chat, { text: "❗ El comando .rareset solo funciona en grupos." }, { quoted: null });
+
+  const chat = m.chat;
+  if (!global.activityLog[chat]) global.activityLog[chat] = { counts: {} };
+  global.activityLog[chat].counts = {};
+  await conn.sendMessage(chat, { text: "✅ Radar reseteado correctamente." }, { quoted: null });
+}
+
 export default handler;
