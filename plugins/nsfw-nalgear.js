@@ -4,23 +4,26 @@ let handler = async (m, { conn }) => {
 
     // Verificar si NSFW está activado
     if (!chat.nsfw && m.isGroup) {
-        return conn.sendMessage(m.chat, { text: `⚠️ El contenido *NSFW* está desactivado en este grupo.\n> Un dueño puede activarlo con *#nsfw*` }, { quoted: m });
+        return conn.sendMessage(
+            m.chat,
+            { text: `⚠️ El contenido *NSFW* está desactivado en este grupo.\n> Un dueño puede activarlo con *#nsfw*` },
+            { quoted: m }
+        );
     }
 
     // Detectar usuario objetivo
-    let who;
-    if (m.mentionedJid?.length) who = m.mentionedJid[0];
-    else if (m.quoted) who = m.quoted.sender;
-    else who = m.sender;
+    let who = m.mentionedJid?.[0] || m.quoted?.sender || m.sender;
 
-    const name = conn.getName(who);
-    const name2 = conn.getName(m.sender);
+    // Solo usernames
+    const usernameTarget = `@${who.split("@")[0]}`;
+    const usernameSender = `@${m.sender.split("@")[0]}`;
 
+    // Construir mensaje
     let str;
     if (m.mentionedJid?.length || m.quoted) {
-        str = `\`${name2}\` *le dio una nalgada a* \`${name || who}\`.`;
+        str = `${usernameSender} *le dio una nalgada a* ${usernameTarget}.`;
     } else {
-        str = `\`${name2}\` *está repartiendo nalgadas! >.<*`;
+        str = `${usernameSender} *está repartiendo nalgadas! >.<*`;
     }
 
     // Lista de videos NSFW
@@ -36,9 +39,13 @@ let handler = async (m, { conn }) => {
 
     const video = videos[Math.floor(Math.random() * videos.length)];
 
-    // Enviar video con mención
-    const mentions = [who];
-    await conn.sendMessage(m.chat, { video: { url: video }, gifPlayback: true, caption: str, mentions }, { quoted: m });
+    // Enviar video con mención de ambos
+    const mentions = [m.sender, who];
+    await conn.sendMessage(
+        m.chat,
+        { video: { url: video }, gifPlayback: true, caption: str, mentions },
+        { quoted: m }
+    );
 };
 
 handler.help = ['spank/nalgada @tag'];
@@ -46,4 +53,4 @@ handler.tags = ['nsfw'];
 handler.command = ['spank', 'nalgada'];
 handler.group = true;
 
-export default handler; 
+export default handler;
