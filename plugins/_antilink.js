@@ -1,12 +1,12 @@
 // plugins/antilink.js
 /**
- * Anti-Link FelixCat-Bot - Funciona Independiente
+ * Anti-Link FelixCat-Bot - Versión final
  */
 
-const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
-const anyLinkRegex = /https?:\/\/[^\s]+/i
-const allowedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i
-const tagallLink = 'https://miunicolink.local/tagall-FelixCat'
+const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i;
+const anyLinkRegex = /https?:\/\/[^\s]+/i;
+const allowedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i;
+const tagallLink = 'https://miunicolink.local/tagall-FelixCat';
 
 // Comando para activar/desactivar
 let handler = async (m, { conn, isAdmin, isOwner }) => {
@@ -30,7 +30,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     if (!m || !m.text) return true;
     if (m.isBaileys && m.fromMe) return true;
     if (!m.isGroup) return true;
-    if (!isBotAdmin) return true;
+    if (!isBotAdmin) return true; // Bot debe ser admin para borrar
 
     const chat = global.db.data.chats[m.chat];
     if (!chat?.antiLink) return true;
@@ -45,8 +45,10 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     if (isAllowedLink) return true;
 
     try {
-        // Borra el mensaje
-        await conn.sendMessage(m.chat, { delete: m.key });
+        // Borra el mensaje siempre que sea link
+        await conn.sendMessage(m.chat, { 
+            delete: { remoteJid: m.chat, fromMe: false, id: m.id, participant: m.sender }
+        });
 
         // Link de tagall -> mensaje especial
         if (isTagallLink) {
@@ -58,7 +60,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
         }
 
         // Expulsión por link de grupo si no es admin
-        if (!isAdmin && isGroupLink) {
+        if (isGroupLink && !isAdmin) {
             await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
             await conn.sendMessage(m.chat, { 
                 text: `🚫 @${who.split("@")[0]} fue expulsado por enviar un link de grupo.`,
@@ -67,7 +69,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
             return true;
         }
 
-        // Cualquier otro link -> borra y menciona
+        // Cualquier otro link -> aviso mencionando al usuario
         await conn.sendMessage(m.chat, { 
             text: `⚠️ @${who.split("@")[0]}, un link no permitido fue eliminado.`,
             mentions: [who]
