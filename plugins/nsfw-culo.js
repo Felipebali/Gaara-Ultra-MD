@@ -14,6 +14,9 @@ let handler = async (m, { conn }) => {
   }
 
   try {
+    // Obtener username del emisor
+    const usernameSender = `@${m.sender.split("@")[0]}`
+
     // Obtiene una imagen aleatoria
     const res = await fetch('https://nekobot.xyz/api/image?type=ass')
     const json = await res.json()
@@ -21,7 +24,7 @@ let handler = async (m, { conn }) => {
     if (!json || !json.message) throw new Error('No se pudo obtener la imagen')
 
     const img = json.message
-    const text = '🍑 *Disfruta tu ración de... arte digital 🙈*'
+    const text = `🍑 ${usernameSender}, disfruta tu ración de... arte digital 🙈`
 
     // Enviar la imagen con botón
     await conn.sendMessage(m.chat, {
