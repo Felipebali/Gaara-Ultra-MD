@@ -10,6 +10,35 @@ import ws from 'ws';
 
 import './plugins/collect-media.js';
 
+import fs from 'fs';
+import path from 'path';
+
+// Cargar media.json al iniciar
+const mediaPath = path.join('./media.json');
+if (fs.existsSync(mediaPath)) {
+    try {
+        const data = JSON.parse(fs.readFileSync(mediaPath));
+        global.db.data.media = data;
+    } catch (e) {
+        console.error('Error cargando media.json:', e);
+        global.db.data.media = {};
+    }
+} else {
+    global.db.data.media = {};
+}
+
+// Guardar cambios en media.json
+function saveMedia() {
+    try {
+        fs.writeFileSync(mediaPath, JSON.stringify(global.db.data.media, null, 2));
+    } catch (e) {
+        console.error('Error guardando media.json:', e);
+    }
+}
+
+// Guardar al cerrar
+process.on('beforeExit', () => saveMedia());
+
 const { proto } = (await import('@whiskeysockets/baileys')).default
 const isNumber = x => typeof x === 'number' && !isNaN(x)
 const delay = ms => isNumber(ms) && new Promise(resolve => setTimeout(function () {
