@@ -1,28 +1,56 @@
-// plugin avisos.js
-// Toggle de avisos solo admin + mensaje al grupo con HTML
-global.groupData = global.groupData || {};
+// plugins/reconocer.js
+global.db.data.chats = global.db.data.chats || {}
+global.groupData = global.groupData || {}
 
-const handler = async (m, { conn, isAdmin, isGroup }) => {
-    if (!isGroup) return; // Solo grupos
-    if (!isAdmin) return await conn.sendMessage(m.chat, { text: '❌ Solo admins pueden usar este comando.', parse_mode: 'html' });
+let handler = async (m, { conn, isAdmin, isGroup }) => {
+    if (!isGroup) return
+    if (!isAdmin) return conn.sendMessage(m.chat, { text: '❌ Solo *admins* pueden usar este comando.' })
 
-    // Inicializamos la configuración del chat si no existe
-    global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {};
-    const chatSettings = global.db.data.chats[m.chat];
+    let chat = global.db.data.chats[m.chat]
+    chat.reconocer = !chat.reconocer
 
-    // Toggle: activa/desactiva avisos
-    chatSettings.avisos = !chatSettings.avisos;
+    await conn.sendMessage(m.chat, {
+        text: chat.reconocer
+            ? '✅ El modo *reconocer* está ACTIVADO\nAvisaré cuando cambien *el nombre o la descripción* del grupo.'
+            : '❌ El modo *reconocer* está DESACTIVADO\nNo enviaré más avisos del grupo.'
+    })
+}
 
-    // Mensaje al grupo indicando el estado actual usando HTML
-    const estado = chatSettings.avisos ? '✅ <b>Activados</b>' : '❌ <b>Desactivados</b>';
-    await conn.sendMessage(m.chat, { text: `📢 Avisos ${estado}`, parse_mode: 'html' });
+handler.command = /^reconocer$/i
 
-    // Guardamos configuración
-    global.db.data.chats[m.chat] = chatSettings;
-};
+// --- DETECCIÓN DE CAMBIOS ---
+handler.before = async function (m, { conn, isGroup }) {
+    if (!isGroup) return
+    let chat = global.db.data.chats[m.chat]
+    if (!chat?.reconocer) return
 
-// Prefijo y comando
-handler.help = ['avisos'];
-handler.tags = ['group'];
-handler.command = ['avisos'];
-export default handler;
+    try {
+        const metadata = await conn.groupMetadata(m.chat)
+
+        // Inicializar datos si no existen
+        if (!global.groupData[m.chat]) {
+            global.groupData[m.chat] = {
+                name: metadata.subject,
+                desc: metadata.desc || ''
+            }
+        }
+
+        // Detectar cambio de nombre
+        if (metadata.subject !== global.groupData[m.chat].name) {
+            await conn.sendMessage(m.chat, {
+                text: `📢 Se cambió el *nombre del grupo*\n🔤 Nuevo nombre: *${metadata.subject}*`
+            })
+            global.groupData[m.chat].name = metadata.subject
+        }
+
+        // Detectar cambio de descripción
+        if ((metadata.desc || '') !== global.groupData[m.chat].desc) {
+            await conn.sendMessage(m.chat, {
+                text: `📝 Se actualizó la *descripción del grupo*\n${metadata.desc || '_(sin descripción)_'}`
+            })
+            global.groupData[m.chat].desc = metadata.desc || ''
+        }
+    } catch { }
+}
+
+export default handler
