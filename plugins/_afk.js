@@ -1,10 +1,19 @@
 // --- Handler combinado AFK ---
 let afkHandler = async (m, { conn, args }) => {
-    // Asegurarse que exista la info del usuario
+    // Asegurarse de que exista la info del usuario
     if (!global.db.data.users[m.sender]) global.db.data.users[m.sender] = {}
     let user = global.db.data.users[m.sender]
 
-    // Activar AFK si se usa el comando .afk
+    // Función para formatear tiempo AFK
+    const formatAFK = (ms) => {
+        let total = Math.floor(ms / 1000)
+        let h = Math.floor(total / 3600)
+        let m = Math.floor((total % 3600) / 60)
+        let s = total % 60
+        return `${h}h ${m}m ${s}s`
+    }
+
+    // --- Activar AFK con comando .afk ---
     if (m.text && m.text.startsWith('.afk')) {
         let text = args.join(' ') || (m.quoted && m.quoted.text) || 'Sin motivo'
         user.afk = Date.now()
@@ -21,15 +30,15 @@ Motivo: ${text}`,
         return true
     }
 
-    // --- Handler before: desactivar AFK al escribir ---
+    // --- Desactivar AFK si el usuario envía mensaje ---
     if (user.afk > -1) {
         let who = m.sender
         await conn.reply(
             m.chat,
             `✴️ *A F K* ✴️
-@${who.split("@")[0]}, ya no estás AFK.
+@${who.split("@")[0]} ya no estás AFK
 Motivo anterior: ${user.afkReason || 'Sin motivo'}
-Tiempo AFK: ${Math.floor((Date.now() - user.afk)/1000)} segundos`,
+Tiempo AFK: ${formatAFK(Date.now() - user.afk)}`,
             m,
             { mentions: [who] }
         )
@@ -37,7 +46,7 @@ Tiempo AFK: ${Math.floor((Date.now() - user.afk)/1000)} segundos`,
         user.afkReason = ''
     }
 
-    // Avisar si mencionan a alguien AFK
+    // --- Avisar si mencionan a alguien AFK ---
     let jids = [...new Set([...(m.mentionedJid || []), ...(m.quoted ? [m.quoted.sender] : [])])]
     for (let jid of jids) {
         if (!global.db.data.users[jid]) global.db.data.users[jid] = {}
@@ -47,9 +56,9 @@ Tiempo AFK: ${Math.floor((Date.now() - user.afk)/1000)} segundos`,
         await conn.reply(
             m.chat,
             `✴️ *A F K* ✴️
-@${jid.split("@")[0]} está AFK.
+@${jid.split("@")[0]} está AFK
 Motivo: ${afkUser.afkReason || 'Sin motivo'}
-Tiempo AFK: ${Math.floor((Date.now() - afkUser.afk)/1000)} segundos`,
+Tiempo AFK: ${formatAFK(Date.now() - afkUser.afk)}`,
             m,
             { mentions: [jid] }
         )
