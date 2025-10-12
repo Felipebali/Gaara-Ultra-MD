@@ -5,7 +5,7 @@ import path from 'path';
 let handler = async (m, { conn }) => {
     const chat = global.db.data.chats[m.chat] || {};
     if (!chat.nsfw && m.isGroup) {
-        return m.reply('[❗] 𝐋𝐨𝐬 𝐜𝐨𝐦𝐚𝐧𝐝𝐨𝐬 +18 están desactivados en este grupo.\n> Si eres owner y deseas activarlos, usa .nsfw');
+        return m.reply('[❗] Los comandos +18 están desactivados en este grupo.\n> Si eres owner y deseas activarlos, usa .nsfw');
     }
 
     // Detectamos el usuario objetivo
@@ -15,14 +15,12 @@ let handler = async (m, { conn }) => {
 
     m.react('🥵');
 
-    // Construimos el mensaje según mención o cita
+    // Construimos el mensaje con mención de ambos
     let str;
-    if (m.mentionedJid?.length) {
-        str = `\`${name2}\` tiene sexo fuertemente con @${who.split("@")[0]}.`;
-    } else if (m.quoted) {
-        str = `\`${name2}\` tiene sexo con @${who.split("@")[0]}.`;
+    if (m.mentionedJid?.length || m.quoted) {
+        str = `@${m.sender.split("@")[0]} tiene sexo fuertemente con @${who.split("@")[0]}.`;
     } else {
-        str = `\`${name2}\` tiene sexo apasionadamente.`;
+        str = `@${m.sender.split("@")[0]} tiene sexo apasionadamente.`;
     }
 
     if (m.isGroup) {
@@ -39,7 +37,7 @@ let handler = async (m, { conn }) => {
         ];
 
         const video = videos[Math.floor(Math.random() * videos.length)];
-        const mentions = [who]; // esto hace que WhatsApp notifique correctamente
+        const mentions = [m.sender, who]; // menciona a ambos
 
         await conn.sendMessage(m.chat, {
             video: { url: video },
