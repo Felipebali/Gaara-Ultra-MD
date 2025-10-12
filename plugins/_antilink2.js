@@ -12,7 +12,8 @@ export async function before(m, { conn }) {
     if (!chat.antiLink2) return true
 
     const who = m.sender
-    const mention = `@${who.split("@")[0]}`  // ✅ Solo número, como NSFW
+    const name = await conn.getName(who)  // ✅ Obtenemos el nombre
+    const mention = `@${who.split("@")[0]}` // La mención para que WhatsApp pinguee al usuario
 
     const isIG = IG_REGEX.test(m.text)
     const isTT = TT_REGEX.test(m.text)
@@ -23,25 +24,12 @@ export async function before(m, { conn }) {
             // Borra el mensaje
             await conn.sendMessage(m.chat, { delete: m.key })
 
-            // Frases random
-            const userPhrases = [
-                `⚠️ ${mention}, ese link quedó borrado porque molesta`,
-                `🚫 ${mention}, no metas esas redes acá, ¿ok?`,
-                `🗑️ ${mention}, nada de Instagram, TikTok ni YouTube aquí`,
-                `💥 ${mention}, cuidado con tus links prohibidos`
-            ]
-            const adminPhrases = [
-                `⚠️ ${mention} admin, también hay reglas, ese link fue borrado`,
-                `🚫 ${mention} líder, no se permiten esas URLs`,
-                `🗑️ ${mention} admin, mensaje eliminado por contenido prohibido`,
-                `💥 ${mention} aún siendo admin, ese link no pasa`
-            ]
+            // Frases distintas según sea admin o no
+            let msg = m.isAdmin
+                ? `${mention} (${name}), admin, nada de Instagram, TikTok ni YouTube aquí`
+                : `${mention} (${name}), nada de Instagram, TikTok ni YouTube aquí`
 
-            let msg
-            if (m.isAdmin) msg = adminPhrases[Math.floor(Math.random()*adminPhrases.length)]
-            else msg = userPhrases[Math.floor(Math.random()*userPhrases.length)]
-
-            // Envía aviso con la mención
+            // Envía aviso
             await conn.sendMessage(m.chat, { text: msg })
         } catch(e){
             console.error("Error en antilink2:", e)
