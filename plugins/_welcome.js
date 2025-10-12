@@ -1,17 +1,18 @@
 // plugins/welcome.js
-export async function onAdd(m, { conn }) {
-    if (!m.isGroup) return; // solo grupos
-    if (!m.addedParticipants || m.addedParticipants.length === 0) return;
+export async function onGroupUpdate({ update, conn }) {
+    const { participants, action, id: chat } = update;
+    if (!participants || participants.length === 0) return;
 
-    const chat = m.chat;
+    // Solo nos interesan los que se agregan
+    if (action !== 'add') return;
+
     if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
     const chatData = global.db.data.chats[chat];
+    if (!chatData.welcome) return;
 
-    if (!chatData.welcome) return; // si el welcome está desactivado, no hace nada
-
-    for (let user of m.addedParticipants) {
-        const name = await conn.getName(user); // nombre del usuario agregado
-        const who = user; // el ID completo del usuario
+    for (let user of participants) {
+        const name = await conn.getName(user);
+        const who = user;
 
         const welcomeMessages = [
             `🎉 Bienvenido/a @${who.split("@")[0]} (${name}) al grupo! Disfruta tu estadía.`,
@@ -19,26 +20,8 @@ export async function onAdd(m, { conn }) {
             `✨ @${who.split("@")[0]} (${name}), bienvenido/a! Pásala genial aquí.`
         ];
 
-        // Elegimos un mensaje aleatorio
         const text = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
 
-        await conn.sendMessage(chat, {
-            text,
-            mentions: [who]
-        });
+        await conn.sendMessage(chat, { text, mentions: [who] });
     }
 }
-
-// Comando para activar/desactivar welcome
-export async function welcomeCommand(m, { conn, isAdmin }) {
-    if (!m.isGroup) return;
-    if (!isAdmin) return m.reply("❌ Solo admins pueden usar este comando.");
-
-    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
-    const chat = global.db.data.chats[m.chat];
-    chat.welcome = !chat.welcome;
-
-    await conn.sendMessage(m.chat, {
-        text: `✅ Mensajes de bienvenida ahora están *${chat.welcome ? "activados" : "desactivados"}*.`
-    });
-} 
