@@ -12,23 +12,25 @@ let handler = async (m, { conn }) => {
 
     // Detectamos el usuario mencionado o citado
     let who;
-    if (m.mentionedJid.length > 0) who = m.mentionedJid[0];
+    if (m.mentionedJid && m.mentionedJid.length > 0) who = m.mentionedJid[0];
     else if (m.quoted) who = m.quoted.sender;
     else who = m.sender;
 
-    let name = conn.getName(who);
-    let name2 = conn.getName(m.sender);
+    // Solo usernames
+    const usernameTarget = `@${who.split("@")[0]}`;
+    const usernameSender = `@${m.sender.split("@")[0]}`;
 
+    // React al mensaje
     m.react('😮');
 
-    // Construimos el mensaje según si hay mención o cita
+    // Construimos el mensaje usando solo usernames
     let str;
-    if (m.mentionedJid.length > 0) {
-        str = `\`${name2}\` le dio una mamada a \`${name || who}\`.`;
+    if (m.mentionedJid && m.mentionedJid.length > 0) {
+        str = `${usernameSender} le dio una mamada a ${usernameTarget}.`;
     } else if (m.quoted) {
-        str = `\`${name2}\` le está dando una mamada a \`${name || who}\`.`;
+        str = `${usernameSender} le está dando una mamada a ${usernameTarget}.`;
     } else {
-        str = `\`${name2}\` está dando una mamada >.<`.trim();
+        str = `${usernameSender} está dando una mamada >.<`.trim();
     }
 
     if (m.isGroup) {
@@ -46,10 +48,16 @@ let handler = async (m, { conn }) => {
         ];
         const video = videos[Math.floor(Math.random() * videos.length)];
 
-        let mentions = [who];
-        conn.sendMessage(m.chat, { video: { url: video }, gifPlayback: true, caption: str, mentions }, { quoted: m });
+        // Menciones: sender y target
+        const mentions = [m.sender, who];
+
+        await conn.sendMessage(
+            m.chat,
+            { video: { url: video }, gifPlayback: true, caption: str, mentions },
+            { quoted: m }
+        );
     }
-}
+};
 
 handler.help = ['blowjob/mamada @tag'];
 handler.tags = ['nsfw'];
