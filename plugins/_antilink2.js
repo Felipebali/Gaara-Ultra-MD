@@ -1,58 +1,51 @@
 // plugins/antilink2.js
-// AntiLink2 - Borra IG/TikTok/YouTube | Afecta admins y usuarios
-
-const linkRegex = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i;
+const IG_REGEX = /(https?:\/\/)?(www\.)?instagram\.com\/[^\s]+/i
+const TT_REGEX = /(https?:\/\/)?(www\.)?tiktok\.com\/[^\s]+/i
+const YT_REGEX = /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/[^\s]+/i
 
 export async function before(m, { conn }) {
-    if (!m.isGroup) return true;
-    if (!m.text) return true;
+    if (!m.isGroup) return true
+    if (!m.text) return true
 
-    let chat = global.db.data.chats[m.chat];
-    if (!chat?.antilink2) return true;
+    const chat = global.db.data.chats[m.chat] || {}
+    if (!chat.antiLink2) chat.antiLink2 = true
+    if (!chat.antiLink2) return true
 
-    const isLink = linkRegex.test(m.text);
-    if (!isLink) return true;
+    const who = m.sender
+    const mention = `@${who.split("@")[0]}`
 
-    let who = m.sender;
-    let userTag = `@${who.split("@")[0]}`;
+    const isIG = IG_REGEX.test(m.text)
+    const isTT = TT_REGEX.test(m.text)
+    const isYT = YT_REGEX.test(m.text)
 
-    try {
-        // Borrar el mensaje
-        await conn.sendMessage(m.chat, { delete: m.key });
+    if (isIG || isTT || isYT) {
+        try {
+            await conn.sendMessage(m.chat, { delete: m.key })
 
-        // Frases personalizadas
-        if (m.isAdmin) {
-            await conn.sendMessage(m.chat, {
-                text: `⚠️ ${userTag} sos admin pero igual está prohibido mandar links acá.`,
-                mentions: [who]
-            });
-        } else {
-            await conn.sendMessage(m.chat, {
-                text: `🚫 ${userTag} no se permite mandar links acá.`,
-                mentions: [who]
-            });
+            // Frases random
+            const userPhrases = [
+                `⚠️ ${mention} no metas esas redes acá, ¿ok?`,
+                `🚫 ${mention}, ese link quedó borrado porque molesta`,
+                `🗑️ ${mention}, nada de Instagram, TikTok ni YouTube aquí`,
+                `💥 ${mention} cuidado con tus links prohibidos`
+            ]
+            const adminPhrases = [
+                `⚠️ ${mention} admin, también hay reglas, ese link fue borrado`,
+                `🚫 ${mention} líder, no se permiten esas URLs`,
+                `🗑️ ${mention} admin, mensaje eliminado por contenido prohibido`,
+                `💥 ${mention} aún siendo admin, ese link no pasa`
+            ]
+
+            let msg
+            if (m.isGroup && m.isAdmin) msg = adminPhrases[Math.floor(Math.random()*adminPhrases.length)]
+            else msg = userPhrases[Math.floor(Math.random()*userPhrases.length)]
+
+            await conn.sendMessage(m.chat, { text: msg })
+        } catch(e){
+            console.error("Error en antilink2:", e)
         }
-    } catch (e) {
-        console.error(e);
+        return true
     }
 
-    return true;
+    return true
 }
-
-// Activar / desactivar
-export async function antilink2Command(m, { conn, isAdmin }) {
-    if (!m.isGroup) return m.reply("❌ Este comando solo funciona en grupos.");
-    if (!isAdmin) return m.reply("❌ Solo los administradores pueden activar esto.");
-
-    let chat = global.db.data.chats[m.chat];
-    chat.antilink2 = !chat.antilink2;
-
-    m.reply(`✅ AntiLink2 ahora está *${chat.antilink2 ? "activado" : "desactivado"}*.`);
-}
-
-export const handler = {
-    command: ['antilink2'],
-    group: true,
-    admin: true,
-    callback: antilink2Command
-};
