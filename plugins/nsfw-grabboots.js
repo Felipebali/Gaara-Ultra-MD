@@ -1,11 +1,12 @@
-// Código NSFW solo para OWNER
-
+// plugins/nsfw-grabboobs.js
 import fs from 'fs';
 import path from 'path';
 
 let handler = async (m, { conn }) => {
+    const chat = global.db.data.chats[m.chat] || {};
+
     // Validación NSFW solo si está activado por OWNER
-    if (!db.data.chats[m.chat].nsfw && m.isGroup) {
+    if (!chat.nsfw && m.isGroup) {
         return m.reply(
 `[❗] 𝐋𝐨𝐬 𝐜𝐨𝐦𝐚𝐧𝐝𝐨𝐬 +18 están desactivados en este grupo.
 > Solo el OWNER puede activarlos con el comando » *.nsfw*`
@@ -13,24 +14,20 @@ let handler = async (m, { conn }) => {
     }
 
     // Detectamos el usuario mencionado o citado
-    let who;
-    if (m.mentionedJid.length > 0) who = m.mentionedJid[0];
-    else if (m.quoted) who = m.quoted.sender;
-    else who = m.sender;
+    let who = m.mentionedJid?.[0] || m.quoted?.sender || m.sender;
 
-    let name = conn.getName(who);
-    let name2 = conn.getName(m.sender);
+    // Solo usernames
+    const usernameTarget = `@${who.split("@")[0]}`;
+    const usernameSender = `@${m.sender.split("@")[0]}`;
 
     m.react('🔥');
 
     // Construimos el mensaje según si hay mención o cita
     let str;
-    if (m.mentionedJid.length > 0) {
-        str = `\`${name2}\` le está agarrando las tetas a \`${name || who}\`.`;
-    } else if (m.quoted) {
-        str = `\`${name2}\` está agarrando las tetas de \`${name || who}\`.`;
+    if (m.mentionedJid?.length || m.quoted) {
+        str = `${usernameSender} *le está agarrando las tetas a* ${usernameTarget}.`;
     } else {
-        str = `\`${name2}\` está agarrando unas ricas tetas >.<`.trim();
+        str = `${usernameSender} *está agarrando unas ricas tetas >.<*`;
     }
 
     if (m.isGroup) {
@@ -48,8 +45,13 @@ let handler = async (m, { conn }) => {
         ];
         const video = videos[Math.floor(Math.random() * videos.length)];
 
-        let mentions = [who];
-        conn.sendMessage(m.chat, { video: { url: video }, gifPlayback: true, caption: str, mentions }, { quoted: m });
+        // Enviar video con mención de ambos
+        const mentions = [m.sender, who];
+        conn.sendMessage(
+            m.chat,
+            { video: { url: video }, gifPlayback: true, caption: str, mentions },
+            { quoted: m }
+        );
     }
 }
 
