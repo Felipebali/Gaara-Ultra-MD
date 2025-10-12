@@ -15,48 +15,25 @@ let handler = async (m, { conn, isOwner }) => {
 
     const chat = m.chat;
     if (!global.activityLog[chat]) global.activityLog[chat] = { counts: {} };
-    const room = global.activityLog[chat];
+    const counts = global.activityLog[chat].counts;
 
-    const counts = room.counts || {};
     const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-    const topN = entries.slice(0,5); // top 5
+    const topN = entries.slice(0,10); // top 10
     const total = Object.values(counts).reduce((a,b)=>a+b,0);
 
-    // Obtener metadata del grupo
-    let participants = [];
-    try { 
-      const meta = await conn.groupMetadata(chat);
-      participants = meta.participants.map(p=>p.id);
-    } catch{}
-
-    // Top emisores con nombre y mención
-    let topNames = [];
-    for (let [user,count] of topN) {
-      try { topNames.push({ name: await conn.getName(user), count }); } 
-      catch { topNames.push({ name: user, count }); }
-    }
-
-    // Usuarios silenciosos (hasta 5)
-    let silentIds = participants.filter(u => !(u in counts)).slice(0,5);
-    let silentNames = [];
-    for (let s of silentIds) {
-      try { silentNames.push(await conn.getName(s)); } catch { silentNames.push(s); }
-    }
-
-    // Construir reporte
+    // Top emisores con mención
     let report = [];
-    report.push("🛰️ *RADAR OMEGA - CONTEO DIARIO* 🛰️");
+    report.push("🛰️ *RADAR OMEGA - CONTEO DE MENSAJES* 🛰️");
     report.push(`📡 Grupo: ${chat}`);
-    report.push(`📊 Total mensajes registrados: ${total}`);
-    report.push("");
+    report.push(`📊 Total mensajes registrados: ${total}\n`);
     report.push("🏆 Ranking de actividad:");
-    if (!topNames.length) report.push("• (sin datos de emisores)");
-    else topNames.forEach((t,i)=>{
-      report.push(`${i+1}) @${t.name.split("@")[0]} — ${t.count} msg`);
-    });
-    if (silentNames.length) report.push(`\n🤫 Miembros silenciosos: ${silentNames.map(n=>`@${n.split("@")[0]}`).join(', ')}`);
 
-    await conn.sendMessage(chat, { text: report.join("\n"), mentions: [...topNames.map(t=>t.name), ...silentNames] }, { quoted: null });
+    if (!topN.length) report.push("• (sin datos de emisores)");
+    else topN.forEach(([user,count],i)=>{
+      report.push(`${i+1}) @${user.split("@")[0]} — ${count} msg`);
+    });
+
+    await conn.sendMessage(chat, { text: report.join("\n"), mentions: topN.map(t=>t[0]) }, { quoted: null });
 
   } catch(e){
     console.error("Error en .radar:", e);
