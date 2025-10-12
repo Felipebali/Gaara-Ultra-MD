@@ -1,14 +1,17 @@
-// plugins/welcome.js
+// plugins/_welcome.js
 export async function onGroupUpdate({ update, conn }) {
     const { participants, action, id: chat } = update;
-    if (!participants || participants.length === 0) return;
+    if (!participants || !participants.length) return;
 
     // Solo nos interesan los que se agregan
     if (action !== 'add') return;
 
+    // Aseguramos que exista la data del chat
     if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
     const chatData = global.db.data.chats[chat];
-    if (!chatData.welcome) return;
+
+    // Si no quieres depender de la activación, comenta esta línea
+    // if (!chatData.welcome) return;
 
     for (let user of participants) {
         const name = await conn.getName(user);
@@ -20,8 +23,13 @@ export async function onGroupUpdate({ update, conn }) {
             `✨ @${who.split("@")[0]} (${name}), bienvenido/a! Pásala genial aquí.`
         ];
 
+        // Elegimos un mensaje al azar
         const text = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
 
-        await conn.sendMessage(chat, { text, mentions: [who] });
+        // Enviamos mensaje con mención
+        await conn.sendMessage(chat, {
+            text,
+            mentions: [who]
+        });
     }
 }
