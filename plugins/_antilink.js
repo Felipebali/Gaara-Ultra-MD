@@ -26,7 +26,7 @@ export default handler;
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
     if (!m?.text) return true;
     if (!m.isGroup) return true;
-    if (!isBotAdmin) return true;
+    if (!isBotAdmin) return true; // el bot debe ser admin para borrar
 
     const chat = global.db.data.chats[m.chat];
     if (!chat?.antiLink) return true;
@@ -36,13 +36,13 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     const isChannelLink = channelLinkRegex.test(m.text);
     const isAnyLink = anyLinkRegex.test(m.text);
     const isAllowedLink = allowedLinks.test(m.text);
-    const isTagallLink = m.text.includes(tagallLink);
+    const isTagall = m.text.includes(tagallLink);
 
-    if (!isAnyLink && !isGroupLink && !isChannelLink && !isTagallLink) return true;
+    if (!isAnyLink && !isGroupLink && !isChannelLink && !isTagall) return true;
     if (isAllowedLink) return true;
 
     try {
-        // 🔹 Borrar mensaje correctamente usando protocolMessage
+        // 🔹 BORRAR MENSAJE siempre que sea link
         if (m.key && m.key.id) {
             await conn.sendMessage(m.chat, {
                 protocolMessage: {
@@ -57,8 +57,8 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
             });
         }
 
-        // Tagall
-        if (isTagallLink) {
+        // 🔹 Tagall: siempre borra, no expulsa
+        if (isTagall) {
             await conn.sendMessage(m.chat, {
                 text: `Qué compartís el tagall inútil 😮‍💨 @${who.split("@")[0]}`,
                 mentions: [who]
@@ -66,28 +66,27 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
             return true;
         }
 
-        // Evitar expulsión si es link del mismo grupo
-        if (isGroupLink) {
-            try {
-                const linkThisGroup = `https://chat.whatsapp.com/${await conn.groupInviteCode(m.chat)}`;
-                if (m.text.includes(linkThisGroup)) return true;
-            } catch (err) {
-                console.error("[ERROR] No se pudo obtener el código del grupo:", err);
+        // 🔹 Links de otros grupos o canales
+        if ((isGroupLink || isChannelLink)) {
+            if (!isAdmin) {
+                // Usuario normal -> borra + expulsa
+                await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
+                await conn.sendMessage(m.chat, {
+                    text: `> ✦ @${who.split("@")[0]} fue expulsado por enviar un link de ${isChannelLink ? 'canal' : 'otro grupo'}.`,
+                    mentions: [who]
+                });
+                console.log(`Usuario ${who} eliminado del grupo ${m.chat}`);
+            } else {
+                // Admin -> solo borra
+                await conn.sendMessage(m.chat, {
+                    text: `⚠️ @${who.split("@")[0]}, tu link de ${isChannelLink ? 'canal' : 'otro grupo'} fue eliminado.`,
+                    mentions: [who]
+                });
             }
-        }
-
-        // Expulsión si no es admin
-        if ((isGroupLink || isChannelLink) && !isAdmin) {
-            await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
-            await conn.sendMessage(m.chat, {
-                text: `> ✦ Se ha eliminado a @${who.split("@")[0]} del grupo por \`Anti-Link\`! No permitimos enlaces de ${isChannelLink ? 'canales' : 'otros grupos'}.`,
-                mentions: [who]
-            });
-            console.log(`Usuario ${who} eliminado del grupo ${m.chat}`);
             return true;
         }
 
-        // Otro link -> advertencia
+        // 🔹 Otros links -> mensaje de advertencia
         await conn.sendMessage(m.chat, {
             text: `⚠️ @${who.split("@")[0]}, un link no permitido fue eliminado.`,
             mentions: [who]
