@@ -15,7 +15,7 @@ let handler = async (m, { conn, isOwner }) => {
     }
 
     // Mensaje antes de salir
-    await conn.sendMessage(m.chat, { text: "✅ Me retiro del grupo, cuídense." }, { quoted: null });
+    await conn.sendMessage(m.chat, { text: "Me retiro del grupo, cuídense. 🫡" }, { quoted: null });
 
     // Salir del grupo
     await conn.groupLeave(m.chat);
