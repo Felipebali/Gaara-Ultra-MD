@@ -552,14 +552,46 @@ return phoneUtil.isValidNumber(parsedNumber)
 return false
 }}
 
-import * as welcomeMod from './plugins/_welcome.js';
-import * as goodbyeMod from './plugins/_despedida.js';
-
+// Manejar entradas y salidas de grupo
 conn.ev.on('group-participants.update', async (update) => {
     try {
-        if (welcomeMod.onGroupUpdate) await welcomeMod.onGroupUpdate({ update, conn });
-        if (goodbyeMod.onGroupUpdate) await goodbyeMod.onGroupUpdate({ update, conn });
+        const { id: chat, participants, action } = update;
+        if (!participants || !participants.length) return;
+
+        // Inicializar DB
+        if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
+        const chatData = global.db.data.chats[chat];
+
+        // Inicializar flags si no existen
+        if (chatData.welcome === undefined) chatData.welcome = true;
+        if (chatData.despedida === undefined) chatData.despedida = true;
+
+        for (let who of participants) {
+            const nombre = who.split("@")[0]; // 👈 usamos esto
+
+            // Entradas
+            if (action === 'add' && chatData.welcome) {
+                const mensajes = [
+                    `🎉 Bienvenido/a ${nombre} al grupo! Disfruta tu estadía.`,
+                    `👋 Hola ${nombre}, nos alegra que te unas!`,
+                    `✨ ${nombre}, bienvenido/a! Pásala genial aquí.`
+                ];
+                const text = mensajes[Math.floor(Math.random() * mensajes.length)];
+                await conn.sendMessage(chat, { text, mentions: [who] });
+            }
+
+            // Salidas
+            if (action === 'remove' && chatData.despedida) {
+                const mensajes = [
+                    `😢 ¡Adiós ${nombre}! Te extrañaremos.`,
+                    `👋 ${nombre} ha salido del grupo. ¡Que te vaya bien!`,
+                    `💔 ${nombre} ha abandonado el grupo.`
+                ];
+                const text = mensajes[Math.floor(Math.random() * mensajes.length)];
+                await conn.sendMessage(chat, { text, mentions: [who] });
+            }
+        }
     } catch (e) {
-        console.error('Error ejecutando group update:', e);
+        console.error('Error en group-participants.update:', e);
     }
 });
