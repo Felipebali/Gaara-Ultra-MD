@@ -10,17 +10,21 @@ let handler = async (m, { conn, usedPrefix }) => {
         return m.reply(`《✦》El contenido *NSFW* está desactivado en este grupo.\n> Un administrador puede activarlo con el comando » *#nsfw on*`);
     }
 
+    // Detectar a quién se menciona o responde
     let who = m.mentionedJid?.[0] || m.quoted?.sender || m.sender;
-    let name = conn.getName(who);
-    let name2 = conn.getName(m.sender);
 
+    // Solo usernames
+    const usernameTarget = `@${who.split("@")[0]}`;
+    const usernameSender = `@${m.sender.split("@")[0]}`;
+
+    // Construir mensaje usando solo usernames
     let str;
     if (m.mentionedJid?.length > 0) {
-        str = `\`${name2}\` *le chupó las tetas a* \`${name}\`.`;
+        str = `${usernameSender} le chupó las tetas a ${usernameTarget}.`;
     } else if (m.quoted) {
-        str = `\`${name2}\` *le está chupando las tetas a* \`${name}\`.`;
+        str = `${usernameSender} le está chupando las tetas a ${usernameTarget}.`;
     } else {
-        str = `\`${name2}\` *está chupando tetas! >.<*`;
+        str = `${usernameSender} está chupando tetas! >.<`;
     }
 
     if (m.isGroup) {
@@ -38,11 +42,14 @@ let handler = async (m, { conn, usedPrefix }) => {
         ];
         const video = videos[Math.floor(Math.random() * videos.length)];
 
-        conn.sendMessage(m.chat, {
+        // Menciones: sender y target
+        const mentions = [m.sender, who];
+
+        await conn.sendMessage(m.chat, {
             video: { url: video },
             gifPlayback: true,
             caption: str,
-            mentions: [who]
+            mentions
         }, { quoted: m });
     }
 }
