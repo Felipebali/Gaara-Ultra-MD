@@ -14,7 +14,6 @@ export async function onGroupUpdate({ update, conn }) {
     // if (!chatData.welcome) return;
 
     for (let user of participants) {
-        const name = await conn.getName(user);
         const who = user;
 
         const welcomeMessages = [
