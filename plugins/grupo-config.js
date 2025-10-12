@@ -1,12 +1,12 @@
-// 📌 Handler compacto para configurar funciones del grupo y del bot
-const handler = async (m, { conn, command, isAdmin, isOwner }) => {
-  // 🔹 Inicializar datos
-  const chat = global.db.data.chats[m.chat] ??= {};
-  const bot = global.db.data.settings[conn.user.jid] ??= {};
+// 🪖 Handler militar: config rápida de grupo y bot
+const handler = async (m, { conn, command, args, isAdmin, isOwner }) => {
+  // Inicializar datos
+  const chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {});
+  const bot  = global.db.data.settings[conn.user.jid] || (global.db.data.settings[conn.user.jid] = {});
 
-  // 🔹 Funciones configurables
+  // Funciones configurables
   const opciones = {
-    // ▸ Grupo
+    // Grupo
     welcome: ['🎉', 'Bienvenida', 'chat'],
     autoresponder: ['🤖', 'Autoresponder', 'chat'],
     detect: ['⚡️', 'Avisos', 'chat'],
@@ -28,14 +28,14 @@ const handler = async (m, { conn, command, isAdmin, isOwner }) => {
     autofrase: ['📝', 'Autofrase', 'chat'],
     antidelete: ['🗑', 'Antieliminar', 'chat'],
 
-    // ▸ Bot
+    // Bot
     frases: ['💡', 'Frases', 'bot'],
     autobio: ['📃', 'Autobiografía', 'bot'],
     antispam: ['🚫', 'Antispam', 'bot'],
     antiprivado: ['🔒', 'Antiprivado', 'bot'],
   };
 
-  // 🔹 Mostrar panel si solo ponen .config
+  // Mostrar panel si solo ponen .config
   if (!command || command === 'config') {
     const buildPanel = tipo => {
       let msg = `╭─〔 *Funciones ${tipo === 'chat' ? 'del Grupo' : 'del Bot'}* 〕\n`;
@@ -47,30 +47,31 @@ const handler = async (m, { conn, command, isAdmin, isOwner }) => {
       msg += '╰────────────────────\n\n';
       return msg;
     };
-
-    const msg = `📌 *Panel de Configuración*\n\n${buildPanel('chat')}${buildPanel('bot')}⚙️ Usa *.nombre* para activar o desactivar (ej: *.welcome*).`;
-    return conn.sendMessage(m.chat, { text: msg });
+    return conn.sendMessage(m.chat, { text: `📌 *Panel de Configuración*\n\n${buildPanel('chat')}${buildPanel('bot')}⚙️ Usa *.config nombre1 nombre2 ...* para activar/desactivar.` });
   }
 
-  // 🔹 Alternar función
-  if (!opciones[command]) return;
+  // Solo admin o dueño puede modificar
   if (!isAdmin && !isOwner) return conn.sendMessage(m.chat, { text: '🚫 Solo administradores o el dueño pueden cambiar la configuración.' });
 
-  const [emoji, nombre, tipo] = opciones[command];
-  if (tipo === 'chat') chat[command] = !chat[command];
-  else bot[command] = !bot[command];
+  // Activar/desactivar varias funciones al mismo tiempo
+  let resultados = [];
+  for (let arg of args) {
+    if (!opciones[arg]) continue;
+    const [emoji, nombre, tipo] = opciones[arg];
+    if (tipo === 'chat') chat[arg] = !chat[arg];
+    else bot[arg] = !bot[arg];
+    resultados.push(`${chat[arg] || bot[arg] ? '✅' : '🛑'} ${nombre} ${chat[arg] || bot[arg] ? 'activado' : 'desactivado'}`);
+  }
 
-  const estado = tipo === 'chat' ? chat[command] : bot[command];
-  return conn.sendMessage(m.chat, { text: estado ? `🎊 ¡Listo! *${nombre}* ahora está activo.` : `🛑 Oops… *${nombre}* ha sido desactivado.` });
+  if (!resultados.length) return conn.sendMessage(m.chat, { text: '❌ No se reconocieron funciones para modificar.' });
+  return conn.sendMessage(m.chat, { text: `📌 Configuración actualizada:\n\n${resultados.join('\n')}` });
 };
 
-// 🔹 Comandos
+// Comandos
 handler.command = ['config', ...Object.keys({
-  welcome: 0, autoresponder: 0, detect: 0, antilink: 0, antilink2: 0,
-  nsfw: 0, autolevelup: 0, autosticker: 0, reaction: 0, antitoxic: 0,
-  audios: 0, modoadmin: 0, antifake: 0, antibot: 0, games: 0,
-  simi: 0, autoaceptar: 0, autorechazar: 0, autofrase: 0, antidelete: 0,
-  frases: 0, autobio: 0, antispam: 0, antiprivado: 0
+  welcome:0, autoresponder:0, detect:0, antilink:0, antilink2:0, nsfw:0, autolevelup:0, autosticker:0,
+  reaction:0, antitoxic:0, audios:0, modoadmin:0, antifake:0, antibot:0, games:0, simi:0,
+  autoaceptar:0, autorechazar:0, autofrase:0, antidelete:0, frases:0, autobio:0, antispam:0, antiprivado:0
 })];
 
 handler.help = ['config'];
