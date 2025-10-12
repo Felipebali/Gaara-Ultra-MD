@@ -7,7 +7,7 @@ const blockedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i
 // -------------------------
 // Antes de procesar cualquier mensaje
 // -------------------------
-export async function before(m, { conn, isBotAdmin }) {
+let handlerBefore = async function (m, { conn, isBotAdmin }) {
   if (!m?.text) return true
   if (m.isBaileys && m.fromMe) return true
   if (!m.isGroup) return true
@@ -36,22 +36,23 @@ export async function before(m, { conn, isBotAdmin }) {
 
   return true
 }
+handlerBefore.before = true
+export { handlerBefore as default }
 
 // -------------------------
 // Comando para activar/desactivar Anti-Link2
 // -------------------------
-export const antilink2 = {
-  command: ['antilink2'],
-  group: true,
-  async handler(m, { conn, isAdmin }) {
-    if (!isAdmin) return m.reply("❌ Solo admins pueden usar este comando.")
+let handlerCommand = async function (m, { conn, isAdmin }) {
+  if (!m.isGroup) return
+  if (!isAdmin) return m.reply("❌ Solo admins pueden usar este comando.")
 
-    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
-    const chat = global.db.data.chats[m.chat]
-    chat.antiLink2 = !chat.antiLink2
+  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
+  const chat = global.db.data.chats[m.chat]
+  chat.antiLink2 = !chat.antiLink2
 
-    await conn.sendMessage(m.chat, { 
-      text: `✅ Anti-Link2 ahora está *${chat.antiLink2 ? "activado" : "desactivado"}*.`
-    })
-  }
+  await conn.sendMessage(m.chat, { 
+    text: `✅ Anti-Link2 ahora está *${chat.antiLink2 ? "activado" : "desactivado"}*.`
+  })
 }
+handlerCommand.command = ['antilink2']
+export { handlerCommand }
