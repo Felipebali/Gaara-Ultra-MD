@@ -562,8 +562,19 @@ conn.ev.on('group-participants.update', async (update) => {
     }
 });
 
-import { onGroupUpdate as goodbye } from './plugins/_despedida.js';
+// index.js (fragmento relevante)
 
+// Importa el handler de despedida
+import despedidaCommand, { onGroupUpdate as goodbye } from './plugins/_despedida.js';
+
+// Cuando alguien entra o sale del grupo
 conn.ev.on('group-participants.update', async (update) => {
-    if (goodbye) await goodbye({ update, conn });
+    try {
+        if (goodbye) await goodbye({ update, conn });
+    } catch (e) {
+        console.error('Error en despedida:', e);
+    }
 });
+
+// Comando para activar/desactivar despedida
+conn.commands.add(despedidaCommand);
