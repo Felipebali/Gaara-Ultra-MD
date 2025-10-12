@@ -1,46 +1,24 @@
-// plugins/despedida.js
-export default {
-  name: 'despedida',
-  description: 'Mensaje de despedida simple con activación/desactivación',
-  group: true,
+// plugins/_despedida.js
+export async function onGroupUpdate({ update, conn }) {
+    const { participants, action, id: chat } = update;
+    if (!participants || !participants.length) return;
 
-  // Evento que se ejecuta cuando un usuario se va del grupo
-  all: async function (m, { conn }) {
-    if (!m.isGroup) return;
+    // Solo nos interesan los que se van
+    if (action !== 'remove') return;
 
-    const chatSettings = global.db.data.chats[m.chat];
-    if (!chatSettings?.despedida) return; // Si despedida no está activada
-    if (!m.removed || m.removed.length === 0) return; // Si no hay usuarios eliminados
+    if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
+    const chatData = global.db.data.chats[chat];
 
-    try {
-      const groupMetadata = await conn.groupMetadata(m.chat);
-      const groupName = groupMetadata.subject || 'este grupo';
+    const goodbyeMessages = [
+        `😢 Adiós @${participants[0].split("@")[0]} (${await conn.getName(participants[0])})! Te extrañaremos en el grupo.`,
+        `👋 @${participants[0].split("@")[0]} (${await conn.getName(participants[0])}) se despide. ¡Hasta pronto!`,
+        `💔 @${participants[0].split("@")[0]} (${await conn.getName(participants[0])}) ha salido del grupo. Que te vaya bien!`
+    ];
 
-      for (let user of m.removed) {
-        let mention = '@' + user.split('@')[0];
-        let text = `👋 ${mention} se ha ido de *${groupName}*. ¡Hasta luego!`;
-        await conn.sendMessage(m.chat, { text, mentions: [user] });
-      }
+    const text = goodbyeMessages[Math.floor(Math.random() * goodbyeMessages.length)];
 
-    } catch (e) {
-      console.error(e);
-    }
-  },
-
-  // Comando para activar/desactivar despedida
-  command: async function (m, { conn, isAdmin }) {
-    if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
-    if (!isAdmin) return conn.reply(m.chat, '❌ Solo administradores pueden usar este comando.', m);
-
-    let chatSettings = global.db.data.chats[m.chat];
-    if (!chatSettings) {
-      global.db.data.chats[m.chat] = { despedida: true };
-      chatSettings = global.db.data.chats[m.chat];
-    } else {
-      chatSettings.despedida = !chatSettings.despedida;
-    }
-
-    await global.db.write();
-    conn.reply(m.chat, `✅ Mensaje de despedida ahora está ${chatSettings.despedida ? 'activado' : 'desactivado'} en este grupo. Usa *${global.prefijo || '.'}despedida* para cambiarlo.`, m);
-  }
-};
+    await conn.sendMessage(chat, {
+        text,
+        mentions: participants
+    });
+}
