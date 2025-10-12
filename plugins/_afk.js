@@ -1,5 +1,4 @@
-// afk.js
-let handler = async (m, { conn }) => {
+let afkHandler = async (m, { conn, args }) => {
     if (!global.db.data.users[m.sender]) global.db.data.users[m.sender] = {}
     let user = global.db.data.users[m.sender]
 
@@ -11,7 +10,24 @@ let handler = async (m, { conn }) => {
         return `${h}h ${m}m ${s}s`
     }
 
-    // Si estaba AFK, desactiva y avisa
+    // --- Activar AFK si es el comando ---
+    if (m.text && m.text.startsWith('.afk')) {
+        let text = args.join(' ') || (m.quoted && m.quoted.text) || 'Sin motivo'
+        user.afk = Date.now()
+        user.afkReason = text
+
+        await conn.reply(
+            m.chat,
+            `✴️ *A F K* ✴️
+@${m.sender.split('@')[0]} está ahora AFK
+Motivo: ${text}`,
+            m,
+            { mentions: [m.sender] }
+        )
+        return true // no hacer nada más en este mensaje
+    }
+
+    // --- Desactivar AFK si el usuario envía mensaje ---
     if (user.afk > -1) {
         await conn.reply(
             m.chat,
@@ -26,7 +42,7 @@ Tiempo AFK: ${formatAFK(Date.now() - user.afk)}`,
         user.afkReason = ''
     }
 
-    // Avisar si mencionan a alguien AFK
+    // --- Avisar si mencionan a alguien AFK ---
     let jids = [...new Set([...(m.mentionedJid || []), ...(m.quoted ? [m.quoted.sender] : [])])]
     for (let jid of jids) {
         if (!global.db.data.users[jid]) global.db.data.users[jid] = {}
@@ -47,6 +63,9 @@ Tiempo AFK: ${formatAFK(Date.now() - afkUser.afk)}`,
     return true
 }
 
-// Para que se ejecute en todos los mensajes
-handler.before = true
-export default handler
+// Esto permite que reconozca el comando .afk
+afkHandler.command = /^afk$/i
+afkHandler.register = true
+afkHandler.before = true
+
+export default afkHandler
