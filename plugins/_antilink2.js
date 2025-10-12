@@ -1,31 +1,26 @@
 // plugins/_antilink2.js
-/**
- * Anti-Link2 FelixCat-Bot - Borra IG, TikTok y YouTube con mención
- */
-
 const blockedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i;
 
-export async function before(m, { conn, isAdmin, isBotAdmin }) {
+export async function before(m, { conn, isAdmin }) {
     if (!m?.text) return true;
     if (m.isBaileys && m.fromMe) return true;
     if (!m.isGroup) return true;
-    if (!isBotAdmin) return true;
 
     const chat = global.db?.data?.chats?.[m.chat];
-    if (!chat?.antiLink2) return true; // Solo si está activado
+    if (!chat?.antiLink2) return true;
 
     const who = m.sender;
 
-    if (!blockedLinks.test(m.text)) return true; // No es link bloqueado
+    if (!blockedLinks.test(m.text)) return true;
 
     try {
-        // 🔹 BORRAR MENSAJE
+        // 🔹 BORRAR MENSAJE SIEMPRE
         await conn.sendMessage(m.chat, { delete: m.key });
 
-        // 🔹 MENSAJE CON MENCIÓN
+        // 🔹 MENSAJE SEGÚN ADMIN/USUARIO
         await conn.sendMessage(m.chat, {
             text: isAdmin
-                ? `⚠️ @${who.split("@")[0]}, admin, nada de Instagram, TikTok ni YouTube aquí.`
+                ? `⚠️ @${who.split("@")[0]}, admin, tu link fue eliminado.`
                 : `⚠️ @${who.split("@")[0]}, ese link quedó borrado porque molesta.`,
             mentions: [who]
         });
@@ -35,7 +30,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     }
 
     return true;
-}
+};
 
 // 🔹 Comando para activar/desactivar Anti-Link2
 let handler = async (m, { conn, isAdmin }) => {
