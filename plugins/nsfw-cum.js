@@ -23,15 +23,16 @@ let handler = async (m, { conn, usedPrefix }) => {
         who = m.sender
     }
 
-    let name = conn.getName(who)
-    let name2 = conn.getName(m.sender)
+    // Solo usernames
+    const usernameTarget = `@${who.split("@")[0]}`
+    const usernameSender = `@${m.sender.split("@")[0]}`
 
     // Texto del caption
     let str
     if (m.mentionedJid && m.mentionedJid.length > 0 || m.quoted) {
-        str = `\`${name2}\` *se vino dentro de* \`${name || who}\`. 💦`
+        str = `${usernameSender} *se vino dentro de* ${usernameTarget}. 💦`
     } else {
-        str = `\`${name2}\` *se vino dentro de... mejor no lo decimos 🥛*`
+        str = `${usernameSender} *se vino dentro de... mejor no lo decimos 🥛*`
     }
 
     // Lista de videos NSFW
@@ -51,9 +52,11 @@ let handler = async (m, { conn, usedPrefix }) => {
     const video = videos[Math.floor(Math.random() * videos.length)]
 
     try {
+        // Enviar video con mención de ambos
+        const mentions = [m.sender, who]
         await conn.sendMessage(
             m.chat,
-            { video: { url: video }, gifPlayback: true, caption: str, mentions: [who] },
+            { video: { url: video }, gifPlayback: true, caption: str, mentions },
             { quoted: m }
         )
         await m.react('🥛') // Reacciona con un vaso de leche
