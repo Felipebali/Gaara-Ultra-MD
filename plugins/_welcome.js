@@ -18,9 +18,9 @@ export async function onGroupUpdate({ update, conn }) {
         const who = user;
 
         const welcomeMessages = [
-            `🎉 Bienvenido/a @${who.split("@")[0]} (${name}) al grupo! Disfruta tu estadía.`,
-            `👋 Hola @${who.split("@")[0]} (${name}), nos alegra que te unas!`,
-            `✨ @${who.split("@")[0]} (${name}), bienvenido/a! Pásala genial aquí.`
+            `🎉 Bienvenido/a @${who.split("@")[0]} al grupo! Disfruta tu estadía.`,
+            `👋 Hola @${who.split("@")[0]}, nos alegra que te unas!`,
+            `✨ @${who.split("@")[0]}, bienvenido/a! Pásala genial aquí.`
         ];
 
         // Elegimos un mensaje al azar
