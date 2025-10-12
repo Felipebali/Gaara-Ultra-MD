@@ -25,21 +25,9 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
 
     try {
         // 🔹 BORRAR MENSAJE SIEMPRE
-        if (m.key && m.key.id) {
-            await conn.sendMessage(m.chat, {
-                protocolMessage: {
-                    key: { 
-                        id: m.key.id, 
-                        remoteJid: m.chat, 
-                        fromMe: false, 
-                        participant: m.key.participant || m.sender 
-                    },
-                    type: 0
-                }
-            });
-        }
+        await conn.sendMessage(m.chat, { delete: m.key });
 
-        // 🔹 Tagall: borra siempre, no expulsa
+        // 🔹 Tagall: solo borrar
         if (isTagall) {
             await conn.sendMessage(m.chat, {
                 text: `Qué compartís el tagall inútil 😮‍💨 @${who.split("@")[0]}`,
@@ -49,17 +37,16 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
         }
 
         // 🔹 Links de otros grupos o canales
-        if ((isGroupLink || isChannelLink)) {
+        if (isGroupLink || isChannelLink) {
             if (!isAdmin) {
-                // Usuario normal -> expulsa + mensaje
+                // Usuario normal -> expulsar + mensaje
                 await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
                 await conn.sendMessage(m.chat, {
                     text: `> ✦ @${who.split("@")[0]} fue expulsado por enviar un link de ${isChannelLink ? 'canal' : 'otro grupo'}.`,
                     mentions: [who]
                 });
-                console.log(`Usuario ${who} eliminado del grupo ${m.chat}`);
             } else {
-                // Admin -> solo mensaje, no expulsa
+                // Admin -> solo mensaje
                 await conn.sendMessage(m.chat, {
                     text: `⚠️ @${who.split("@")[0]}, tu link de ${isChannelLink ? 'canal' : 'otro grupo'} fue eliminado.`,
                     mentions: [who]
@@ -68,7 +55,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
             return true;
         }
 
-        // 🔹 Otros links -> mensaje de advertencia
+        // 🔹 Otros links -> advertencia
         await conn.sendMessage(m.chat, {
             text: `⚠️ @${who.split("@")[0]}, un link no permitido fue eliminado.`,
             mentions: [who]
