@@ -4,6 +4,7 @@
 
 const blockedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i
 
+// Función que corre antes de cada mensaje
 export async function before(m, { conn, isBotAdmin }) {
   if (!m?.text) return true
   if (m.isBaileys && m.fromMe) return true
@@ -36,15 +37,18 @@ export async function before(m, { conn, isBotAdmin }) {
 }
 
 // Comando para activar/desactivar Anti-Link2
-export async function antilink2Command(m, { conn, isAdmin }) {
-  if (!m.isGroup) return
-  if (!isAdmin) return m.reply("❌ Solo admins pueden usar este comando.")
+export const antilink2Command = {
+  command: ['antilink2'],
+  desc: 'Activa o desactiva el Anti-Link para IG, TikTok y YouTube',
+  group: true,
+  admin: true, // solo admins pueden activar/desactivar
+  async handler(m, { conn }) {
+    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
+    const chat = global.db.data.chats[m.chat]
+    chat.antiLink2 = !chat.antiLink2
 
-  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
-  const chat = global.db.data.chats[m.chat]
-  chat.antiLink2 = !chat.antiLink2
-
-  await conn.sendMessage(m.chat, { 
-    text: `✅ Anti-Link2 ahora está *${chat.antiLink2 ? "activado" : "desactivado"}*.`
-  })
+    await conn.sendMessage(m.chat, { 
+      text: `✅ Anti-Link2 ahora está *${chat.antiLink2 ? "activado" : "desactivado"}*.`
+    })
+  }
 }
