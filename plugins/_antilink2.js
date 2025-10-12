@@ -12,8 +12,7 @@ export async function before(m, { conn }) {
     if (!chat.antiLink2) return true
 
     const who = m.sender
-    const name = await conn.getName(who)  // ✅ Obtenemos el nombre de WhatsApp
-    const mention = `@${who.split("@")[0]} (${name})`  // Mención con nombre
+    const mention = `@${who.split("@")[0]}`  // ✅ Solo número, como NSFW
 
     const isIG = IG_REGEX.test(m.text)
     const isTT = TT_REGEX.test(m.text)
@@ -42,7 +41,7 @@ export async function before(m, { conn }) {
             if (m.isAdmin) msg = adminPhrases[Math.floor(Math.random()*adminPhrases.length)]
             else msg = userPhrases[Math.floor(Math.random()*userPhrases.length)]
 
-            // Envía aviso con la mención y nombre
+            // Envía aviso con la mención
             await conn.sendMessage(m.chat, { text: msg })
         } catch(e){
             console.error("Error en antilink2:", e)
