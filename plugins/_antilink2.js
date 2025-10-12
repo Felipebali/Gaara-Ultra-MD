@@ -12,7 +12,7 @@ export async function before(m, { conn }) {
     if (!chat.antiLink2) return true
 
     const who = m.sender
-    const mention = `@${who.split("@")[0]}`
+    const mention = `@${who.split("@")[0]}`  // ✅ La mención funciona correctamente
 
     const isIG = IG_REGEX.test(m.text)
     const isTT = TT_REGEX.test(m.text)
@@ -20,6 +20,7 @@ export async function before(m, { conn }) {
 
     if (isIG || isTT || isYT) {
         try {
+            // Borra el mensaje del link
             await conn.sendMessage(m.chat, { delete: m.key })
 
             // Frases random
@@ -37,9 +38,10 @@ export async function before(m, { conn }) {
             ]
 
             let msg
-            if (m.isGroup && m.isAdmin) msg = adminPhrases[Math.floor(Math.random()*adminPhrases.length)]
+            if (m.isAdmin) msg = adminPhrases[Math.floor(Math.random()*adminPhrases.length)]
             else msg = userPhrases[Math.floor(Math.random()*userPhrases.length)]
 
+            // Envía aviso con la mención
             await conn.sendMessage(m.chat, { text: msg })
         } catch(e){
             console.error("Error en antilink2:", e)
