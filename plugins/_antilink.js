@@ -1,9 +1,10 @@
 // plugins/antilink.js
 /**
- * Anti-Link FelixCat-Bot - Funciona Independiente y estable
+ * Anti-Link FelixCat-Bot - Versión final mejorada
  */
 
 const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i;
+const channelLinkRegex = /whatsapp.com\/channel\/([0-9A-Za-z]+)/i;
 const anyLinkRegex = /https?:\/\/[^\s]+/i;
 const allowedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i;
 const tagallLink = 'https://miunicolink.local/tagall-FelixCat';
@@ -36,41 +37,53 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     if (!chat?.antiLink) return true;
 
     const who = m.sender;
-    const isGroupLink = groupLinkRegex.test(m.text);
+    const isGroupLink = m.text.match(groupLinkRegex);
+    const isChannelLink = m.text.match(channelLinkRegex);
     const isAnyLink = anyLinkRegex.test(m.text);
     const isAllowedLink = allowedLinks.test(m.text);
     const isTagallLink = m.text.includes(tagallLink);
 
-    if (!isAnyLink && !isGroupLink && !isTagallLink) return true;
+    if (!isAnyLink && !isGroupLink && !isChannelLink && !isTagallLink) return true;
     if (isAllowedLink) return true;
 
     try {
-        // 🔹 BORRAR MENSAJE (funciona en Termux + Baileys)
+        // 🔹 Borrar mensaje siempre que sea link
         await conn.sendMessage(m.chat, {
             delete: { remoteJid: m.chat, fromMe: false, id: m.key.id, participant: m.sender }
         });
 
-        // Link de tagall -> mensaje especial
+        // Link de tagall -> mensaje divertido con mención
         if (isTagallLink) {
-            await conn.sendMessage(m.chat, { 
+            await conn.sendMessage(m.chat, {
                 text: `Qué compartís el tagall inútil 😮‍💨 @${who.split("@")[0]}`,
                 mentions: [who]
             });
             return true;
         }
 
-        // Expulsión por link de grupo si no es admin
-        if (!isAdmin && isGroupLink) {
+        // Evitar expulsión si el link es del mismo grupo
+        if (isGroupLink) {
+            try {
+                const linkThisGroup = `https://chat.whatsapp.com/${await conn.groupInviteCode(m.chat)}`;
+                if (m.text.includes(linkThisGroup)) return true;
+            } catch (error) {
+                console.error("[ERROR] No se pudo obtener el código del grupo:", error);
+            }
+        }
+
+        // Expulsión por link de grupo o canal si no es admin
+        if ((isGroupLink || isChannelLink) && !isAdmin) {
             await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
-            await conn.sendMessage(m.chat, { 
-                text: `🚫 @${who.split("@")[0]} fue expulsado por enviar un link de grupo.`,
+            await conn.sendMessage(m.chat, {
+                text: `> ✦ Se ha eliminado a @${who.split("@")[0]} del grupo por \`Anti-Link\`! No permitimos enlaces de ${isChannelLink ? 'canales' : 'otros grupos'}.`,
                 mentions: [who]
             });
+            console.log(`Usuario ${who} eliminado del grupo ${m.chat}`);
             return true;
         }
 
-        // Cualquier otro link -> mensaje de advertencia
-        await conn.sendMessage(m.chat, { 
+        // Cualquier otro link -> mensaje de advertencia mencionando al usuario
+        await conn.sendMessage(m.chat, {
             text: `⚠️ @${who.split("@")[0]}, un link no permitido fue eliminado.`,
             mentions: [who]
         });
