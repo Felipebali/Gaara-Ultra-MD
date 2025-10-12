@@ -8,7 +8,9 @@ let handler = async (m, { conn, usedPrefix }) => {
 
     // Verificar si NSFW está activado
     if (!chat.nsfw && m.isGroup) {
-        return conn.sendMessage(m.chat, { text: `《✦》El contenido *NSFW* está desactivado en este grupo.\n> Un dueño puede activarlo con el comando » *#nsfw*` }, { quoted: m });
+        return conn.sendMessage(m.chat, { 
+            text: `《✦》El contenido *NSFW* está desactivado en este grupo.\n> Un dueño puede activarlo con el comando » *#nsfw*` 
+        }, { quoted: m });
     }
 
     // Detectar a quién se menciona o responde
@@ -21,16 +23,18 @@ let handler = async (m, { conn, usedPrefix }) => {
         who = m.sender;
     }
 
-    const name = conn.getName(who);
-    const name2 = conn.getName(m.sender);
+    // Solo usernames
+    const usernameTarget = `@${who.split("@")[0]}`;
+    const usernameSender = `@${m.sender.split("@")[0]}`;
 
+    // Construir mensaje usando solo usernames
     let str;
     if (m.mentionedJid?.length) {
-        str = `\`${name2}\` *le está lamiendo el coño a* \`${name || who}\`.`;
+        str = `${usernameSender} le está lamiendo el coño a ${usernameTarget}.`;
     } else if (m.quoted) {
-        str = `\`${name2}\` *le chupó el coño a* \`${name || who}\`.`;
+        str = `${usernameSender} le chupó el coño a ${usernameTarget}.`;
     } else {
-        str = `\`${name2}\` *está lamiendo un coño! >.<*`;
+        str = `${usernameSender} está lamiendo un coño! >.<`;
     }
 
     if (m.isGroup) {
@@ -46,7 +50,9 @@ let handler = async (m, { conn, usedPrefix }) => {
         ];
 
         const video = videos[Math.floor(Math.random() * videos.length)];
-        const mentions = [who];
+
+        // Menciones: sender y target
+        const mentions = [m.sender, who];
 
         await conn.sendMessage(m.chat, {
             video: { url: video },
@@ -62,4 +68,4 @@ handler.tags = ['nsfw'];
 handler.command = ['lickpussy', 'coño'];
 handler.group = true;
 
-export default handler; 
+export default handler;
