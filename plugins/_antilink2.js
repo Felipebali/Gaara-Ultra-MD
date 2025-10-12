@@ -1,59 +1,57 @@
+// plugins/_antilink2.js
 /**
  * Anti-Link2 FelixCat-Bot - Borra IG, TikTok y YouTube con mención
  */
 
-const linkRegex = /https?:\/\/[^\s]+/i // Detecta cualquier link
-const blockedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i // Links a bloquear
+const blockedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i;
 
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
-    if (!m || !m.text) return true
-    if (m.isBaileys && m.fromMe) return true
-    if (!m.isGroup) return true
-    if (!isBotAdmin) return true
+    if (!m?.text) return true;
+    if (m.isBaileys && m.fromMe) return true;
+    if (!m.isGroup) return true;
+    if (!isBotAdmin) return true;
 
-    let chat = global.db?.data?.chats?.[m.chat]
-    if (!chat || !chat.antiLink2) return true // Activado desde .antilink2
+    const chat = global.db?.data?.chats?.[m.chat];
+    if (!chat?.antiLink2) return true; // Solo si está activado
 
-    const who = m.sender
-    const name = await conn.getName(who)
+    const who = m.sender;
 
-    const isBlockedLink = blockedLinks.test(m.text)
-    if (!isBlockedLink) return true // Si no es un link bloqueado, no hace nada
+    if (!blockedLinks.test(m.text)) return true; // No es link bloqueado
 
     try {
-        // Borra el mensaje
-        await conn.sendMessage(m.chat, { delete: m.key })
+        // 🔹 BORRAR MENSAJE
+        await conn.sendMessage(m.chat, { delete: m.key });
 
-        // Mensaje según si es admin o no
-        if (isAdmin) {
-            await conn.sendMessage(m.chat, {
-                text: `⚠️ @${who.split("@")[0]}, admin, nada de Instagram, TikTok ni YouTube aquí.`,
-                mentions: [who]
-            })
-        } else {
-            await conn.sendMessage(m.chat, {
-                text: `⚠️ @${who.split("@")[0]}, ese link quedó borrado porque molesta.`,
-                mentions: [who]
-            })
-        }
+        // 🔹 MENSAJE CON MENCIÓN
+        await conn.sendMessage(m.chat, {
+            text: isAdmin
+                ? `⚠️ @${who.split("@")[0]}, admin, nada de Instagram, TikTok ni YouTube aquí.`
+                : `⚠️ @${who.split("@")[0]}, ese link quedó borrado porque molesta.`,
+            mentions: [who]
+        });
 
     } catch (e) {
-        console.error('Error en Anti-Link2:', e)
+        console.error('Error en Anti-Link2:', e);
     }
 
-    return true
+    return true;
 }
 
-// Comando para activar/desactivar Anti-Link2
-export async function antilink2Command(m, { conn, isAdmin }) {
-    if (!m.isGroup) return
-    if (!isAdmin) return m.reply("❌ Solo admins pueden usar este comando.")
+// 🔹 Comando para activar/desactivar Anti-Link2
+let handler = async (m, { conn, isAdmin }) => {
+    if (!m.isGroup) return;
+    if (!isAdmin) return conn.sendMessage(m.chat, { text: "❌ Solo admins pueden usar este comando." });
 
-    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
-    let chat = global.db.data.chats[m.chat]
-    chat.antiLink2 = !chat.antiLink2
+    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
+    const chat = global.db.data.chats[m.chat];
+
+    chat.antiLink2 = !chat.antiLink2;
 
     await conn.sendMessage(m.chat, { 
         text: `✅ Anti-Link2 ahora está *${chat.antiLink2 ? "activado" : "desactivado"}*.`
-    })
-}
+    });
+};
+
+handler.command = ['antilink2'];
+handler.group = true;
+export default handler;
