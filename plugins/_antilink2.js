@@ -5,7 +5,7 @@
 const blockedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i
 
 // -------------------------
-// Revisa mensajes en grupo
+// Antes de procesar cualquier mensaje
 // -------------------------
 export async function before(m, { conn, isBotAdmin }) {
   if (!m?.text) return true
@@ -38,7 +38,7 @@ export async function before(m, { conn, isBotAdmin }) {
 }
 
 // -------------------------
-// Comando para activar/desactivar
+// Comando para activar/desactivar Anti-Link2
 // -------------------------
 export const antilink2 = {
   command: ['antilink2'],
