@@ -1,4 +1,6 @@
 // plugins/_despedida.js
+
+// Handler de despedida
 export async function onGroupUpdate({ update, conn }) {
     const { participants, action, id: chat } = update;
     if (!participants || !participants.length) return;
@@ -6,18 +8,23 @@ export async function onGroupUpdate({ update, conn }) {
 
     if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
     const chatData = global.db.data.chats[chat];
-    if (chatData.despedida === undefined) chatData.despedida = true; // default activado
 
-    if (!chatData.despedida) return;
+    // Si despedida no está activada, no hace nada
+    if (!chatData.goodbye) return;
 
-    for (let who of participants) {
-        const msgs = [
-            `@${who.split("@")[0]} salió del grupo`,
-            `Adiós @${who.split("@")[0]}`,
-            `Hasta luego @${who.split("@")[0]}`
+    for (let user of participants) {
+        const goodbyeMessages = [
+            `😢 ¡Adiós @${user.split("@")[0]}! Te extrañaremos.`,
+            `👋 @${user.split("@")[0]} ha salido del grupo. ¡Que te vaya bien!`,
+            `💔 @${user.split("@")[0]} ha abandonado el grupo.`
         ];
-        const text = msgs[Math.floor(Math.random() * msgs.length)];
-        await conn.sendMessage(chat, { text, mentions: [who] });
+
+        const text = goodbyeMessages[Math.floor(Math.random() * goodbyeMessages.length)];
+
+        await conn.sendMessage(chat, {
+            text,
+            mentions: [user]
+        });
     }
 }
 
@@ -29,13 +36,13 @@ export async function despedidaCommand(m, { conn, isAdmin }) {
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
     const chat = global.db.data.chats[m.chat];
 
-    chat.despedida = !chat.despedida;
+    chat.goodbye = !chat.goodbye;
 
     await conn.sendMessage(m.chat, { 
-        text: `✅ Mensajes de despedida ahora están *${chat.despedida ? "activados" : "desactivados"}*.`
+        text: `✅ Mensajes de despedida ahora están *${chat.goodbye ? "activados" : "desactivados"}*.`
     });
 }
 
-despedidaCommand.command = ['despedida'];
+despedidaCommand.command = ['goodbye','despedida'];
 despedidaCommand.tags = ['group'];
 export default despedidaCommand;
