@@ -1,7 +1,7 @@
 // plugins/_antilink2.js
 /**
- * Anti-Link2 FelixCat-Bot
- * Borra mensajes de IG/TikTok/YouTube con mención, basado en Anti-Link que funciona
+ * Anti-Link2 FelixCat-Bot - Borra IG, TikTok y YouTube con mención
+ * Basado en el Anti-Link que sí funciona
  */
 
 const blockedLinks = /(https?:\/\/)?(www\.)?(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)\/[^\s]+/i
@@ -10,29 +10,27 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     if (!m?.text) return true
     if (m.isBaileys && m.fromMe) return true
     if (!m.isGroup) return true
-    if (!isBotAdmin) return true
+    if (!isBotAdmin) return true // Bot debe ser admin
 
     const chat = global.db?.data?.chats?.[m.chat]
-    if (!chat?.antiLink2) return true
+    if (!chat?.antiLink2) return true // Activado con .antilink2
 
     const who = m.sender
-
-    if (!blockedLinks.test(m.text)) return true
+    const isBlocked = blockedLinks.test(m.text)
+    if (!isBlocked) return true
 
     try {
-        // Borra el mensaje, usando la misma forma que Anti-Link que funciona
-        if (m.key?.id && m.key?.remoteJid) {
-            await conn.sendMessage(m.chat, { delete: m.key })
-        }
+        // Borra el mensaje de manera segura
+        if (m.key?.id && m.key?.remoteJid) await conn.sendMessage(m.chat, { delete: m.key })
 
-        // Mensaje de aviso al usuario
+        // Mensaje de aviso
         await conn.sendMessage(m.chat, {
             text: `⚠️ @${who.split("@")[0]}, tu link de Instagram, TikTok o YouTube fue eliminado.`,
             mentions: [who]
         })
 
     } catch (e) {
-        console.error('Error en Anti-Link2:', e)
+        console.error("Error en Anti-Link2:", e)
     }
 
     return true
@@ -45,9 +43,9 @@ let handler = async (m, { conn, isAdmin }) => {
 
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
     const chat = global.db.data.chats[m.chat]
-
     chat.antiLink2 = !chat.antiLink2
-    await conn.sendMessage(m.chat, { 
+
+    await conn.sendMessage(m.chat, {
         text: `✅ Anti-Link2 ahora está *${chat.antiLink2 ? "activado" : "desactivado"}*.`
     })
 }
