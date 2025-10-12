@@ -8,6 +8,8 @@ import fs from 'fs';
 import chalk from 'chalk';
 import ws from 'ws';
 
+import './plugins/collect-media.js'; // <-- carga automática de media
+
 const { proto } = (await import('@whiskeysockets/baileys')).default
 const isNumber = x => typeof x === 'number' && !isNaN(x)
 const delay = ms => isNumber(ms) && new Promise(resolve => setTimeout(function () {
