@@ -1,8 +1,4 @@
-// plugins/antilink.js
-/**
- * Anti-Link FelixCat-Bot - Funciona realmente en Termux
- */
-
+// plugins/_antilink.js
 const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i;
 const channelLinkRegex = /whatsapp.com\/channel\/([0-9A-Za-z]+)/i;
 const anyLinkRegex = /https?:\/\/[^\s]+/i;
@@ -30,7 +26,7 @@ export default handler;
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
     if (!m?.text) return true;
     if (!m.isGroup) return true;
-    if (!isBotAdmin) return true; // Bot debe ser admin
+    if (!isBotAdmin) return true;
 
     const chat = global.db.data.chats[m.chat];
     if (!chat?.antiLink) return true;
@@ -46,7 +42,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     if (isAllowedLink) return true;
 
     try {
-        // 🔹 BORRAR MENSAJE correctamente usando protocolMessage
+        // 🔹 Borrar mensaje correctamente usando protocolMessage
         if (m.key && m.key.id) {
             await conn.sendMessage(m.chat, {
                 protocolMessage: {
@@ -56,12 +52,12 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
                         fromMe: false, 
                         participant: m.key.participant || m.sender 
                     },
-                    type: 0 // DELETE
+                    type: 0
                 }
             });
         }
 
-        // Link de tagall -> mensaje divertido con mención
+        // Tagall
         if (isTagallLink) {
             await conn.sendMessage(m.chat, {
                 text: `Qué compartís el tagall inútil 😮‍💨 @${who.split("@")[0]}`,
@@ -80,7 +76,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
             }
         }
 
-        // Expulsión por link de grupo o canal si no es admin
+        // Expulsión si no es admin
         if ((isGroupLink || isChannelLink) && !isAdmin) {
             await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
             await conn.sendMessage(m.chat, {
@@ -91,7 +87,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
             return true;
         }
 
-        // Cualquier otro link -> mensaje de advertencia
+        // Otro link -> advertencia
         await conn.sendMessage(m.chat, {
             text: `⚠️ @${who.split("@")[0]}, un link no permitido fue eliminado.`,
             mentions: [who]
@@ -102,3 +98,4 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     }
 
     return true;
+}
