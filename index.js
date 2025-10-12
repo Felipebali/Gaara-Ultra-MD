@@ -552,29 +552,18 @@ return phoneUtil.isValidNumber(parsedNumber)
 return false
 }}
 
-// Al final de index.js, después de inicializar conn
+// index.js (fragmento corregido)
+
+// Función para manejar tanto bienvenida como despedida
 conn.ev.on('group-participants.update', async (update) => {
     try {
-        const mod = await import('./plugins/_welcome.js');
-        if (mod.onGroupUpdate) await mod.onGroupUpdate({ update, conn });
+        // Importa los plugins dinámicamente
+        const welcomeMod = await import('./plugins/_welcome.js');
+        const goodbyeMod = await import('./plugins/_despedida.js');
+
+        if (welcomeMod.onGroupUpdate) await welcomeMod.onGroupUpdate({ update, conn });
+        if (goodbyeMod.onGroupUpdate) await goodbyeMod.onGroupUpdate({ update, conn });
     } catch (e) {
-        console.error('Error ejecutando welcome:', e);
+        console.error('Error ejecutando group update:', e);
     }
 });
-
-// index.js (fragmento relevante)
-
-// Importa el handler de despedida
-import despedidaCommand, { onGroupUpdate as goodbye } from './plugins/_despedida.js';
-
-// Cuando alguien entra o sale del grupo
-conn.ev.on('group-participants.update', async (update) => {
-    try {
-        if (goodbye) await goodbye({ update, conn });
-    } catch (e) {
-        console.error('Error en despedida:', e);
-    }
-});
-
-// Comando para activar/desactivar despedida
-conn.commands.add(despedidaCommand);
