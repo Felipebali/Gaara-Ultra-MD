@@ -5,7 +5,9 @@ let handler = async (m, { conn }) => {
 
         // Verificar si NSFW está activado
         if (!chat.nsfw && m.isGroup) {
-            return conn.sendMessage(m.chat, { text: `⚠️ El contenido *NSFW* está desactivado en este grupo.\n> Un dueño puede activarlo con *#nsfw*` }, { quoted: m });
+            return conn.sendMessage(m.chat, { 
+                text: `⚠️ El contenido *NSFW* está desactivado en este grupo.\n> Un dueño puede activarlo con *#nsfw*` 
+            }, { quoted: m });
         }
 
         // Detectar usuario objetivo
@@ -14,14 +16,16 @@ let handler = async (m, { conn }) => {
         else if (m.quoted) who = m.quoted.sender;
         else who = m.sender;
 
-        const name = conn.getName(who);
-        const name2 = conn.getName(m.sender);
+        // Solo usernames
+        const usernameTarget = `@${who.split("@")[0]}`;
+        const usernameSender = `@${m.sender.split("@")[0]}`;
 
+        // Construir mensaje usando solo usernames
         let str;
         if (m.mentionedJid?.length || m.quoted) {
-            str = `\`${name2}\` *le hizo una paja con los pies a* \`${name || who}\`.`;
+            str = `${usernameSender} le hizo una paja con los pies a ${usernameTarget}.`;
         } else {
-            str = `\`${name2}\` *está haciendo una paja con los pies!*`;
+            str = `${usernameSender} está haciendo una paja con los pies!`;
         }
 
         // Lista de videos NSFW
@@ -37,8 +41,8 @@ let handler = async (m, { conn }) => {
 
         const video = videos[Math.floor(Math.random() * videos.length)];
 
-        // Enviar video con mención
-        const mentions = [who];
+        // Enviar video con mención de ambos
+        const mentions = [m.sender, who];
         await conn.sendMessage(m.chat, { video: { url: video }, gifPlayback: true, caption: str, mentions }, { quoted: m });
 
     } catch (e) {
