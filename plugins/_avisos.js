@@ -3,15 +3,20 @@ global.db.data.chats = global.db.data.chats || {}
 global.groupData = global.groupData || {}
 
 let handler = async (m, { conn, isAdmin, isGroup }) => {
-  if (!isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
-  if (!isAdmin) return m.reply('❌ Solo *admins* pueden usar este comando.')
+  if (!isGroup) return conn.sendMessage(m.chat, { 
+    text: '❌ Este comando solo funciona en grupos.\n\n⚡ Cuando me agregues a un grupo, podré reconocer cambios automáticamente.' 
+  })
+
+  if (!isAdmin) return conn.sendMessage(m.chat, { text: '❌ Solo *admins* pueden activar o desactivar el modo reconocer.' })
 
   let chat = global.db.data.chats[m.chat]
   chat.reconocer = !chat.reconocer
 
-  return m.reply(chat.reconocer 
-    ? '✅ Modo *reconocer* ACTIVADO\nAvisaré cuando cambien el *nombre* o la *descripción* del grupo.' 
-    : '❌ Modo *reconocer* DESACTIVADO')
+  return conn.sendMessage(m.chat, { 
+    text: chat.reconocer
+      ? '✅ Modo *reconocer* ACTIVADO\nAvisaré cuando cambien el *nombre* o la *descripción* del grupo.'
+      : '❌ Modo *reconocer* DESACTIVADO'
+  })
 }
 
 handler.help = ['reconocer']
