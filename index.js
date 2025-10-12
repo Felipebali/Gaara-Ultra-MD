@@ -561,3 +561,9 @@ conn.ev.on('group-participants.update', async (update) => {
         console.error('Error ejecutando welcome:', e);
     }
 });
+
+import { onGroupUpdate as goodbye } from './plugins/_despedida.js';
+
+conn.ev.on('group-participants.update', async (update) => {
+    if (goodbye) await goodbye({ update, conn });
+});
