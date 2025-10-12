@@ -43,10 +43,23 @@ const handler = async (m, { conn }) => {
         }, TIME_LIMIT)
     }
 
-    // Construir mensaje HTML
-    let text = `<b>🌍 Adivina la bandera</b>\n\n${correct.emoji}\n\n<b>Opciones:</b>`
-    options.forEach((o, i) => text += `\n<b>${i + 1}.</b> ${o}`)
-    text += `\n\nResponde con el <b>número correcto</b> (1-4).\nTiempo: <i>${TIME_LIMIT / 1000} segundos</i>\nIntentos: <b>${MAX_TRIES}</b>`
+    // Construir mensaje HTML mejorado
+    let text = `
+<b>🌍 ¡Adivina la bandera!</b>
+
+${correct.emoji.repeat(3)}
+
+<b>Opciones:</b>
+`
+    options.forEach((o, i) => {
+        text += `<b>${i + 1}.</b> ${o}\n`
+    })
+
+    text += `
+<b>📌 Cómo responder:</b> Envía el <i>número</i> de la opción correcta (1-4)
+<b>⏱ Tiempo límite:</b> <i>${TIME_LIMIT / 1000} segundos</i>
+<b>🎯 Intentos disponibles:</b> <b>${MAX_TRIES}</b>
+`
 
     await conn.sendMessage(m.chat, { text, parse_mode: 'html' })
 }
@@ -61,7 +74,7 @@ handler.before = async (m, { conn }) => {
 
     if (userAnswer === answer) {
         clearTimeout(game.timeout)
-        await conn.sendMessage(m.chat, { text: `✅ <b>Correcto!</b> 🎉 La opción correcta era <i>${answer}</i>`, parse_mode: 'html' })
+        await conn.sendMessage(m.chat, { text: `✅ <b>¡Correcto!</b> 🎉\nLa opción correcta era: <i>${answer}</i>`, parse_mode: 'html' })
 
         global.flagRanking[m.chat] = global.flagRanking[m.chat] || {}
         global.flagRanking[m.chat][m.sender] = (global.flagRanking[m.chat][m.sender] || 0) + 1
@@ -71,10 +84,10 @@ handler.before = async (m, { conn }) => {
         game.tries--
         if (game.tries <= 0) {
             clearTimeout(game.timeout)
-            await conn.sendMessage(m.chat, { text: `❌ <b>Se acabaron tus intentos</b>. La opción correcta era <i>${answer}</i>`, parse_mode: 'html' })
+            await conn.sendMessage(m.chat, { text: `❌ <b>Se acabaron tus intentos</b>\nLa opción correcta era: <i>${answer}</i>`, parse_mode: 'html' })
             delete global.flagGame[m.chat]
         } else {
-            await conn.sendMessage(m.chat, { text: `❌ Respuesta incorrecta. Intentos restantes: <b>${game.tries}</b>`, parse_mode: 'html' })
+            await conn.sendMessage(m.chat, { text: `❌ Respuesta incorrecta\nIntentos restantes: <b>${game.tries}</b>`, parse_mode: 'html' })
         }
     }
 }
