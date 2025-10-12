@@ -15,14 +15,14 @@ let handler = async (m, { conn }) => {
 
     m.react('🥵');
 
-    // Construimos el mensaje incluyendo la mención con @
+    // Construimos el mensaje según mención o cita
     let str;
     if (m.mentionedJid?.length) {
-        str = `\`${name2}\` tiene sexo fuertemente con @${who.split('@')[0]}.`;
+        str = `\`${name2}\` tiene sexo fuertemente con @${who.split("@")[0]}.`;
     } else if (m.quoted) {
-        str = `\`${name2}\` tiene sexo con @${who.split('@')[0]}.`;
+        str = `\`${name2}\` tiene sexo con @${who.split("@")[0]}.`;
     } else {
-        str = `\`${name2}\` tiene sexo apasionadamente`;
+        str = `\`${name2}\` tiene sexo apasionadamente.`;
     }
 
     if (m.isGroup) {
@@ -39,13 +39,13 @@ let handler = async (m, { conn }) => {
         ];
 
         const video = videos[Math.floor(Math.random() * videos.length)];
+        const mentions = [who]; // esto hace que WhatsApp notifique correctamente
 
-        // Enviamos el mensaje con mención explícita
         await conn.sendMessage(m.chat, {
             video: { url: video },
             gifPlayback: true,
             caption: str,
-            mentions: [who] // Esto activa la mención en WhatsApp
+            mentions
         }, { quoted: m });
     }
 };
