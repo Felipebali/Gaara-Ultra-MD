@@ -13,16 +13,18 @@ let handler = async (m, { conn }) => {
     else if (m.quoted) who = m.quoted.sender;
     else who = m.sender;
 
-    const usernameTarget = `@${who.split("@")[0]}`; // Solo username
+    // Obtener solo usernames
+    const usernameTarget = `@${who.split("@")[0]}`;
+    const usernameSender = `@${m.sender.split("@")[0]}`;
 
-    // Construir mensaje usando solo username
+    // Construir mensaje usando solo usernames
     let str;
     if (m.mentionedJid && m.mentionedJid.length > 0) {
-        str = `${usernameTarget} está haciendo un 69!`;
+        str = `${usernameSender} está haciendo un 69 con ${usernameTarget}!`;
     } else if (m.quoted) {
-        str = `${usernameTarget} hizo un 69!`;
+        str = `${usernameSender} hizo un 69 con ${usernameTarget}!`;
     } else {
-        str = `${usernameTarget} está haciendo un 69! >.<`;
+        str = `${usernameSender} está haciendo un 69! >.<`;
     }
 
     if (m.isGroup) {
@@ -38,8 +40,8 @@ let handler = async (m, { conn }) => {
         ];
         const video = videos[Math.floor(Math.random() * videos.length)];
 
-        // Menciones: solo el JID
-        const mentions = [who];
+        // Menciones: sender y target
+        const mentions = [m.sender, who];
 
         await conn.sendMessage(
             m.chat,
