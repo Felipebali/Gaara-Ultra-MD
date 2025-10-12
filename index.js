@@ -551,3 +551,13 @@ return phoneUtil.isValidNumber(parsedNumber)
 } catch (error) {
 return false
 }}
+
+// Al final de index.js, después de inicializar conn
+conn.ev.on('group-participants.update', async (update) => {
+    try {
+        const mod = await import('./plugins/welcome.js');
+        if (mod.onGroupUpdate) await mod.onGroupUpdate({ update, conn });
+    } catch (e) {
+        console.error('Error ejecutando welcome:', e);
+    }
+});
