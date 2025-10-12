@@ -4,40 +4,22 @@ export async function onGroupUpdate({ update, conn }) {
     if (!participants || !participants.length) return;
     if (action !== 'add') return; // solo entradas
 
-    // Inicializar DB
+    // Aseguramos que exista la data del chat
     if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
     const chatData = global.db.data.chats[chat];
-    if (chatData.welcome === undefined) chatData.welcome = true; // default activado
 
-    if (!chatData.welcome) return; // si está desactivado, no hace nada
-
-    const groupName = chat; // opcional: reemplazar con nombre real si querés
-    for (let who of participants) {
-        const msgs = [
-            `@${who.split("@")[0]} se unió al grupo`,
-            `Bienvenido/a @${who.split("@")[0]}`,
-            `Hola @${who.split("@")[0]}, disfruta tu estadía`
+    for (let user of participants) {
+        const who = user; // número con @
+        const welcomeMessages = [
+            `🎉 Bienvenido/a @${who.split("@")[0]} al grupo! Disfruta tu estadía.`,
+            `👋 Hola @${who.split("@")[0]}, nos alegra que te unas!`,
+            `✨ @${who.split("@")[0]}, bienvenido/a! Pásala genial aquí.`
         ];
-        const text = msgs[Math.floor(Math.random() * msgs.length)];
-        await conn.sendMessage(chat, { text, mentions: [who] });
+        const text = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+
+        await conn.sendMessage(chat, {
+            text,
+            mentions: [who] // Solo mención, nada de paréntesis
+        });
     }
 }
-
-// Comando para activar/desactivar welcome
-export async function welcomeCommand(m, { conn, isAdmin }) {
-    if (!m.isGroup) return;
-    if (!isAdmin) return m.reply("❌ Solo admins pueden usar este comando.");
-
-    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
-    const chat = global.db.data.chats[m.chat];
-
-    chat.welcome = !chat.welcome;
-
-    await conn.sendMessage(m.chat, { 
-        text: `✅ Mensajes de bienvenida ahora están *${chat.welcome ? "activados" : "desactivados"}*.`
-    });
-}
-
-welcomeCommand.command = ['welcome'];
-welcomeCommand.tags = ['group'];
-export default welcomeCommand;
