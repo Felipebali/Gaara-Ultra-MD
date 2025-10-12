@@ -1,4 +1,3 @@
-// plugins/antilink2.js
 const blockedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i
 
 export async function before(m, { conn, isBotAdmin }) {
@@ -16,7 +15,11 @@ export async function before(m, { conn, isBotAdmin }) {
   if (!blockedLinks.test(m.text)) return true
 
   try {
-    await conn.sendMessage(m.chat, { delete: m.key })
+    // Borra el mensaje correctamente
+    await conn.sendMessage(m.chat, { 
+      delete: { remoteJid: m.chat, fromMe: false, id: m.key.id, participant: m.key.participant } 
+    })
+
     await conn.sendMessage(m.chat, {
       text: `⚠️ @${who.split('@')[0]}, ese link de Instagram, TikTok o YouTube no está permitido.`,
       mentions
@@ -28,7 +31,7 @@ export async function before(m, { conn, isBotAdmin }) {
   return true
 }
 
-// Comando .antilink2
+// Comando para activar/desactivar Anti-Link2
 export const handler = async (m, { conn, isAdmin }) => {
   if (!m.isGroup) return
   if (!isAdmin) return m.reply("❌ Solo admins pueden usar este comando.")
