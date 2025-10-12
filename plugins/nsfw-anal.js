@@ -10,23 +10,27 @@ let handler = async (m, { conn, usedPrefix, isOwner }) => {
         );
     }
 
+    // Determinar a quién se refiere
     let who;
-    if (m.mentionedJid.length > 0) who = m.mentionedJid[0]; // Si hay mención
+    if (m.mentionedJid && m.mentionedJid.length > 0) who = m.mentionedJid[0]; // Si hay mención
     else if (m.quoted) who = m.quoted.sender; // Si se cita un mensaje
     else who = m.sender; // Por defecto, el emisor
 
-    let name = conn.getName(who); 
-    let name2 = conn.getName(m.sender); 
+    // Solo usernames
+    const usernameTarget = `@${who.split("@")[0]}`;
+    const usernameSender = `@${m.sender.split("@")[0]}`;
 
+    // React al mensaje
     m.react('🥵');
 
+    // Construir mensaje usando solo usernames
     let str;
-    if (m.mentionedJid.length > 0) {
-        str = `\`${name2}\` le partió el culo a la puta de \`${name || who}\`.`;
+    if (m.mentionedJid && m.mentionedJid.length > 0) {
+        str = `${usernameSender} le partió el culo a la puta de ${usernameTarget}.`;
     } else if (m.quoted) {
-        str = `\`${name2}\` se la metió en el ano a \`${name || who}\`.`;
+        str = `${usernameSender} se la metió en el ano a ${usernameTarget}.`;
     } else {
-        str = `\`${name2}\` está haciendo un anal`.trim();
+        str = `${usernameSender} está haciendo un anal`.trim();
     }
 
     if (m.isGroup) {
@@ -41,10 +45,15 @@ let handler = async (m, { conn, usedPrefix, isOwner }) => {
         ];
         const video = videos[Math.floor(Math.random() * videos.length)];
 
-        let mentions = [who];
-        conn.sendMessage(m.chat, { video: { url: video }, gifPlayback: true, caption: str, mentions }, { quoted: m });
+        // Menciones: sender y target
+        const mentions = [m.sender, who];
+        await conn.sendMessage(
+            m.chat,
+            { video: { url: video }, gifPlayback: true, caption: str, mentions },
+            { quoted: m }
+        );
     }
-}
+};
 
 handler.help = ['anal/culiar @tag'];
 handler.tags = ['nsfw'];
