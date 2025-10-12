@@ -16,15 +16,16 @@ let handler = async (m, { conn }) => {
     // Obtener nombres, fallback si no encuentra nombre
     let nameTarget = (await conn.getName(who)) || who.split('@')[0];
     let nameSender = (await conn.getName(m.sender)) || m.sender.split('@')[0];
+    const usernameTarget = `@${who.split("@")[0]}`; // username para mencionar
 
-    // Construir mensaje usando nombres
+    // Construir mensaje usando nombres y mencionando username
     let str;
     if (m.mentionedJid && m.mentionedJid.length > 0) {
-        str = `*${nameSender}* está haciendo un 69 con *${nameTarget}*`;
+        str = `*${nameSender}* está haciendo un 69 con *${nameTarget}* (${usernameTarget})`;
     } else if (m.quoted) {
-        str = `*${nameSender}* hizo un 69 con *${nameTarget}*`;
+        str = `*${nameSender}* hizo un 69 con *${nameTarget}* (${usernameTarget})`;
     } else {
-        str = `*${nameSender}* está haciendo un 69! >.<`;
+        str = `*${nameSender}* está haciendo un 69! >.< (${usernameTarget})`;
     }
 
     if (m.isGroup) {
@@ -36,12 +37,11 @@ let handler = async (m, { conn }) => {
             'https://telegra.ph/file/a2098292896fb05675250.mp4',
             'https://telegra.ph/file/16f43effd7357e82c94d3.mp4',
             'https://telegra.ph/file/55cb31314b168edd732f8.mp4',
-            'https://telegra.ph/file/1cbaa4a7a61f1ad18af01.mp4',
             'https://telegra.ph/file/1083c19087f6997ec8095.mp4'
         ];
         const video = videos[Math.floor(Math.random() * videos.length)];
 
-        // Menciones: siempre el JID, el texto muestra el nombre
+        // Menciones: siempre el JID, el texto muestra el nombre y username
         const mentions = [who];
 
         await conn.sendMessage(
