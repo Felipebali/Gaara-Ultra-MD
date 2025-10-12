@@ -22,13 +22,11 @@ export async function onGroupUpdate({ update, conn }) {
             `✨ @${who.split("@")[0]}, bienvenido/a! Pásala genial aquí.`
         ];
 
-        // Elegimos un mensaje al azar
         const text = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
 
-        // Enviamos mensaje con mención
         await conn.sendMessage(chat, {
             text,
-            mentions: [who]
+            mentions: [who] // Solo la mención, nada de paréntesis
         });
     }
 }
