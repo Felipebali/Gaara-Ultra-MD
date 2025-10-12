@@ -13,19 +13,16 @@ let handler = async (m, { conn }) => {
     else if (m.quoted) who = m.quoted.sender;
     else who = m.sender;
 
-    // Obtener nombres, fallback si no encuentra nombre
-    let nameTarget = (await conn.getName(who)) || who.split('@')[0];
-    let nameSender = (await conn.getName(m.sender)) || m.sender.split('@')[0];
-    const usernameTarget = `@${who.split("@")[0]}`; // username para mencionar
+    const usernameTarget = `@${who.split("@")[0]}`; // Solo username
 
-    // Construir mensaje usando nombres y mencionando username
+    // Construir mensaje usando solo username
     let str;
     if (m.mentionedJid && m.mentionedJid.length > 0) {
-        str = `*${nameSender}* está haciendo un 69 con *${nameTarget}* (${usernameTarget})`;
+        str = `${usernameTarget} está haciendo un 69!`;
     } else if (m.quoted) {
-        str = `*${nameSender}* hizo un 69 con *${nameTarget}* (${usernameTarget})`;
+        str = `${usernameTarget} hizo un 69!`;
     } else {
-        str = `*${nameSender}* está haciendo un 69! >.< (${usernameTarget})`;
+        str = `${usernameTarget} está haciendo un 69! >.<`;
     }
 
     if (m.isGroup) {
@@ -41,7 +38,7 @@ let handler = async (m, { conn }) => {
         ];
         const video = videos[Math.floor(Math.random() * videos.length)];
 
-        // Menciones: siempre el JID, el texto muestra el nombre y username
+        // Menciones: solo el JID
         const mentions = [who];
 
         await conn.sendMessage(
