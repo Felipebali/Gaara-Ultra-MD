@@ -1,3 +1,4 @@
+// plugins/afkBefore.js
 let handler = async (m, { conn }) => {
     if (!global.db.data.users[m.sender]) global.db.data.users[m.sender] = {}
     let user = global.db.data.users[m.sender]
@@ -11,31 +12,31 @@ let handler = async (m, { conn }) => {
     }
 
     // --- Desactivar AFK si el usuario envía mensaje ---
-    if (user.afk > -1) {
+    if (user.afk && user.afk > 0) {
         await conn.reply(
             m.chat,
             `✴️ *A F K* ✴️
-@${m.sender.split("@")[0]} ya no estás AFK
+@${m.sender.split('@')[0]} ya no estás AFK
 Motivo anterior: ${user.afkReason || 'Sin motivo'}
 Tiempo AFK: ${formatAFK(Date.now() - user.afk)}`,
             m,
             { mentions: [m.sender] }
         )
-        user.afk = -1
+        user.afk = 0
         user.afkReason = ''
     }
 
     // --- Avisar si mencionan a alguien AFK ---
     let jids = [...new Set([...(m.mentionedJid || []), ...(m.quoted ? [m.quoted.sender] : [])])]
     for (let jid of jids) {
-        if (!global.db.data.users[jid]) global.db.data.users[jid] = {}
+        if (!global.db.data.users[jid]) continue
         let afkUser = global.db.data.users[jid]
-        if (!afkUser.afk || afkUser.afk < 0) continue
+        if (!afkUser.afk || afkUser.afk <= 0) continue
 
         await conn.reply(
             m.chat,
             `✴️ *A F K* ✴️
-@${jid.split("@")[0]} está AFK
+@${jid.split('@')[0]} está AFK
 Motivo: ${afkUser.afkReason || 'Sin motivo'}
 Tiempo AFK: ${formatAFK(Date.now() - afkUser.afk)}`,
             m,
@@ -46,5 +47,5 @@ Tiempo AFK: ${formatAFK(Date.now() - afkUser.afk)}`,
     return true
 }
 
-handler.before = true // esto hace que se ejecute en todos los mensajes
+handler.before = true
 export default handler
