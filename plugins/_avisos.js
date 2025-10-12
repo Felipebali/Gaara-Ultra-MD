@@ -1,64 +1,32 @@
-// plugins/reconocer.js
-global.db.data.chats = global.db.data.chats || {}
+// plugins/reconocer-event.js
 global.groupData = global.groupData || {}
+global.db.data.chats = global.db.data.chats || {}
 
-let handler = async (m, { conn, isAdmin, isGroup }) => {
-  if (!isGroup) return conn.sendMessage(m.chat, { 
-    text: '❌ Este comando solo funciona en grupos.\n\n⚡ Cuando me agregues a un grupo, podré reconocer cambios automáticamente.' 
-  })
+export async function groupUpdateHandler(conn, update) {
+    const id = update.id || update.jid || update.groupJid
+    if (!id) return
 
-  if (!isAdmin) return conn.sendMessage(m.chat, { text: '❌ Solo *admins* pueden activar o desactivar el modo reconocer.' })
+    const chat = global.db.data.chats[id]
+    if (!chat?.reconocer) return // Solo grupos con modo reconocer activo
 
-  let chat = global.db.data.chats[m.chat]
-  chat.reconocer = !chat.reconocer
+    try {
+        const oldData = global.groupData[id] || { name: '', desc: '' }
 
-  return conn.sendMessage(m.chat, { 
-    text: chat.reconocer
-      ? '✅ Modo *reconocer* ACTIVADO\nAvisaré cuando cambien el *nombre* o la *descripción* del grupo.'
-      : '❌ Modo *reconocer* DESACTIVADO'
-  })
-}
+        // Nombre cambiado
+        if (update.subject && update.subject !== oldData.name) {
+            await conn.sendMessage(id, { text: `🔧 *El nombre del grupo ha cambiado*\n🆕 Nuevo nombre: *${update.subject}*` })
+            oldData.name = update.subject
+        }
 
-handler.help = ['reconocer']
-handler.tags = ['group']
-handler.command = /^reconocer$/i
-handler.group = true
-export default handler
+        // Descripción cambiada
+        if (update.desc && update.desc !== oldData.desc) {
+            await conn.sendMessage(id, { text: `📝 *La descripción del grupo ha cambiado*\n${update.desc || '_Sin descripción_'}` })
+            oldData.desc = update.desc
+        }
 
-// ---------------- Detector automático ----------------
-handler.before = async function (m, { conn, isGroup }) {
-  if (!isGroup) return
-  const chat = global.db.data.chats[m.chat]
-  if (!chat?.reconocer) return
+        global.groupData[id] = oldData
 
-  try {
-    const metadata = await conn.groupMetadata(m.chat)
-
-    // Inicializar datos si no existen
-    if (!global.groupData[m.chat]) {
-      global.groupData[m.chat] = {
-        name: metadata.subject,
-        desc: metadata.desc || ''
-      }
+    } catch (err) {
+        console.log('Error en groupUpdateHandler:', err)
     }
-
-    // Detectar cambio de nombre
-    if (metadata.subject !== global.groupData[m.chat].name) {
-      await conn.sendMessage(m.chat, { 
-        text: `🔧 *El nombre del grupo ha cambiado*\n🆕 Nuevo nombre: *${metadata.subject}*`
-      })
-      global.groupData[m.chat].name = metadata.subject
-    }
-
-    // Detectar cambio de descripción
-    if ((metadata.desc || '') !== global.groupData[m.chat].desc) {
-      await conn.sendMessage(m.chat, { 
-        text: `📝 *La descripción del grupo ha cambiado*\n${metadata.desc || '_Sin descripción_'}`
-      })
-      global.groupData[m.chat].desc = metadata.desc || ''
-    }
-
-  } catch (err) {
-    console.log('Error en reconocer:', err)
-  }
 }
