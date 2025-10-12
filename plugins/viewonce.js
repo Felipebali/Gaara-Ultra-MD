@@ -3,26 +3,26 @@ import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
 let handler = async (m, { conn, isOwner, isAdmin }) => {
     try {
-        if (!isOwner && !isAdmin) return m.reply('❌ Solo owners o admins pueden usar esto.')
-        if (!m.quoted) return m.reply('⚠️ Responde a una foto o video de visualización única (ViewOnce).')
+        if (!isOwner && !isAdmin) return m.reply('❌ Solo owner o admins pueden usar esto.')
+        if (!m.quoted) return m.reply('⚠️ Responde a una foto o video de *ViewOnce*.')
 
-        const msg = await m.getQuotedObj()
-        if (!msg.message.viewOnceMessage) return m.reply('❌ Ese mensaje no es ViewOnce.')
+        // Obtenemos el mensaje citado
+        const quotedMsg = m.quoted?.message?.viewOnceMessage
+        if (!quotedMsg) return m.reply('❌ Ese mensaje no es ViewOnce.')
 
-        // Detecta el tipo de media
-        const innerMsg = msg.message.viewOnceMessage.message
-        const type = Object.keys(innerMsg)[0] // 'imageMessage' o 'videoMessage'
+        const innerMsg = quotedMsg.message
+        const type = Object.keys(innerMsg)[0] // imageMessage o videoMessage
         const media = innerMsg[type]
 
-        // Descarga el contenido
+        // Descargamos la media
         const stream = await downloadContentFromMessage(media, type.includes('image') ? 'image' : 'video')
         let buffer = Buffer.from([])
         for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
 
-        // Envía la media
+        // Enviamos la media
         await conn.sendMessage(m.chat, type.includes('image')
             ? { image: buffer, caption: media.caption || '' }
-            : { video: buffer, caption: media.caption || '' }, 
+            : { video: buffer, caption: media.caption || '' },
             { quoted: m })
 
     } catch (e) {
@@ -33,4 +33,5 @@ let handler = async (m, { conn, isOwner, isAdmin }) => {
 
 handler.command = ['viewonce', 'vo', 'ver']
 handler.tags = ['tools']
+
 export default handler
