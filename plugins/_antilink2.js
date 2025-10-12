@@ -12,7 +12,8 @@ export async function before(m, { conn }) {
     if (!chat.antiLink2) return true
 
     const who = m.sender
-    const mention = `@${who.split("@")[0]}`  // ✅ La mención funciona correctamente
+    const name = await conn.getName(who)  // ✅ Obtenemos el nombre de WhatsApp
+    const mention = `@${who.split("@")[0]} (${name})`  // Mención con nombre
 
     const isIG = IG_REGEX.test(m.text)
     const isTT = TT_REGEX.test(m.text)
@@ -20,15 +21,15 @@ export async function before(m, { conn }) {
 
     if (isIG || isTT || isYT) {
         try {
-            // Borra el mensaje del link
+            // Borra el mensaje
             await conn.sendMessage(m.chat, { delete: m.key })
 
             // Frases random
             const userPhrases = [
-                `⚠️ ${mention} no metas esas redes acá, ¿ok?`,
-                `🚫 ${mention}, ese link quedó borrado porque molesta`,
+                `⚠️ ${mention}, ese link quedó borrado porque molesta`,
+                `🚫 ${mention}, no metas esas redes acá, ¿ok?`,
                 `🗑️ ${mention}, nada de Instagram, TikTok ni YouTube aquí`,
-                `💥 ${mention} cuidado con tus links prohibidos`
+                `💥 ${mention}, cuidado con tus links prohibidos`
             ]
             const adminPhrases = [
                 `⚠️ ${mention} admin, también hay reglas, ese link fue borrado`,
@@ -41,7 +42,7 @@ export async function before(m, { conn }) {
             if (m.isAdmin) msg = adminPhrases[Math.floor(Math.random()*adminPhrases.length)]
             else msg = userPhrases[Math.floor(Math.random()*userPhrases.length)]
 
-            // Envía aviso con la mención
+            // Envía aviso con la mención y nombre
             await conn.sendMessage(m.chat, { text: msg })
         } catch(e){
             console.error("Error en antilink2:", e)
