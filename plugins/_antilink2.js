@@ -14,7 +14,7 @@ export async function before(m, { conn, isAdmin }) {
     if (!blockedLinks.test(m.text)) return true;
 
     try {
-        // 🔹 BORRAR MENSAJE SIEMPRE
+        // 🔹 BORRAR MENSAJE SIEMPRE, admins o no
         await conn.sendMessage(m.chat, { delete: m.key });
 
         // 🔹 MENSAJE SEGÚN ADMIN/USUARIO
