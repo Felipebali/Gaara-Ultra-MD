@@ -1,41 +1,41 @@
+// plugins/viewonce.js
 import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
-let handler = async (m, { conn, isOwner, isAdmin }) => {
-    // Solo Owner y Admins
-    if (!isOwner && !isAdmin) return m.reply('❌ Este comando es solo para *Admins y Owner*.')    
-
-    // Debe responder a un mensaje ViewOnce
-    if (!m.quoted) return m.reply('⚠️ Responde a una *foto o video de ver una vez*.')
-
-    let quoted = await m.getQuotedObj()
-    let type = Object.keys(quoted.message)[0]
-    let media = quoted.message[type]
-
-    if (!media?.viewOnce) return m.reply('❌ Ese mensaje *no es ver una vez*. Ahora responde a uno correcto.')
-
+let handler = async (m, { conn, isAdmin, isOwner }) => {
     try {
-        // Descargar contenido
-        let stream = await downloadContentFromMessage(media, type.includes('image') ? 'image' : 'video')
-        let buffer = Buffer.from([])
-        for await (let chunk of stream) buffer = Buffer.concat([buffer, chunk])
+        if (!m.quoted) return m.reply('⚠️ Responde a un mensaje *ViewOnce* (foto o video) para usar este comando.')
 
-        // Enviar según tipo de archivo
+        const msg = await m.getQuotedObj()
+        const type = Object.keys(msg.message)[0]
+        const media = msg.message[type]
+
+        if (!media.viewOnce) return m.reply('❌ Ese mensaje no es de *ViewOnce*.')
+
+        // Descargar contenido
+        const stream = await downloadContentFromMessage(media, type.includes('image') ? 'image' : 'video')
+        let buffer = Buffer.from([])
+        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
+
+        // Enviar media sin restricciones
         if (type.includes('image')) {
             await conn.sendMessage(m.chat, { image: buffer, caption: media.caption || '' }, { quoted: m })
         } else if (type.includes('video')) {
             await conn.sendMessage(m.chat, { video: buffer, caption: media.caption || '' }, { quoted: m })
         } else {
-            return m.reply('❌ Solo funciona con *fotos o videos de ver una vez*.')
+            return m.reply('❌ Solo funciona con fotos o videos ViewOnce.')
         }
-    } catch (err) {
-        console.error(err)
-        m.reply('❌ Error al intentar recuperar el mensaje de ver una vez.')
+
+    } catch (e) {
+        console.error(e)
+        m.reply('❌ Error al procesar el contenido ViewOnce.')
     }
 }
 
-// Configuración del comando
-handler.command = ['viewonce', 'ver', 'vo']
-handler.help = ['ver']
+handler.command = ['viewonce','vo','ver']
 handler.tags = ['tools']
-handler.group = true // Solo en grupos
+
+// Opcional: permitir solo admins o owners
+handler.admin = true // true = solo admins pueden usarlo
+handler.owner = true // true = solo owners pueden usarlo
+
 export default handler
