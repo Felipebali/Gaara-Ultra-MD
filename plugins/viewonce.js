@@ -1,44 +1,36 @@
-import { downloadContentFromMessage, proto } from '@whiskeysockets/baileys'
+// plugins/viewonce.js
+import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
-let handler = async (m, { conn, isAdmin, isOwner }) => {
+let handler = async (m, { conn, isOwner, isAdmin }) => {
     try {
+        if (!isOwner && !isAdmin) return m.reply('❌ Solo owners o admins pueden usar esto.')
         if (!m.quoted) return m.reply('⚠️ Responde a una foto o video de visualización única (ViewOnce).')
 
-        let msg = await m.getQuotedObj()
-        let type = Object.keys(msg.message)[0]
-        let media
+        const msg = await m.getQuotedObj()
+        if (!msg.message.viewOnceMessage) return m.reply('❌ Ese mensaje no es ViewOnce.')
 
-        if (msg.message.viewOnceMessage) {
-            // Extraemos la media real del viewOnce
-            media = msg.message.viewOnceMessage.message[type.replace('ViewOnceMessage', '')]
-        } else {
-            media = msg.message[type]
-        }
+        // Detecta el tipo de media
+        const innerMsg = msg.message.viewOnceMessage.message
+        const type = Object.keys(innerMsg)[0] // 'imageMessage' o 'videoMessage'
+        const media = innerMsg[type]
 
-        if (!media || !media.viewOnce) return m.reply('❌ Ese mensaje no es de ViewOnce.')
-
-        // Determinamos si es imagen o video
-        let mediaType = type.includes('image') ? 'image' : type.includes('video') ? 'video' : null
-        if (!mediaType) return m.reply('❌ Solo funciona con fotos o videos ViewOnce.')
-
-        // Descargamos el contenido
-        const stream = await downloadContentFromMessage(media, mediaType)
+        // Descarga el contenido
+        const stream = await downloadContentFromMessage(media, type.includes('image') ? 'image' : 'video')
         let buffer = Buffer.from([])
         for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
 
-        // Enviamos media
-        await conn.sendMessage(m.chat, mediaType === 'image'
+        // Envía la media
+        await conn.sendMessage(m.chat, type.includes('image')
             ? { image: buffer, caption: media.caption || '' }
             : { video: buffer, caption: media.caption || '' }, 
             { quoted: m })
 
     } catch (e) {
-        console.error(e)
+        console.error('Error viewonce:', e)
         m.reply('❌ Error al procesar el contenido ViewOnce.')
     }
 }
 
 handler.command = ['viewonce', 'vo', 'ver']
 handler.tags = ['tools']
-handler.owner = true // solo owner y admin podés agregar un check adicional si querés
 export default handler
