@@ -8,7 +8,7 @@ import fs from 'fs';
 import chalk from 'chalk';
 import ws from 'ws';
 
-import './plugins/colección-media.js'; // <-- carga automática de media
+import './plugins/coleccion-media.js';
 
 const { proto } = (await import('@whiskeysockets/baileys')).default
 const isNumber = x => typeof x === 'number' && !isNaN(x)
