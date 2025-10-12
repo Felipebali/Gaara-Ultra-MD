@@ -4,20 +4,20 @@
 
 const blockedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i
 
-export async function before(m, { conn, isBotAdmin }) {
-  if (!m?.text) return true
-  if (m.isBaileys && m.fromMe) return true
-  if (!m.isGroup) return true
-  if (!isBotAdmin) return true
+let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
+  if (!m?.text) return
+  if (m.isBaileys && m.fromMe) return
+  if (!m.isGroup) return
+  if (!isBotAdmin) return
 
   const chat = global.db?.data?.chats?.[m.chat]
-  if (!chat?.antiLink2) return true // activado con .antilink2
+  if (!chat?.antiLink2) return
 
   const who = m.sender
   const mentions = [who]
 
   const isBlockedLink = blockedLinks.test(m.text)
-  if (!isBlockedLink) return true
+  if (!isBlockedLink) return
 
   try {
     // Borra el mensaje
@@ -31,12 +31,12 @@ export async function before(m, { conn, isBotAdmin }) {
   } catch (e) {
     console.error('Error en Anti-Link2:', e)
   }
-
-  return true
 }
 
-// Comando para activar/desactivar Anti-Link2
-export async function antilink2Command(m, { conn, isAdmin }) {
+handler.command = ['antilink2']
+handler.group = true
+
+handler.antilink2Command = async (m, { conn, isAdmin }) => {
   if (!m.isGroup) return
   if (!isAdmin) return m.reply("❌ Solo admins pueden usar este comando.")
 
@@ -48,3 +48,5 @@ export async function antilink2Command(m, { conn, isAdmin }) {
     text: `✅ Anti-Link2 ahora está *${chat.antiLink2 ? "activado" : "desactivado"}*.`
   })
 }
+
+export default handler
