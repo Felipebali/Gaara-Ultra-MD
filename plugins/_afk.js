@@ -1,10 +1,8 @@
-// --- Handler combinado AFK ---
-let afkHandler = async (m, { conn, args }) => {
-    // Asegurarse de que exista la info del usuario
+// afk.js
+let handler = async (m, { conn }) => {
     if (!global.db.data.users[m.sender]) global.db.data.users[m.sender] = {}
     let user = global.db.data.users[m.sender]
 
-    // Función para formatear tiempo AFK
     const formatAFK = (ms) => {
         let total = Math.floor(ms / 1000)
         let h = Math.floor(total / 3600)
@@ -13,40 +11,22 @@ let afkHandler = async (m, { conn, args }) => {
         return `${h}h ${m}m ${s}s`
     }
 
-    // --- Activar AFK con comando .afk ---
-    if (m.text && m.text.startsWith('.afk')) {
-        let text = args.join(' ') || (m.quoted && m.quoted.text) || 'Sin motivo'
-        user.afk = Date.now()
-        user.afkReason = text
-
-        await conn.reply(
-            m.chat,
-            `✴️ *A F K* ✴️
-@${m.sender.split('@')[0]} está ahora AFK
-Motivo: ${text}`,
-            m,
-            { mentions: [m.sender] }
-        )
-        return true
-    }
-
-    // --- Desactivar AFK si el usuario envía mensaje ---
+    // Si estaba AFK, desactiva y avisa
     if (user.afk > -1) {
-        let who = m.sender
         await conn.reply(
             m.chat,
             `✴️ *A F K* ✴️
-@${who.split("@")[0]} ya no estás AFK
+@${m.sender.split("@")[0]} ya no estás AFK
 Motivo anterior: ${user.afkReason || 'Sin motivo'}
 Tiempo AFK: ${formatAFK(Date.now() - user.afk)}`,
             m,
-            { mentions: [who] }
+            { mentions: [m.sender] }
         )
         user.afk = -1
         user.afkReason = ''
     }
 
-    // --- Avisar si mencionan a alguien AFK ---
+    // Avisar si mencionan a alguien AFK
     let jids = [...new Set([...(m.mentionedJid || []), ...(m.quoted ? [m.quoted.sender] : [])])]
     for (let jid of jids) {
         if (!global.db.data.users[jid]) global.db.data.users[jid] = {}
@@ -67,8 +47,6 @@ Tiempo AFK: ${formatAFK(Date.now() - afkUser.afk)}`,
     return true
 }
 
-afkHandler.command = /^afk$/i
-afkHandler.register = true
-afkHandler.before = true
-
-export default afkHandler
+// Para que se ejecute en todos los mensajes
+handler.before = true
+export default handler
