@@ -552,15 +552,11 @@ return phoneUtil.isValidNumber(parsedNumber)
 return false
 }}
 
-// index.js (fragmento corregido)
+import * as welcomeMod from './plugins/_welcome.js';
+import * as goodbyeMod from './plugins/_despedida.js';
 
-// Función para manejar tanto bienvenida como despedida
 conn.ev.on('group-participants.update', async (update) => {
     try {
-        // Importa los plugins dinámicamente
-        const welcomeMod = await import('./plugins/_welcome.js');
-        const goodbyeMod = await import('./plugins/_despedida.js');
-
         if (welcomeMod.onGroupUpdate) await welcomeMod.onGroupUpdate({ update, conn });
         if (goodbyeMod.onGroupUpdate) await goodbyeMod.onGroupUpdate({ update, conn });
     } catch (e) {
