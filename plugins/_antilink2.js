@@ -1,17 +1,17 @@
 // plugins/_antilink2.js
-const blockedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i; // Links a bloquear
+// Regex más robusta para Instagram, TikTok y YouTube
+const blockedLinks = /(https?:\/\/)?(www\.)?(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)\/[^\s]+/i;
 
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
     if (!m?.text) return true;
     if (m.isBaileys && m.fromMe) return true;
     if (!m.isGroup) return true;
-    if (!isBotAdmin) return true; // Bot necesita permisos de admin para borrar
+    if (!isBotAdmin) return true; // Bot necesita permisos de admin
 
     const chat = global.db?.data?.chats?.[m.chat];
     if (!chat?.antiLink2) return true; // Activado desde .antilink2
 
     const who = m.sender;
-    const name = await conn.getName(who);
 
     if (!blockedLinks.test(m.text)) return true; // Si no es link bloqueado, no hace nada
 
