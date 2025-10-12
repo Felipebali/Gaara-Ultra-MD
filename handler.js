@@ -521,3 +521,24 @@ const users = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws
 for (const userr of users) {
 userr.subreloadHandler(false)
 }}})
+
+// ---------------------- MEDIA.JSON ----------------------
+// Inicializar la sección media si no existe
+if (!global.db.data.media) global.db.data.media = {}
+
+// Función para guardar media.json
+function saveMedia() {
+    try {
+        fs.writeFileSync('./media.json', JSON.stringify(global.db.data.media, null, 2))
+    } catch (e) {
+        console.error('Error guardando media.json:', e)
+    }
+}
+
+// Guardar automáticamente al final de cada handler
+process.on('beforeExit', () => {
+    saveMedia()
+})
+
+// También puedes llamar saveMedia() cada vez que actualices algo de media en plugins
+// Ejemplo: global.db.data.media[m.sender] = { lastImage: 'url' }; saveMedia();
