@@ -7,19 +7,18 @@ export async function onGroupUpdate({ update, conn }) {
     if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
 
     for (let user of participants) {
-        const who = user;
-
+        // Mensajes de despedida sin paréntesis
         const goodbyeMessages = [
-            `😢 Adiós @${who.split("@")[0]}! Te extrañaremos.`,
-            `👋 @${who.split("@")[0]} ha salido del grupo. ¡Que te vaya bien!`,
-            `💔 @${who.split("@")[0]} ha abandonado el grupo.`
+            `😢 ¡Adiós @${user.split("@")[0]}! Te extrañaremos.`,
+            `👋 @${user.split("@")[0]} ha salido del grupo. ¡Que te vaya bien!`,
+            `💔 @${user.split("@")[0]} ha abandonado el grupo.`
         ];
 
         const text = goodbyeMessages[Math.floor(Math.random() * goodbyeMessages.length)];
 
         await conn.sendMessage(chat, {
             text,
-            mentions: [who] // Solo la mención
+            mentions: [user] // WhatsApp mostrará automáticamente el nombre correcto
         });
     }
 }
