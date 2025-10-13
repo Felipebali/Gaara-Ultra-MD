@@ -6,8 +6,8 @@ let handler = async (m, { conn, participants }) => {
     const owners = global.owner.map(o => o[0]);
     if (!owners.includes(m.sender.replace(/[^0-9]/g, ''))) return; // solo owners
 
-    // Comando sin prefijo: "sh"
-    if (m.text && m.text.toLowerCase() === 'sh') {
+    // Comando sin prefijo: "buenas"
+    if (m.text && m.text.toLowerCase() === 'buenas') {
         const mensajes = [
             "🌅 ¡Buenos días! Que el café esté fuerte y la paciencia también 😎",
             "☀️ Buen día! A comerse el mundo con estilo 😏",
