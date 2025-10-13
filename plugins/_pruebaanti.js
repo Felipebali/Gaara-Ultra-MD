@@ -1,40 +1,33 @@
-// plugins/toggle-antilinks.js
-let toggleAntilinks = async (m, { conn, isAdmin, isOwner }) => {
-    if (!m.isGroup) return conn.sendMessage(m.chat, { text: '⚠️ Este comando solo funciona en grupos' });
-    if (!isAdmin && !isOwner) return conn.sendMessage(m.chat, { text: '⚠️ Solo los administradores pueden cambiar esta configuración' });
+let handler = async (m, { conn, isAdmin, isOwner, command }) => {
+    if (!m.isGroup) return m.reply('⚠️ Este comando solo funciona en grupos.');
+    if (!isAdmin && !isOwner) return m.reply('⚠️ Solo *admins* pueden usar este comando.');
 
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
-    const chat = global.db.data.chats[m.chat];
+    let chat = global.db.data.chats[m.chat];
 
-    const cmd = m.text.trim().slice(1).toLowerCase(); // obtiene el comando sin prefijo
-
-    switch(cmd) {
+    switch (command) {
         case 'antilink':
             chat.antiLink = !chat.antiLink;
-            await conn.sendMessage(m.chat, {
-                text: `🔗 AntiLink ahora está ${chat.antiLink ? '✅ ACTIVADO' : '❌ DESACTIVADO'}`
-            });
+            m.reply(`🔗 AntiLink WhatsApp ahora está *${chat.antiLink ? '✅ ACTIVADO' : '❌ DESACTIVADO'}*`);
             break;
 
         case 'antilink2':
             chat.antiLink2 = !chat.antiLink2;
-            await conn.sendMessage(m.chat, {
-                text: `🔗 AntiLink2 ahora está ${chat.antiLink2 ? '✅ ACTIVADO' : '❌ DESACTIVADO'}`
-            });
+            m.reply(`🌍 AntiLink Global ahora está *${chat.antiLink2 ? '✅ ACTIVADO' : '❌ DESACTIVADO'}*`);
             break;
 
-        default:
-            return conn.sendMessage(m.chat, {
-                text: '⚠️ Comando desconocido. Usa .antilink o .antilink2'
-            });
+        case 'antispam':
+            chat.antiSpam = !chat.antiSpam;
+            m.reply(`🛡️ AntiSpam ahora está *${chat.antiSpam ? '✅ ACTIVADO' : '❌ DESACTIVADO'}*`);
+            break;
     }
 
     global.db.data.chats[m.chat] = chat;
 };
 
-toggleAntilinks.help = ['antilink','antilink2'];
-toggleAntilinks.tags = ['group'];
-toggleAntilinks.command = /^(antilink|antilink2)$/i;
-toggleAntilinks.group = true;
+handler.help = ['antilink','antilink2','antispam'];
+handler.tags = ['config'];
+handler.command = /^(antilink|antilink2|antispam)$/i;
+handler.group = true;
 
-export default toggleAntilinks;
+export default handler;
