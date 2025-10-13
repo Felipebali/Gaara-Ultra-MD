@@ -1,50 +1,40 @@
-// plugins/panel-config.js
-import config from './config.js';
+// plugins/grupo-configuracion.js - Panel de configuración del grupo
 
-const handler = async (m, { conn }) => {
-  const chat = global.db.data.chats[m.chat] || {};
-  const bot = global.db.data.settings[conn.user.jid] || {};
+let handler = async (m, { conn, isOwner, isAdmin }) => {
+    // Solo grupos
+    if (!m.isGroup) return m.reply('⚠️ Este comando solo funciona en grupos');
+    // Solo admins o owners
+    if (!isAdmin && !isOwner) return m.reply('⚠️ Solo los administradores pueden ver el panel');
 
-  const fkontak = {
-    key: { participants: '0@s.whatsapp.net', remoteJid: 'status@broadcast', fromMe: false, id: 'Halo' },
-    message: {
-      contactMessage: {
-        vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
-      }
-    },
-    participant: '0@s.whatsapp.net'
-  };
+    // Obtenemos la configuración del grupo desde la base de datos
+    let chat = global.db.data.chats[m.chat] || {};
 
-  let panel = '╭━━━〔 ⚡️ PANEL DE CONFIGURACIÓN 〕━━━╮\n';
-  panel += '┃ 👑 Opciones de Grupo:\n';
-  const grupoKeys = [
-    'welcome','autoresponder','autoaceptar','autorechazar','detect','antidelete',
-    'antilink','antilink2','nsfw','autolevelup','autosticker','reaction','antitoxic',
-    'audios','modoadmin','antifake','antibot'
-  ];
+    // Panel con todas las funciones
+    let panel = `╭━━━[ PANEL DE CONFIGURACIÓN ]━━━╮
+┃ 👋 Welcome: ${chat.welcome ? '✅' : '❌'}
+┃ 👋 Despedida: ${chat.despedida ? '✅' : '❌'}
+┃ 🔗 AntiLink: ${chat.antilink ? '✅' : '❌'}
+┃ 🚫 AntiFake: ${chat.antifake ? '✅' : '❌'}
+┃ 🚫 AntiSpam: ${chat.antispam ? '✅' : '❌'}
+┃ 🤬 AntiTóxico: ${chat.antitoxic ? '✅' : '❌'}
+┃ 🛰️ Detect: ${chat.detect ? '✅' : '❌'}
+┃ 🖼️ AutoSticker: ${chat.autosticker ? '✅' : '❌'}
+┃ 🔞 NSFW: ${chat.nsfw ? '✅' : '❌'}
+┃ 🎮 Juegos: ${chat.juegos ? '✅' : '❌'}
+┃ 🌐 Modo Público: ${chat.public ? '✅' : '❌'}
+┃ 🛡️ SoloAdmins: ${chat.onlyadmin ? '✅' : '❌'}
+┃ 📵 AntiLlamada: ${chat.antillamada ? '✅' : '❌'}
+┃ 🤖 AntiBots: ${chat.antibot ? '✅' : '❌'}
+╰━━━━━━━━━━━━━━━━━━━━━━╯
 
-  grupoKeys.forEach(key => {
-    const estado = chat[key] ?? config[key] ? '✅' : '❌';
-    panel += `┃ ${estado} ${key} → comando: ${key}\n`;
-  });
+Escribe *.panel info* para ver cómo activar o configurar cada función.`;
 
-  panel += '┃ 🚀 Opciones Globales:\n';
-  const globalKeys = [
-    'antisubots','public','status','serbot','restrict','autoread','antispam','antiprivado'
-  ];
-
-  globalKeys.forEach(key => {
-    const estado = bot[key] ?? config[key] ? '✅' : '❌';
-    panel += `┃ ${estado} ${key} → comando: ${key}\n`;
-  });
-
-  panel += '╰━━━━━━━━━━━━━━━━━━━━╯';
-
-  return conn.reply(m.chat, panel, m, fkontak);
+    m.reply(panel);
 };
 
 handler.help = ['panel'];
-handler.tags = ['owner','group'];
-handler.command = ['panel','configuracion','conf'];
+handler.tags = ['group'];
+handler.command = /^panel$/i;
+handler.group = true;
 
 export default handler;
