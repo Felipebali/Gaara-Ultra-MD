@@ -18,21 +18,21 @@ let handler = async function (m, { conn }) {
     who = m.sender;
   }
 
-  const userNumber = who.split("@")[0]; 
-  const mention = who; // aquí usamos el JID completo para la mención
+  const userId = who.split("@")[0]; // Aquí usamos exactamente lo que pediste
+  const mention = who;
 
   const mensajeFinal = `
 ✨┏━〔 🕵️‍♂️ Información de Usuario 〕━┓✨
-┃ 🌱 Nombre: @${userNumber}
+┃ 🌱 Nombre: @${userId}
 ┃ 🔹 LID/JID: ${who}
-┃ 💠 Propietario: ${owners.includes(userNumber) ? '✅ Sí' : '❌ No'}
+┃ 💠 Propietario: ${owners.includes(userId) ? '✅ Sí' : '❌ No'}
 ┗━━━━━━━━━━━━━━━━━━━┛
-💬 Aquí está la info de @${userNumber} visible para todos.
+💬 Aquí está la info de @${userId} visible para todos.
 `;
 
-  // Enviar mensaje y que la mención sea visible
-  return conn.sendMessage(m.chat, { text: mensajeFinal, mentions: [mention] });
-}
+  // Enviar mensaje con mención visible
+  await conn.sendMessage(m.chat, { text: mensajeFinal, mentions: [mention] });
+};
 
 handler.help = ['user']
 handler.tags = ['owner']
