@@ -15,7 +15,6 @@ let handler = async (m, { conn, participants }) => {
   const index = Math.floor(Math.random() * mensajes[text].length);
   const mensaje = mensajes[text][index];
 
-  // Mención oculta a todos los participantes
   const mentions = participants.map(p => p.jid);
   await conn.sendMessage(m.chat, { text: mensaje, mentions });
 };
