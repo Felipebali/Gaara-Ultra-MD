@@ -11,36 +11,9 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
 
     await conn.sendMessage(m.chat, {
         text: chat.antifake
-            ? '⚡️ La función *antifake* se activó para este chat ✅'
-            : '🛑 La función *antifake* se desactivó para este chat ❌'
+            ? '🚨 Antifake activado! Ahora solo números internacionales sospechosos serán avisados 😏💌'
+            : '💤 Antifake desactivado! Relájate, todos los números son bienvenidos 😎✨'
     });
-
-    if (chat.antifake) {
-        let groupMetadata = await conn.groupMetadata(m.chat);
-        let participants = groupMetadata.participants.map(u => u.id);
-        let sospechosos = [];
-
-        for (let jid of participants) {
-            // Tomamos solo JIDs que sean números
-            let numberOnly = jid.split('@')[0].replace(/\D/g,''); 
-            if (!numberOnly) continue; // saltar si no tiene dígitos
-
-            // Si empieza con 598 → uruguay, ignorar
-            if (!numberOnly.startsWith('598')) {
-                sospechosos.push(jid);
-            }
-        }
-
-        if (sospechosos.length > 0) {
-            let mentionsText = sospechosos.map(who => `@${who.split("@")[0]}`).join('\n');
-            await conn.sendMessage(m.chat, {
-                text: `⚠️ Números internacionales detectados en el grupo (podrían ser eliminados):\n\n${mentionsText}`,
-                mentions: sospechosos
-            });
-        } else {
-            await conn.sendMessage(m.chat, { text: '✅ No se encontraron números internacionales en el grupo.' });
-        }
-    }
 };
 
 // Detecta nuevos participantes
@@ -52,18 +25,16 @@ handler.all = async (m, { conn }) => {
         let newUsers = m.participants || [];
         for (let who of newUsers) {
             let numberOnly = who.split('@')[0].replace(/\D/g,''); 
-            if (!numberOnly) continue; // saltar si no tiene dígitos
+            if (!numberOnly || numberOnly.startsWith('598')) continue; // ignorar uruguayos o vacíos
 
-            if (!numberOnly.startsWith('598')) {
-                let groupMetadata = await conn.groupMetadata(m.chat);
-                let admins = groupMetadata.participants.filter(u => u.admin === 'admin' || u.admin === 'superadmin');
-                let mentions = admins.map(u => u.id);
+            let groupMetadata = await conn.groupMetadata(m.chat);
+            let admins = groupMetadata.participants.filter(u => u.admin === 'admin' || u.admin === 'superadmin');
+            let mentions = admins.map(u => u.id);
 
-                await conn.sendMessage(m.chat, {
-                    text: `⚠️ Nuevo número internacional detectado: @${who.split("@")[0]}\nTipo: POSIBLE NO URUGUAYO`,
-                    mentions: [who, ...mentions]
-                });
-            }
+            await conn.sendMessage(m.chat, {
+                text: `⚠️ Nuevo número internacional detectado: @${who.split("@")[0]}\nTipo: POSIBLE NO URUGUAYO`,
+                mentions: [who, ...mentions]
+            });
         }
     } catch (e) {
         console.log('Error en plugin antifake-offline:', e);
