@@ -5,20 +5,29 @@ let handler = async (m, { conn, isAdmin, isOwner, command }) => {
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
     let chat = global.db.data.chats[m.chat];
 
-    switch (command) {
+    switch (command.toLowerCase()) {
         case 'antilink':
             chat.antiLink = !chat.antiLink;
-            m.reply(`🔗 AntiLink WhatsApp ahora está *${chat.antiLink ? '✅ ACTIVADO' : '❌ DESACTIVADO'}*`);
+            m.reply(chat.antiLink 
+                ? '🔗 ¡Cuidado con los links! AntiLink activado ✅ Ahora los enlaces no pasarán desapercibidos 😎' 
+                : '🔗 AntiLink desactivado ❌ ¡Los links ya pueden colarse sin problemas! 😅'
+            );
             break;
 
         case 'antilink2':
             chat.antiLink2 = !chat.antiLink2;
-            m.reply(`🌍 AntiLink Global ahora está *${chat.antiLink2 ? '✅ ACTIVADO' : '❌ DESACTIVADO'}*`);
+            m.reply(chat.antiLink2 
+                ? '🌍 ¡Protección global activada! AntiLink Global ✅ Nadie puede escapar de los enlaces 🚫' 
+                : '🌍 AntiLink Global desactivado ❌ Los enlaces vuelven a ser libres... cuidado 😏'
+            );
             break;
 
         case 'antispam':
             chat.antiSpam = !chat.antiSpam;
-            m.reply(`🛡️ AntiSpam ahora está *${chat.antiSpam ? '✅ ACTIVADO' : '❌ DESACTIVADO'}*`);
+            m.reply(chat.antiSpam 
+                ? '🛡️ AntiSpam activado ✅ ¡Que no te molesten los mensajes repetidos! 😎' 
+                : '🛡️ AntiSpam desactivado ❌ Prepárate para recibir spam a placer 😅'
+            );
             break;
     }
 
