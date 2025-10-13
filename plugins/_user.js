@@ -22,7 +22,7 @@ let handler = async function (m, { conn }) {
   const username = '@' + who.split('@')[0]; // usar en todo el mensaje
 
   const mensajeFinal = `┏━〔 👤 Información de Usuario 〕━┓
-┃ 🌱 *Nombre:* ${username}
+┃ 🌱 *Nombre:* ${who.split("@")[0]}
 ┃ 🔹 *LID/JID:* ${who}
 ┗━━━━━━━━━━━━━━━━━━━┛`
 
