@@ -15,16 +15,18 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
             : '🛑 La función *antifake* se desactivó para este chat ❌'
     });
 
-    // Escaneo de participantes actuales al activar
     if (chat.antifake) {
         let groupMetadata = await conn.groupMetadata(m.chat);
         let participants = groupMetadata.participants.map(u => u.id);
         let sospechosos = [];
 
         for (let jid of participants) {
-            let raw = jid.split('@')[0].replace(/\D/g,''); // solo dígitos
-            let number = raw.startsWith('598') ? raw : '598' + raw; // normalizamos todos los uruguayos
-            if (!number.startsWith('598')) { // solo internacionales
+            // Tomamos solo JIDs que sean números
+            let numberOnly = jid.split('@')[0].replace(/\D/g,''); 
+            if (!numberOnly) continue; // saltar si no tiene dígitos
+
+            // Si empieza con 598 → uruguay, ignorar
+            if (!numberOnly.startsWith('598')) {
                 sospechosos.push(jid);
             }
         }
@@ -49,9 +51,10 @@ handler.all = async (m, { conn }) => {
 
         let newUsers = m.participants || [];
         for (let who of newUsers) {
-            let raw = who.split('@')[0].replace(/\D/g,'');
-            let number = raw.startsWith('598') ? raw : '598' + raw; // normalizamos
-            if (!number.startsWith('598')) { // solo internacionales
+            let numberOnly = who.split('@')[0].replace(/\D/g,''); 
+            if (!numberOnly) continue; // saltar si no tiene dígitos
+
+            if (!numberOnly.startsWith('598')) {
                 let groupMetadata = await conn.groupMetadata(m.chat);
                 let admins = groupMetadata.participants.filter(u => u.admin === 'admin' || u.admin === 'superadmin');
                 let mentions = admins.map(u => u.id);
