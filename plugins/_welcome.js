@@ -1,19 +1,24 @@
-//plugins/_welcome.js
+// plugins/_welcome.js
 export async function onGroupUpdate({ update, conn }) {
     const { participants, action, id: chat } = update;
     if (!participants || action !== 'add') return;
 
     const chatData = global.db.data.chats[chat] || {};
-    if (!chatData.welcome) return; // check de configuración
+    if (!chatData.welcome) return; // Revisar si está activado el welcome
 
-    for (let user of participants) {
-        const who = user;
+    for (let who of participants) {
+
         const welcomeMessages = [
             `🎉 Bienvenido/a @${who.split("@")[0]} al grupo! Disfruta tu estadía.`,
             `👋 Hola @${who.split("@")[0]}, nos alegra que te unas!`,
             `✨ @${who.split("@")[0]}, bienvenido/a! Pásala genial aquí.`
         ];
+
         const text = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-        await conn.sendMessage(chat, { text, mentions: [who] });
+
+        await conn.sendMessage(chat, { 
+            text, 
+            mentions: [who] // La mención real en WhatsApp
+        });
     }
 }
