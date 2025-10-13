@@ -1,57 +1,41 @@
 let handler = async function (m, { conn, groupMetadata }) {
-  // Solo owners
+  if (!m.isGroup) return m.reply('🚫 Este comando solo funciona en grupos.');
+  
+  // Solo owners pueden usarlo
   const owners = global.owner.map(o => o[0]);
   if (!owners.includes(m.sender.replace(/[^0-9]/g, ''))) return;
 
-  let who;
-  let estado = '👤 Miembro';
+  const participantes = groupMetadata.participants;
 
-  // 1️⃣ Si citan mensaje
-  if (m.quoted) {
-    who = m.quoted.sender;
-    const participante = groupMetadata?.participants.find(p => p.id === who);
-    if (participante) {
-      estado = participante.admin === 'superadmin' ? '👑 Superadmin' :
-               participante.admin === 'admin' ? '🛡️ Admin' : '👤 Miembro';
-    }
-  }
-  // 2️⃣ Si escriben un número o JID
-  else if (m.text && m.text.split(' ')[1]) {
-    let number = m.text.split(' ')[1];
-    who = number.includes('@') ? number : `${number}@s.whatsapp.net`;
-  }
-  // 3️⃣ Si nada → tu propio LID
-  else {
-    who = m.sender;
-  }
+  let mensajeFinal = '╔══════════════════╗\n║      🐾 FelixCat-Bot 🐾     ║\n╠══════════════════╣\n';
 
-  const username = '@' + who.split("@")[0];
+  participantes.forEach((p, i) => {
+    const username = '@' + p.id.split('@')[0]; // mención real
+    const estado = p.admin === 'superadmin' ? '👑 Superadmin' :
+                   p.admin === 'admin' ? '🛡️ Admin' : '👤 Miembro';
 
-  // Verificar si es owner
-  const esOwner = owners.includes(who.replace(/[^0-9]/g, '')) ? '✅ Sí' : '❌ No';
-
-  // Estructura de la tarjeta
-  const mensajeFinal = `
-╔══════════════════╗
-║      🐾 FelixCat-Bot 🐾     ║
-╠══════════════════╣
-┏━━━━━━━━━━━━━━━🐾
-┃ 🌟 *Usuario:*
-┃ 🙍‍♂️ ${username}
-┃ 🔑 LID: ${who}
+    mensajeFinal += `┏━━━━━━━━━━━━━━━🐾
+┃ 🌟 Participante ${i + 1}
+┃ 🙍‍♂️ Usuario: ${username}
+┃ 🔑 LID: ${p.id}@lid
 ┃ 🏷️ Estado: ${estado}
-┃ 💠 Propietario: ${esOwner}
 ┗━━━━━━━━━━━━━━━🐾
-╚══════════════════╝
-💬 Aquí está la info de ${username} visible para todos.
+┃
 `;
+  });
 
-  // Enviar mensaje como texto plano, sin menciones ocultas
-  await conn.sendMessage(m.chat, { text: mensajeFinal });
+  mensajeFinal += '╚══════════════════╝';
+
+  // Menciones reales de todos los participantes
+  const mentions = participantes.map(p => p.id);
+
+  await conn.sendMessage(m.chat, { text: mensajeFinal, mentions });
 }
 
-handler.help = ['user'];
-handler.tags = ['owner'];
-handler.command = ['user'];
+handler.help = ['lids'];
+handler.tags = ['group'];
+handler.command = ['lids'];
 handler.owner = true;
+handler.group = true;
+
 export default handler;
