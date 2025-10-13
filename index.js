@@ -552,12 +552,6 @@ return phoneUtil.isValidNumber(parsedNumber)
 return false
 }}
 
-{ onGroupUpdate } from './plugins/_welcome.js';
+import { welcome } from './plugins/_welcome.js'
 
-sock.ev.on('group-participants.update', async (update) => {
-    try {
-        await onGroupUpdate({ update, conn: sock });
-    } catch (e) {
-        console.error('Error en welcome plugin:', e);
-    }
-});
+welcome(sock)  // sock es tu conexión de Baileys 
