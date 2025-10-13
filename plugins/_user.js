@@ -9,7 +9,7 @@ let handler = async function (m, { conn }) {
   if (m.quoted) {
     who = m.quoted.sender;
   }
-  // 2️⃣ Si escriben un número válido
+  // 2️⃣ Si escriben un número
   else if (m.text && m.text.split(' ')[1]) {
     let number = m.text.split(' ')[1].replace(/[^0-9]/g, '');
     who = `${number}@s.whatsapp.net`;
@@ -19,17 +19,16 @@ let handler = async function (m, { conn }) {
     who = m.sender;
   }
 
-  const displayName = who.split('@')[0]; // Esto es lo que querés mostrar como "mención visible"
-
   const mensajeFinal = `
 ✨┏━〔 🕵️‍♂️ Información de Usuario 〕━┓✨
-┃ 🌱 Nombre: @${displayName}
+┃ 🌱 Nombre: @${who.split("@")[0]}
 ┃ 🔹 LID/JID: ${who}
-┃ 💠 Propietario: ${owners.includes(displayName) ? '✅ Sí' : '❌ No'}
+┃ 💠 Propietario: ${owners.includes(who.split("@")[0]) ? '✅ Sí' : '❌ No'}
 ┗━━━━━━━━━━━━━━━━━━━┛
-💬 Aquí está la info de ${displayName} sin mención oculta.
+💬 Aquí está la info de @${who.split("@")[0]} visible para todos.
 `;
 
+  // Enviar mensaje como texto simple, sin menciones ocultas
   return conn.sendMessage(m.chat, { text: mensajeFinal });
 }
 
