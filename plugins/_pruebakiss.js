@@ -1,24 +1,19 @@
-import fs from 'fs'
-import path from 'path'
-
 let handler = async (m, { conn }) => {
-  let sender = '@' + m.sender.split('@')[0]
-  let mentionedJid = m.quoted ? m.quoted.sender : (m.mentionedJid && m.mentionedJid[0])
+  let who = m.sender // quien manda el comando
+  let targetJid = m.quoted ? m.quoted.sender : (m.mentionedJid && m.mentionedJid[0])
+
+  let senderName = '@' + who.split('@')[0]
+  let targetName = targetJid ? '@' + targetJid.split('@')[0] : null
 
   // Mensaje principal
   let textMessage
-  if (!mentionedJid || mentionedJid === m.sender) {
-    textMessage = `💋 ${sender} se dio un beso a sí mismo 😳🔥`
+  if (!targetJid || targetJid === who) {
+    textMessage = `💋 ${senderName} se dio un beso a sí mismo 😳🔥`
   } else {
-    let target = '@' + mentionedJid.split('@')[0]
-    textMessage = `💋 ${sender} le dio un beso a ${target} 😘🔥`
+    textMessage = `💋 ${senderName} le dio un beso a ${targetName} 😘🔥`
   }
 
-  // Enviar mensaje con mención
-  let mentions = mentionedJid ? [m.sender, mentionedJid] : [m.sender]
-  await conn.sendMessage(m.chat, { text: textMessage, mentions })
-
-  // Elegir un gif de beso sexy/funny aleatorio
+  // Lista de gifs de beso
   const gifs = [
     'https://media.giphy.com/media/G3va31oEEnIkM/giphy.gif',
     'https://media.giphy.com/media/12VXIxKaIEarL2/giphy.gif',
@@ -26,8 +21,13 @@ let handler = async (m, { conn }) => {
   ]
   let gifUrl = gifs[Math.floor(Math.random() * gifs.length)]
 
-  // Enviar el gif
-  await conn.sendMessage(m.chat, { video: { url: gifUrl }, caption: textMessage, gifPlayback: true }, { mentions })
+  // Enviar un solo mensaje con gif y texto
+  let mentions = targetJid ? [who, targetJid] : [who]
+  await conn.sendMessage(
+    m.chat, 
+    { video: { url: gifUrl }, caption: textMessage, gifPlayback: true, mentions },
+    { mentions }
+  )
 }
 
 handler.command = ['kiss']
