@@ -4,38 +4,32 @@ let handler = async function (m, { conn }) {
 
   let who;
 
-  // 1️⃣ Si citan mensaje
   if (m.quoted) {
     who = m.quoted.sender;
-  }
-  // 2️⃣ Si escriben un número
-  else if (m.text && m.text.split(' ')[1]) {
+  } else if (m.text && m.text.split(' ')[1]) {
     let number = m.text.split(' ')[1].replace(/[^0-9]/g, '');
     who = `${number}@s.whatsapp.net`;
-  }
-  // 3️⃣ Si nada → tu propio LID
-  else {
+  } else {
     who = m.sender;
   }
 
-  const userId = who.split("@")[0]; // Aquí usamos exactamente lo que pediste
-  const mention = who;
+  const userId = who.split("@")[0];
 
   const mensajeFinal = `
 ✨┏━〔 🕵️‍♂️ Información de Usuario 〕━┓✨
-┃ 🌱 Nombre: @${userId}
+┃ 🌱 Nombre: ${userId}
 ┃ 🔹 LID/JID: ${who}
 ┃ 💠 Propietario: ${owners.includes(userId) ? '✅ Sí' : '❌ No'}
 ┗━━━━━━━━━━━━━━━━━━━┛
-💬 Aquí está la info de @${userId} visible para todos.
+💬 Aquí está la info de ${userId} visible para todos.
 `;
 
-  // Enviar mensaje con mención visible
-  await conn.sendMessage(m.chat, { text: mensajeFinal, mentions: [mention] });
+  // Enviar mensaje **mencionando realmente al usuario**
+  await conn.sendMessage(m.chat, { text: mensajeFinal, mentions: [who] });
 };
 
-handler.help = ['user']
-handler.tags = ['owner']
-handler.command = ['user']
-handler.owner = true
+handler.help = ['user'];
+handler.tags = ['owner'];
+handler.command = ['user'];
+handler.owner = true;
 export default handler;
