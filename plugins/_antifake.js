@@ -22,8 +22,9 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
         let sospechosos = [];
 
         for (let jid of participants) {
-            let number = jid.split('@')[0].replace(/\D/g, '');
-            if (!number.startsWith('598')) { // solo números internacionales
+            let raw = jid.split('@')[0].replace(/\D/g,''); // solo dígitos
+            let number = raw.startsWith('598') ? raw : '598' + raw; // normalizamos todos los uruguayos
+            if (!number.startsWith('598')) { // solo internacionales
                 sospechosos.push(jid);
             }
         }
@@ -48,7 +49,8 @@ handler.all = async (m, { conn }) => {
 
         let newUsers = m.participants || [];
         for (let who of newUsers) {
-            let number = who.split('@')[0].replace(/\D/g, ''); 
+            let raw = who.split('@')[0].replace(/\D/g,'');
+            let number = raw.startsWith('598') ? raw : '598' + raw; // normalizamos
             if (!number.startsWith('598')) { // solo internacionales
                 let groupMetadata = await conn.groupMetadata(m.chat);
                 let admins = groupMetadata.participants.filter(u => u.admin === 'admin' || u.admin === 'superadmin');
@@ -56,7 +58,7 @@ handler.all = async (m, { conn }) => {
 
                 await conn.sendMessage(m.chat, {
                     text: `⚠️ Nuevo número internacional detectado: @${who.split("@")[0]}\nTipo: POSIBLE NO URUGUAYO`,
-                    mentions: [who, ...mentions] // menciona solo al sospechoso y avisa a los admins
+                    mentions: [who, ...mentions]
                 });
             }
         }
