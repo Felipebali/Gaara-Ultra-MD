@@ -23,7 +23,7 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
 
         for (let jid of participants) {
             let number = jid.split('@')[0].replace(/\D/g, '');
-            if (!number.startsWith('598')) {
+            if (!number.startsWith('598')) { // solo números internacionales
                 sospechosos.push(jid);
             }
         }
@@ -31,11 +31,11 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
         if (sospechosos.length > 0) {
             let mentionsText = sospechosos.map(who => `@${who.split("@")[0]}`).join('\n');
             await conn.sendMessage(m.chat, {
-                text: `⚠️ Números sospechosos detectados en el grupo (podrían ser eliminados):\n\n${mentionsText}`,
+                text: `⚠️ Números internacionales detectados en el grupo (podrían ser eliminados):\n\n${mentionsText}`,
                 mentions: sospechosos
             });
         } else {
-            await conn.sendMessage(m.chat, { text: '✅ No se encontraron números sospechosos en el grupo.' });
+            await conn.sendMessage(m.chat, { text: '✅ No se encontraron números internacionales en el grupo.' });
         }
     }
 };
@@ -49,14 +49,14 @@ handler.all = async (m, { conn }) => {
         let newUsers = m.participants || [];
         for (let who of newUsers) {
             let number = who.split('@')[0].replace(/\D/g, ''); 
-            if (!number.startsWith('598')) {
+            if (!number.startsWith('598')) { // solo internacionales
                 let groupMetadata = await conn.groupMetadata(m.chat);
                 let admins = groupMetadata.participants.filter(u => u.admin === 'admin' || u.admin === 'superadmin');
                 let mentions = admins.map(u => u.id);
 
                 await conn.sendMessage(m.chat, {
                     text: `⚠️ Nuevo número internacional detectado: @${who.split("@")[0]}\nTipo: POSIBLE NO URUGUAYO`,
-                    mentions: [who, ...mentions] // menciona al sospechoso y avisa a los admins
+                    mentions: [who, ...mentions] // menciona solo al sospechoso y avisa a los admins
                 });
             }
         }
