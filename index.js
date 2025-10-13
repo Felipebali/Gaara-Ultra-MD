@@ -551,7 +551,3 @@ return phoneUtil.isValidNumber(parsedNumber)
 } catch (error) {
 return false
 }}
-
-import { welcome } from './plugins/_welcome.js'
-
-welcome(sock)  // sock es tu conexión de Baileys 
