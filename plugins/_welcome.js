@@ -1,38 +1,131 @@
-export async function onGroupUpdate({ update, conn }) {
-    // Detectar participantes correctamente
-    const participants = update.participants || update.participantsAdded || update.participantsRemoved;
-    const action = update.action || update.event; // Dependiendo de la versión
-    const chat = update.id || update.jid;
+// plugins/_welcome.js
+import { WAMessageStubType } from '@whiskeysockets/baileys'
+import fetch from 'node-fetch'
 
-    console.log('📢 EVENTO PARTICIPANTES:', { action, participants, chat });
+export async function before(m, { conn, participants, groupMetadata }) {
+  if (!m.messageStubType || !m.isGroup) return true
 
-    if (!participants || participants.length === 0) return;
+  const chat = global.db.data.chats[m.chat]
+  if (!chat?.welcome) return true
 
-    if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
-    const chatData = global.db.data.chats[chat];
-
-    if (!chatData.welcome) {
-        console.log('❌ Welcome desactivado para este chat');
-        return;
+  // Función para obtener país por prefijo
+  const getPais = (numero) => {
+    const paises = {
+      "1": "🇺🇸 Estados Unidos", "34": "🇪🇸 España", "52": "🇲🇽 México",
+      "54": "🇦🇷 Argentina", "55": "🇧🇷 Brasil", "56": "🇨🇱 Chile",
+      "57": "🇨🇴 Colombia", "58": "🇻🇪 Venezuela", "591": "🇧🇴 Bolivia",
+      "593": "🇪🇨 Ecuador", "595": "🇵🇾 Paraguay", "598": "🇺🇾 Uruguay",
+      "502": "🇬🇹 Guatemala", "503": "🇸🇻 El Salvador", "504": "🇭🇳 Honduras",
+      "505": "🇳🇮 Nicaragua", "506": "🇨🇷 Costa Rica", "507": "🇵🇦 Panamá",
+      "51": "🇵🇪 Perú", "53": "🇨🇺 Cuba", "91": "🇮🇳 India"
     }
-
-    if (action !== 'add' && action !== 'GROUP_PARTICIPANT_ADD') return;
-
-    for (let who of participants) {
-        const username = who.split("@")[0];
-        const welcomeMessages = [
-            `🎉 Bienvenido/a @${username} al grupo! Disfruta tu estadía.`,
-            `👋 Hola @${username}, nos alegra que te unas!`,
-            `✨ @${username}, bienvenido/a! Pásala genial aquí.`
-        ];
-
-        const text = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-
-        try {
-            await conn.sendMessage(chat, { text, mentions: [who] });
-            console.log(`✅ Welcome message sent to ${username}`);
-        } catch (e) {
-            console.error(`❌ Error sending welcome to ${username}:`, e);
-        }
+    for (let i = 1; i <= 3; i++) {
+      const prefijo = numero.slice(0, i)
+      if (paises[prefijo]) return paises[prefijo]
     }
-}
+    return "🌎 Desconocido"
+  }
+
+  const usuarioJid = m.messageStubParameters?.[0] || m.key.participant
+  const numeroUsuario = usuarioJid.split('@')[0]
+  const pais = getPais(numeroUsuario)
+
+  // Avatar del usuario
+  const avatarUsuario = await conn.profilePictureUrl(usuarioJid, 'image')
+    .catch(() => 'https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg')
+
+  // Generar imagen welcome/bye
+  const generarImagenUrl = async (tipo) => {
+    const username = `@${numeroUsuario}`
+    const guildName = groupMetadata.subject
+    const memberCount = participants.length
+    const guildIcon = await conn.profilePictureUrl(m.chat, 'image').catch(() => 'https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg')
+    const key = 'hYSK8YrJpKRc9jSE'
+
+    const url = `https://api-nv.ultraplus.click/api/generate/welcome-image?username=${encodeURIComponent(username)}&guildName=${encodeURIComponent(guildName)}&memberCount=${memberCount}&avatar=${encodeURIComponent(avatarUsuario)}&background=${encodeURIComponent(avatarUsuario)}&guildIcon=${encodeURIComponent(guildIcon)}&key=${key}&type=${tipo}`
+
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('API no responde')
+      return url
+    } catch {
+      return avatarUsuario
+    }
+  }
+
+  // Imagen de contacto para quoted
+  const thumbBuffer = await fetch('https://files.catbox.moe/7sbozb.jpg').then(res => res.buffer())
+  const fkontak = {
+    key: { participants: "0@s.whatsapp.net", remoteJid: m.chat, fromMe: false, id: "Halo" },
+    message: { locationMessage: { name: "☆ 𝚁𝙸𝙽 𝙸𝚃𝙾𝚂𝙷𝙸 𝚄𝙻𝚃𝚁𝙰 ☆ 🌸", jpegThumbnail: thumbBuffer } },
+    participant: "0@s.whatsapp.net"
+  }
+
+  const fechaObj = new Date()
+  const hora = fechaObj.toLocaleTimeString('es-PE', { timeZone: 'America/Lima' })
+  const fecha = fechaObj.toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Lima' })
+  const dia = fechaObj.toLocaleDateString('es-PE', { weekday: 'long', timeZone: 'America/Lima' })
+
+  const groupSize = participants.length + ((m.messageStubType === 27) ? 1 : ((m.messageStubType === 28 || m.messageStubType === 32) ? -1 : 0))
+
+  const contextInfo = {
+    mentionedJid: [usuarioJid],
+    externalAdReply: {
+      title: '🍉 𝙒𝙚𝙡𝙘𝙤𝙢𝙚 𝙍𝙞𝙣 𝙄𝙩𝙤𝙨𝙝𝙞 - 𝘽𝙤𝙩 🌿',
+      body: '',
+      previewType: "PHOTO",
+      thumbnailUrl: avatarUsuario,
+      sourceUrl: "https://instagram.com",
+      mediaType: 1
+    }
+  }
+
+  const welcomeMessage = `
+╭━━━〔 🌸 *ＢＩＥＮＶＥＮＩＤＯ @${numeroUsuario}* 🌸 〕━━⬣
+│🎀 ʙɪᴇɴᴠᴇɴɪᴅᴏ ᴀ *${groupMetadata.subject}* 💫
+│🍃 _${groupMetadata.desc?.slice(0, 120) || "Sin descripción."}_
+│🌸 𝑀𝑖𝑒𝑚𝑏𝑟𝑜𝑠: *${groupSize}*
+│🕰️ 𝐹𝑒𝑐ℎ𝑎: *${dia}, ${fecha}*
+│🌍 𝐿𝑢𝑔𝑎𝑟: *${pais}*
+╰━━━〔 💮 𝑅𝑖𝑛 𝐼𝑡𝑜𝑠ℎ𝑖 💮 〕━━⬣
+> ✨ *Que disfrutes tu estadía en este grupo.*
+> ૮₍｡˃ ᵕ ˂ ｡₎ა 💕 Usa _#menu_ para explorar comandos.`
+
+  const byeMessage = `
+╭━━━〔 💔 *ＨＡＳＴＡ ＰＲＯＮＴＯ @${numeroUsuario}* 💔 
+│🍂 𝑬𝒔 𝒕𝒓𝒊𝒔𝒕𝒆 𝒗𝒆𝒓𝒕𝒆 𝒊𝒓...
+│🕊️ 𝐺𝑟𝑢𝑝𝑜: *${groupMetadata.subject}*
+│🌸 𝑀𝑖𝑒𝑚𝑏𝑟𝑜𝑠: *${groupSize}*
+│🕰️ 𝐹𝑒𝑐ℎ𝑎: *${dia}, ${fecha}*
+│🌍 𝐿𝑢𝑔𝑎𝑟: *${pais}*
+╰━━━〔 💮 𝑅𝑖𝑛 𝐼𝑡𝑜𝑠ℎ𝑖 💮 〕━━⬣
+> 🌧️ *Esperamos verte de nuevo pronto.*
+> 🍃 Usa _#help_ si vuelves, estaremos aquí.`
+
+  // Entrada
+  if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
+    const imgWelcome = await generarImagenUrl('welcome')
+    await conn.sendMessage(m.chat, { 
+      image: { url: imgWelcome },
+      caption: welcomeMessage,
+      contextInfo,
+      mentions: [usuarioJid],
+      buttons: [
+        { buttonId: "#reg shadow.18", buttonText: { displayText: "💮 𝐀𝐔𝐓𝐎 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐑 💮" }, type: 1 },
+        { buttonId: "#menu", buttonText: { displayText: "🌸 𝐌𝐄𝐍𝐔 𝐑𝐈𝐍 𝐈𝐓𝐎𝐒𝐇𝐈 🌸" }, type: 1 }
+      ],
+      headerType: 4
+    }, { quoted: fkontak })
+  }
+
+  // Salida
+  if (m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE || m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_REMOVE) {
+    const imgBye = await generarImagenUrl('bye')
+    await conn.sendMessage(m.chat, {
+      image: { url: imgBye },
+      caption: byeMessage,
+      contextInfo,
+      mentions: [usuarioJid],
+      buttons: [
+        { buttonId: "#menu", buttonText: { displayText: "☁️ 𝐌𝐄𝐍𝐔 ☁️" }, type: 1 },
+        { buttonId
