@@ -1,52 +1,68 @@
 // plugins/antifake-offline.js
 
 let handler = async (m, { conn, isAdmin, isOwner }) => {
-  if (!m.isGroup) {
-    return conn.sendMessage(m.chat, { text: '⚠️ Este comando solo funciona en grupos.' });
-  }
-  if (!(isAdmin || isOwner)) {
-    return conn.sendMessage(m.chat, { text: '⚠️ Solo admins pueden usar este comando.' });
-  }
+    if (!m.isGroup) return conn.sendMessage(m.chat, { text: '⚠️ Este comando solo funciona en grupos.' });
+    if (!(isAdmin || isOwner)) return conn.sendMessage(m.chat, { text: '⚠️ Solo admins pueden usar este comando.' });
 
-  let chat = global.db.data.chats[m.chat];
-  chat.antifake = !chat.antifake;
+    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
+    let chat = global.db.data.chats[m.chat];
 
-  // Mensaje sin citar el comando
-  conn.sendMessage(m.chat, { 
-    text: chat.antifake
-      ? '⚡️ La función *antifake* se activó para este chat ✅'
-      : '🛑 La función *antifake* se desactivó para este chat ❌'
-  });
+    chat.antifake = !chat.antifake;
+
+    await conn.sendMessage(m.chat, {
+        text: chat.antifake
+            ? '⚡️ La función *antifake* se activó para este chat ✅'
+            : '🛑 La función *antifake* se desactivó para este chat ❌'
+    });
+
+    // Escaneo de participantes actuales al activar
+    if (chat.antifake) {
+        let groupMetadata = await conn.groupMetadata(m.chat);
+        let participants = groupMetadata.participants.map(u => u.id);
+        let sospechosos = [];
+
+        for (let jid of participants) {
+            let number = jid.split('@')[0].replace(/\D/g, '');
+            if (!number.startsWith('598')) {
+                sospechosos.push(jid);
+            }
+        }
+
+        if (sospechosos.length > 0) {
+            let mentionsText = sospechosos.map(who => `@${who.split("@")[0]}`).join('\n');
+            await conn.sendMessage(m.chat, {
+                text: `⚠️ Números sospechosos detectados en el grupo (podrían ser eliminados):\n\n${mentionsText}`,
+                mentions: sospechosos
+            });
+        } else {
+            await conn.sendMessage(m.chat, { text: '✅ No se encontraron números sospechosos en el grupo.' });
+        }
+    }
 };
 
+// Detecta nuevos participantes
 handler.all = async (m, { conn }) => {
-  try {
-    let chat = global.db.data.chats[m.chat];
-    if (!m.isGroup || !chat.antifake) return;
+    try {
+        let chat = global.db.data.chats[m.chat];
+        if (!m.isGroup || !chat?.antifake) return;
 
-    let newUsers = m.users || m.participants || [];
-    for (let jid of newUsers) {
-      let number = jid.split('@')[0];
+        let newUsers = m.participants || [];
+        for (let who of newUsers) {
+            let number = who.split('@')[0].replace(/\D/g, ''); 
+            if (!number.startsWith('598')) {
+                let groupMetadata = await conn.groupMetadata(m.chat);
+                let admins = groupMetadata.participants.filter(u => u.admin === 'admin' || u.admin === 'superadmin');
+                let mentions = admins.map(u => u.id);
 
-      // Patrones de números VoIP/virtuales en Uruguay
-      let suspiciousPrefixes = ['092', '094', '095', '096'];
-      let prefix = number.slice(2, 5); // quitar +598 y tomar los primeros 3 dígitos
-
-      if (suspiciousPrefixes.includes(prefix)) {
-        // Avisar a los admins sin citar al usuario
-        let groupMetadata = await conn.groupMetadata(m.chat);
-        let admins = groupMetadata.participants.filter(u => u.admin === 'admin' || u.admin === 'superadmin');
-        let mentions = admins.map(u => u.id);
-
-        conn.sendMessage(m.chat, {
-          text: `⚠️ Número sospechoso detectado: +${number}\nTipo: POSIBLE VIRTUAL/VOIP`,
-          mentions
-        });
-      }
+                await conn.sendMessage(m.chat, {
+                    text: `⚠️ Nuevo número internacional detectado: @${who.split("@")[0]}\nTipo: POSIBLE NO URUGUAYO`,
+                    mentions: [who, ...mentions] // menciona al sospechoso y avisa a los admins
+                });
+            }
+        }
+    } catch (e) {
+        console.log('Error en plugin antifake-offline:', e);
     }
-  } catch (e) {
-    console.log('Error en plugin antifake-offline:', e);
-  }
 };
 
 handler.help = ['antifake'];
