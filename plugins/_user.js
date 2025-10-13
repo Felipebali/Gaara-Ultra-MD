@@ -32,9 +32,9 @@ let handler = async function (m, { conn, groupMetadata }) {
   await conn.sendMessage(m.chat, { text: mensajeFinal, mentions });
 }
 
-handler.help = ['lids'];
+handler.help = ['user'];
 handler.tags = ['group'];
-handler.command = ['lids'];
+handler.command = ['user'];
 handler.owner = true;
 handler.group = true;
 
