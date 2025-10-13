@@ -1,7 +1,7 @@
 export async function onGroupUpdate({ update, conn }) {
-    const { participants, action, id: chat } = update;
-    console.log('📢 Group update detected:', { action, participants, chat });
-
+    sock.ev.on('group-participants.update', async (update) => {
+    console.log('📢 EVENTO PARTICIPANTES:', update);
+});
     if (!participants || participants.length === 0) return;
 
     if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
