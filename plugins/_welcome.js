@@ -1,7 +1,11 @@
 export async function onGroupUpdate({ update, conn }) {
-    sock.ev.on('group-participants.update', async (update) => {
-    console.log('📢 EVENTO PARTICIPANTES:', update);
-});
+    // Detectar participantes correctamente
+    const participants = update.participants || update.participantsAdded || update.participantsRemoved;
+    const action = update.action || update.event; // Dependiendo de la versión
+    const chat = update.id || update.jid;
+
+    console.log('📢 EVENTO PARTICIPANTES:', { action, participants, chat });
+
     if (!participants || participants.length === 0) return;
 
     if (!global.db.data.chats[chat]) global.db.data.chats[chat] = {};
@@ -12,7 +16,7 @@ export async function onGroupUpdate({ update, conn }) {
         return;
     }
 
-    if (action !== 'add') return;
+    if (action !== 'add' && action !== 'GROUP_PARTICIPANT_ADD') return;
 
     for (let who of participants) {
         const username = who.split("@")[0];
