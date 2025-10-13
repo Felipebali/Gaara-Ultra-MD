@@ -1,8 +1,8 @@
 // plugins/_antilink.js
-const groupLinkRegex = /chat.whatsapp.com/(?:invite/)?([0-9A-Za-z]{20,24})/i;
-const channelLinkRegex = /whatsapp.com/channel/([0-9A-Za-z]+)/i;
-const anyLinkRegex = /https?://[^\s]+/i;
-const allowedLinks = /(instagram.com|tiktok.com|youtube.com|youtu.be)/i;
+const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i;
+const channelLinkRegex = /whatsapp\.com\/channel\/([0-9A-Za-z]+)/i;
+const anyLinkRegex = /https?:\/\/[^\s]+/i;
+const allowedLinks = /(instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/i;
 const tagallLink = 'https://miunicolink.local/tagall-FelixCat';
 
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
