@@ -15,18 +15,14 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
     return m.reply(`🔗 AntiLink ahora está ${chat.antiLink ? '✅ ACTIVADO' : '❌ DESACTIVADO'}`);
 };
 
-handler.help = ['antilink'];
-handler.tags = ['group'];
-handler.command = /^antilink$/i;
-handler.group = true;
-
+// Este before sigue igual, revisa mensajes y borra/expulsa si AntiLink está activo
 handler.before = async (m, { conn, isAdmin, isBotAdmin }) => {
     if (!m?.text) return true;
     if (!m.isGroup) return true;
     if (!isBotAdmin) return true;
 
     const chat = global.db.data.chats[m.chat];
-    if (!chat?.antiLink) return true; // Si está desactivado, no hacer nada
+    if (!chat?.antiLink) return true;
 
     const who = m.sender;
     const isGroupLink = groupLinkRegex.test(m.text);
@@ -51,5 +47,10 @@ handler.before = async (m, { conn, isAdmin, isBotAdmin }) => {
 
     return true;
 };
+
+handler.help = ['antilink'];
+handler.tags = ['group'];
+handler.command = /^antilink$/i;
+handler.group = true;
 
 export default handler;
