@@ -1,7 +1,7 @@
+
 let handler = async function (m, { conn }) {
   // Solo owners
-  const owners = global.owner.map(o => o[0]);
-  if (!owners.includes(m.sender.replace(/[^0-9]/g, ''))) return;
+  const owners = global.owner.map(o => o[0].replace(/[^0-9]/g, '')); // números puros
 
   let who;
 
@@ -19,13 +19,15 @@ let handler = async function (m, { conn }) {
     who = m.sender;
   }
 
+  const userNumber = who.split("@")[0]; // número puro del usuario
+
   const mensajeFinal = `
 ✨┏━〔 🕵️‍♂️ Información de Usuario 〕━┓✨
-┃ 🌱 Nombre: @${who.split("@")[0]}
+┃ 🌱 Nombre: @${userNumber}
 ┃ 🔹 LID/JID: ${who}
-┃ 💠 Propietario: ${owners.includes(who.split("@")[0]) ? '✅ Sí' : '❌ No'}
+┃ 💠 Propietario: ${owners.includes(userNumber) ? '✅ Sí' : '❌ No'}
 ┗━━━━━━━━━━━━━━━━━━━┛
-💬 Aquí está la info de @${who.split("@")[0]} visible para todos.
+💬 Aquí está la info de @${userNumber} visible para todos.
 `;
 
   // Enviar mensaje como texto simple, sin menciones ocultas
