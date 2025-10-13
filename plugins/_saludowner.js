@@ -1,9 +1,7 @@
-// plugins/saludo-owner.js
 let handler = async (m, { conn, isOwner }) => {
-    if (!isOwner) return; // Solo owner puede usarlo
-    if (!m.isGroup) return; // Solo funciona en grupos
+    if (!isOwner) return;
+    if (!m.isGroup) return;
 
-    // Mensajes aleatorios para cada saludo
     const mensajes = {
         'buenos días': [
             '🌅 Buenos días a todos, que su café esté fuerte y su ánimo más fuerte 😼☕',
@@ -22,31 +20,26 @@ let handler = async (m, { conn, isOwner }) => {
         ]
     };
 
-    // Convertir el mensaje original a minúsculas para comparar
     let texto = m.text.toLowerCase();
 
     if (mensajes[texto]) {
-        // Elegir mensaje aleatorio
         let mensajeRandom = mensajes[texto][Math.floor(Math.random() * mensajes[texto].length)];
-
-        // Obtener todos los participantes para mención oculta
         let groupMetadata = await conn.groupMetadata(m.chat);
         let mentions = groupMetadata.participants.map(u => u.id);
 
-        // Enviar mensaje con mención oculta (todos reciben notificación)
-        await conn.sendMessage(m.chat, { 
-            text: mensajeRandom, 
+        await conn.sendMessage(m.chat, {
+            text: mensajeRandom,
             mentions: mentions,
-            contextInfo: { mentionedJid: mentions } // mantiene mención oculta
+            contextInfo: { mentionedJid: mentions }
         });
     }
 };
 
-// Sin prefijo, se activa con el texto exacto
-handler.command = ['buenos días','buenas tardes','buenas noches'];
+// Regex evita el error de str.replace
+handler.command = /^(buenos días|buenas tardes|buenas noches)$/i;
 handler.tags = ['owner'];
 handler.owner = true;
-handler.customPrefix = true; // Sin prefijo
+handler.customPrefix = true;
 handler.help = ['saludoOwner'];
 
 export default handler;
