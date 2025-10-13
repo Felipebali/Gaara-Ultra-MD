@@ -552,14 +552,12 @@ return phoneUtil.isValidNumber(parsedNumber)
 return false
 }}
 
-conn.ev.on('group-participants.update', async (update) => {
-    try {
-        const welcomeMod = await import('./plugins/_welcome.js');
-        const goodbyeMod = await import('./plugins/_despedida.js');
+{ onGroupUpdate } from './plugins/_welcome.js';
 
-        if (welcomeMod.onGroupUpdate) await welcomeMod.onGroupUpdate({ update, conn });
-        if (goodbyeMod.onGroupUpdate) await goodbyeMod.onGroupUpdate({ update, conn });
+sock.ev.on('group-participants.update', async (update) => {
+    try {
+        await onGroupUpdate({ update, conn: sock });
     } catch (e) {
-        console.error('Error ejecutando group update:', e);
+        console.error('Error en welcome plugin:', e);
     }
 });
