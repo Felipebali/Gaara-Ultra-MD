@@ -1,7 +1,6 @@
-
 let handler = async function (m, { conn }) {
-  // Solo owners
-  const owners = global.owner.map(o => o[0].replace(/[^0-9]/g, '')); // números puros
+  // Números de owners
+  const owners = global.owner.map(o => o[0].replace(/[^0-9]/g, ''));
 
   let who;
 
@@ -20,17 +19,18 @@ let handler = async function (m, { conn }) {
   }
 
   const userNumber = who.split("@")[0]; // número puro del usuario
+  const mention = '@' + userNumber; // para usar en todo el mensaje
 
   const mensajeFinal = `
 ✨┏━〔 🕵️‍♂️ Información de Usuario 〕━┓✨
-┃ 🌱 Nombre: @${userNumber}
+┃ 🌱 Nombre: ${mention}
 ┃ 🔹 LID/JID: ${who}
 ┃ 💠 Propietario: ${owners.includes(userNumber) ? '✅ Sí' : '❌ No'}
 ┗━━━━━━━━━━━━━━━━━━━┛
-💬 Aquí está la info de @${userNumber} visible para todos.
+💬 Aquí está la info de ${mention} visible para todos.
 `;
 
-  // Enviar mensaje como texto simple, sin menciones ocultas
+  // Enviar mensaje y que la mención sea visible
   return conn.sendMessage(m.chat, { text: mensajeFinal });
 }
 
