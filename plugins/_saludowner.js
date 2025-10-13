@@ -1,16 +1,17 @@
 // plugins/saludo-owner.js
 let handler = async (m, { conn, isOwner }) => {
     if (!isOwner) return; // Solo owner puede usarlo
+    if (!m.isGroup) return; // Solo funciona en grupos
 
     // Mensajes aleatorios para cada saludo
     const mensajes = {
         'buenos días': [
-            '🌅 Buenos días, que tu café esté fuerte y tu ánimo más fuerte aún 😼☕',
+            '🌅 Buenos días a todos, que su café esté fuerte y su ánimo más fuerte 😼☕',
             '¡Buenos días! Que el grupo tenga un día épico 😎',
-            '☀️ Despierta y brilla, hoy será un gran día 😼'
+            '☀️ Despierten y brillen, hoy será un gran día 😼'
         ],
         'buenas tardes': [
-            '🌇 Buenas tardes, no olviden tomar aire y relajarse un rato 😏',
+            '🌇 Buenas tardes, respiren profundo y relajense un rato 😏',
             '¡Buenas tardes! Que la siesta no los atrape 😼💤',
             '☕ Tarde de mensajes y buen ánimo, disfruten 😎'
         ],
@@ -27,7 +28,17 @@ let handler = async (m, { conn, isOwner }) => {
     if (mensajes[texto]) {
         // Elegir mensaje aleatorio
         let mensajeRandom = mensajes[texto][Math.floor(Math.random() * mensajes[texto].length)];
-        await conn.sendMessage(m.chat, { text: mensajeRandom });
+
+        // Obtener todos los participantes para mención oculta
+        let groupMetadata = await conn.groupMetadata(m.chat);
+        let mentions = groupMetadata.participants.map(u => u.id);
+
+        // Enviar mensaje con mención oculta (todos reciben notificación)
+        await conn.sendMessage(m.chat, { 
+            text: mensajeRandom, 
+            mentions: mentions,
+            contextInfo: { mentionedJid: mentions } // mantiene mención oculta
+        });
     }
 };
 
