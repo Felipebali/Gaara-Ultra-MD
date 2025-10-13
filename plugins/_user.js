@@ -19,19 +19,24 @@ let handler = async function (m, { conn }) {
     who = m.sender;
   }
 
-  const username = '@' + who.split('@')[0]; // usar en todo el mensaje
+  const username = '@' + who.split('@')[0]; // usar para mostrar
+  const displayName = who.split('@')[0];    // usar en el texto tipo mención
 
-  const mensajeFinal = `┏━〔 👤 Información de Usuario 〕━┓
-┃ 🌱 *Nombre:* ${who.split("@")[0]}
+  const mensajeFinal = `
+✨┏━〔 🕵️‍♂️ Información de Usuario 〕━┓✨
+┃ 🌱 *Nombre:* ${username} (${displayName})
 ┃ 🔹 *LID/JID:* ${who}
-┗━━━━━━━━━━━━━━━━━━━┛`
+┃ 💠 *Propietario:* ${owners.includes(who.replace(/[^0-9]/g,'')) ? '✅ Sí' : '❌ No'}
+┗━━━━━━━━━━━━━━━━━━━┛
+💬 Aquí está la info de ${displayName} sin mención oculta.
+`;
 
-  // Enviar mensaje y mencionar a la persona
-  return conn.sendMessage(m.chat, { text: mensajeFinal, mentions: [who] })
+  // Enviar mensaje sin mención oculta
+  return conn.sendMessage(m.chat, { text: mensajeFinal });
 }
 
 handler.help = ['user']
 handler.tags = ['owner']
 handler.command = ['user']
 handler.owner = true
-export default handler
+export default handler;
