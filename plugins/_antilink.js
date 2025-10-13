@@ -68,6 +68,3 @@ console.error('Error en Anti-Link:', e);
 return true;
 
 };
-
-Voy a usar este, creame el toggles para este
-
