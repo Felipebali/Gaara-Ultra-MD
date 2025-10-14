@@ -96,41 +96,30 @@ ${deco}
   if(!menuState.active && mainCmds.includes(command.toLowerCase())) return send(templates.menu_disabled())
 
   // ---------- COMANDOS PRINCIPALES ----------
-  if(['saldo','coins','balance'].includes(command.toLowerCase())) return send(templates.saldo(user.coins))
-
-  if(command.toLowerCase()==='flip'){
-    const outcome = Math.random()<0.5?'CAR A':'CRUZ'
-    user.history.unshift(`Flip: ${outcome}`); if(user.history.length>5) user.history.pop()
-    return send(templates.flip(outcome))
-  }
-
-  if(command.toLowerCase()==='daily'){
-    const now=Date.now()
-    if(now-(user.lastDaily||0)<DAILY_COOLDOWN){
-      const remaining=DAILY_COOLDOWN-(now-user.lastDaily)
-      const h=Math.floor(remaining/3600000), m=Math.floor((remaining%3600000)/60000)
-      return send(templates.daily_cooldown(h,m))
-    }
-    user.coins+=DAILY_REWARD; user.lastDaily=now
-    user.history.unshift(`+${DAILY_REWARD} Daily`); if(user.history.length>5) user.history.pop()
-    return send(templates.daily_ok(DAILY_REWARD,user.coins))
-  }
-
   if(['apuesta','bet','moneda'].includes(command.toLowerCase())){
-    if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}apuesta <cantidad>`)
-    let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
-    if(!amount||amount<=0) return send(`💀 @${short} Cantidad inválida.`)
-    if(user.coins-amount<DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT))
-    const win=Math.random()<WIN_PROB
-    if(win){ user.coins+=amount; user.history.unshift(`+${amount} Apuesta`); if(user.history.length>5) user.history.pop(); return send(templates.victory(amount,user.coins)}
-    else { user.coins-=amount; user.history.unshift(`-${amount} Apuesta`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins)}
+  if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}apuesta <cantidad>`)
+  let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
+  if(!amount||amount<=0) return send(`💀 @${short} Cantidad inválida.`)
+  if(user.coins-amount<DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT))
+  const win=Math.random()<WIN_PROB
+  if(win){ 
+    user.coins+=amount
+    user.history.unshift(`+${amount} Apuesta`)
+    if(user.history.length>5) user.history.pop()
+    return send(templates.victory(amount,user.coins))
+  } else { 
+    user.coins-=amount
+    user.history.unshift(`-${amount} Apuesta`)
+    if(user.history.length>5) user.history.pop()
+    return send(templates.defeat(amount,user.coins))
   }
+}
 
   // ---------- DADOS ----------
   if(command.toLowerCase()==='dados'){
     const dice1=Math.floor(Math.random()*6)+1, dice2=Math.floor(Math.random()*6)+1, total=dice1+dice2
     user.history.unshift(`Dados: ${dice1}+${dice2}=${total`); if(user.history.length>5) user.history.pop()
-    return send(`🎲 @${short} — Tirada de dados: ${dice1} + ${dice2} = ${total}`)
+    return send(`🎲 @${short} — Tirada de dados: ${dice1} + ${dice2} = ${total}`);
   }
 
   // ---------- MINAR ----------
