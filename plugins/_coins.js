@@ -5,8 +5,8 @@
    - Saldo inicial: 500
    - Daily: 50 (24h cooldown)
    - Probabilidad de ganar: 60%
-   - Deuda permitida hasta: -100 (límite). Si intenta pasar ese límite: bloqueo + mensaje agresivo.
-   - Menciones: usa @${who.split("@")[0]}
+   - Deuda permitida hasta: -100 (límite)
+   - Menciones: usa @${sender.split("@")[0]}
    Compatible con estructura global.db.data.users
 */
 
@@ -16,31 +16,29 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   if (!global.db.data) global.db.data = { users: {} }
   if (!global.db.data.users) global.db.data.users = {}
 
-  const who = m.sender // '598...@s.whatsapp.net'
-  const short = who.split('@')[0]
+  const sender = m.sender
+  const short = sender.split('@')[0]
 
   // inicializar usuario si no existe
-  if (!global.db.data.users[who]) {
-    global.db.data.users[who] = {
+  if (!global.db.data.users[sender]) {
+    global.db.data.users[sender] = {
       coins: 500,
       lastDaily: 0
     }
   }
 
-  const user = global.db.data.users[who]
+  const user = global.db.data.users[sender]
   const cmd = command.toLowerCase()
 
   const send = async (text) => {
-    // Intentar enviar con mentions (Baileys-style). Si falla, caer a m.reply
     try {
-      // Conn.sendMessage signature puede variar; este objeto es compatible con Baileys v4+
-      await conn.sendMessage(m.chat, { text, mentions: [who] })
+      await conn.sendMessage(m.chat, { text, mentions: [sender] })
     } catch (e) {
       try { await m.reply(text) } catch (err) { console.error('No se pudo enviar mensaje:', err) }
     }
   }
 
-  // Mensajes estilo Militar Oscuro (D)
+  // Mensajes estilo Militar Oscuro
   const templates = {
     victory: (amount, newBalance) => (
       `🦂 @${short}\n` +
@@ -98,13 +96,13 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   // Configuración del juego
   const DAILY_REWARD = 50
-  const DAILY_COOLDOWN = 24 * 60 * 60 * 1000 // ms
-  const WIN_PROB = 0.60 // 60%
-  const DEBT_LIMIT = -100 // max deuda permitida
+  const DAILY_COOLDOWN = 24 * 60 * 60 * 1000
+  const WIN_PROB = 0.6
+  const DEBT_LIMIT = -100
 
-  // Handlers de comandos
+  // Comandos
   if (cmd === 'saldo' || cmd === 'coins' || cmd === 'balance') {
-    return send(templates.saldo(user.coins))
+    return send(templates.saldo(user.coins ?? 0))
   }
 
   if (cmd === 'flip') {
@@ -116,35 +114,25 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     const now = Date.now()
     if (now - (user.lastDaily || 0) < DAILY_COOLDOWN) {
       const remaining = DAILY_COOLDOWN - (now - user.lastDaily)
-      const hours = Math.floor(remaining / (60*60*1000))
-      const minutes = Math.floor((remaining % (60*60*1000)) / (60*1000))
+      const hours = Math.floor(remaining / (60 * 60 * 1000))
+      const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000))
       return send(templates.daily_cooldown(hours, minutes))
     }
-    user.coins += DAILY_REWARD
+    user.coins = (user.coins ?? 0) + DAILY_REWARD
     user.lastDaily = now
     return send(templates.daily_ok(DAILY_REWARD, user.coins))
   }
 
   if (cmd === 'moneda' || cmd === 'apostar' || cmd === 'bet') {
     if (!args || args.length === 0) return send(templates.usage_help(usedPrefix))
+    let amount = parseInt(args[0].toString().replace(/[^0-9]/g, ''))
+    if (!amount || amount <= 0) return send(`🦂 @${short}\nCantidad inválida. Ingresá un número mayor a 0.`)
 
-    // parsear cantidad (acepta números y $s)
-    let amount = args[0].toString().replace(/[^0-9]/g, '')
-    if (!amount) return send(`🦂 @${short}\nUso: ${usedPrefix}moneda <cantidad>\nEj: ${usedPrefix}moneda 50`)
-    amount = parseInt(amount)
-    if (isNaN(amount) || amount <= 0) return send(`🦂 @${short}\nCantidad inválida. Ingresá un número mayor a 0.`)
+    const projected = (user.coins ?? 0) - amount
+    if (projected < DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT))
 
-    // Comprobar límite de deuda: no permitir que quede por debajo de DEBT_LIMIT
-    const projected = user.coins - amount
-    if (projected < DEBT_LIMIT) {
-      // Bloqueo + mensaje agresivo (estilo D)
-      return send(templates.debt_block(DEBT_LIMIT))
-    }
-
-    // Realizar flip con 60% de chance de ganar
     const win = Math.random() < WIN_PROB
     if (win) {
-      // gana la cantidad (neto +amount)
       user.coins += amount
       return send(templates.victory(amount, user.coins))
     } else {
@@ -154,22 +142,19 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   }
 
   if (cmd === 'topcoins' || cmd === 'top') {
-    // Construir ranking - tomar usuarios con coins definidos
-    const users = Object.keys(global.db.data.users || {})
-      .map(jid => ({ jid, coins: global.db.data.users[jid].coins || 0 }))
+    const users = Object.keys(global.db.data.users)
+      .map(jid => ({ jid, coins: global.db.data.users[jid].coins ?? 0 }))
       .sort((a, b) => b.coins - a.coins)
-      .slice(0, 5) // top 5
+      .slice(0, 5)
 
-    if (users.length === 0) return send(`🦂 @${short}\nNo hay datos de soldados todavía.`)
+    if (!users.length) return send(`🦂 @${short}\nNo hay datos de soldados todavía.`)
 
     let text = `🦂 RANKING MILITAR - TOP 5\n\n`
     for (let i = 0; i < users.length; i++) {
       const u = users[i]
-      const s = u.jid.split('@')[0]
-      text += `${i+1}) @${s} — ${u.coins} fichas\n`
+      text += `${i + 1}) @${u.jid.split('@')[0]} — ${u.coins} fichas\n`
     }
     text += `\nMantengan la disciplina.`
-    // enviar con mentions de los top 5
     try {
       const mentions = users.map(u => u.jid)
       await conn.sendMessage(m.chat, { text, mentions })
@@ -179,12 +164,11 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     return
   }
 
-  // Si no matchea, mostrar ayuda
   return send(templates.usage_help(usedPrefix))
 }
 
-// Export y configuración del plugin (prefijo fijo ".")
 handler.help = ['moneda <cantidad>', 'saldo', 'flip', 'daily', 'topcoins']
 handler.tags = ['economy', 'fun']
 handler.command = /^(moneda|apostar|bet|saldo|coins|balance|flip|daily|topcoins|top)$/i
+
 export default handler
