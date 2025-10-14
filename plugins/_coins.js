@@ -1,15 +1,17 @@
-/* plugins/coins_arcade.js
-   Juego estilo Casino Retro Arcade
+/* plugins/_coins.js
+   Juego de monedas estilo Arcade Cósmico
    Comandos: .saldo .daily .apuesta <monto> .flip [monto] .topcoins .history
 */
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
-  if (!global.db) global.db = { data: { users: {} } }
-  if (!global.db.data) global.db.data.users) global.db.data.users = {}
+  // Inicializar DB si no existe
+  if (!global.db) global.db = { data: {} }
+  if (!global.db.data.users) global.db.data.users = {}
 
   const sender = m.sender
   const short = sender.split("@")[0]
 
+  // Inicializar usuario
   if (!global.db.data.users[sender]) global.db.data.users[sender] = { coins: 500, lastDaily: 0, history: [] }
   const user = global.db.data.users[sender]
   if (user.coins === undefined) user.coins = 500
@@ -36,9 +38,9 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   }
 
   const templates = {
-    victory: (amt, bal) => `💥🎰 @${short}\n¡GANANCIA RETRO! +${amt} 💎\nSaldo: ${bal} 🕹️✨`,
-    defeat: (amt, bal) => `💀💡 @${short}\n¡FALLASTE! -${amt} 💎\nSaldo: ${bal} 🕹️`,
-    flip_result: (outcome, amt, bal, win) => `🎲🕹️ @${short}\nResultado: ${outcome}\n${win?'GANASTE!':'PERDISTE'} ${amt} 💎\nSaldo: ${bal} 🎰`,
+    victory: (amt, bal) => `💥🎰 @${short}\n¡VICTORIA! Ganaste +${amt} 💎\nSaldo: ${bal} 🕹️`,
+    defeat: (amt, bal) => `💀🕹️ @${short}\n¡DERROTA! Perdeste ${amt} 💎\nSaldo: ${bal}`,
+    flip_result: (outcome, amt, bal, win) => `🎲🕹️ @${short}\nTirada: ${outcome}\n${win?'¡GANASTE!':'PERDISTE'} ${amt} 💎\nSaldo: ${bal}`,
     saldo: bal => `💎📊 @${short}\nSaldo actual: ${bal} fichas`,
     daily_ok: (amt, bal) => `🎖️💰 @${short}\nDaily: +${amt} 💎\nSaldo: ${bal} 🕹️`,
     daily_cooldown: (h,m) => `⌛ @${short}\nDaily en espera: ${h}h ${m}m`,
@@ -54,14 +56,16 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   // DAILY
   if (cmd === 'daily') {
-    await react('🎖️'); const now = Date.now()
+    await react('🎖️')
+    const now = Date.now()
     if(now - user.lastDaily < DAILY_COOLDOWN) {
       const remaining = DAILY_COOLDOWN - (now - user.lastDaily)
       const h = Math.floor(remaining/(60*60*1000))
       const m = Math.floor((remaining%(60*60*1000))/(60*1000))
       return send(templates.daily_cooldown(h,m))
     }
-    user.coins += DAILY_REWARD; user.lastDaily = now
+    user.coins += DAILY_REWARD
+    user.lastDaily = now
     addHistory('daily', DAILY_REWARD, true)
     return send(templates.daily_ok(DAILY_REWARD,user.coins))
   }
@@ -82,10 +86,12 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     const win = Math.random() < WIN_PROB
     if(win){ 
       const gain = Math.floor(amount * multiplier)
-      user.coins += gain; addHistory('apuesta',gain,true)
+      user.coins += gain
+      addHistory('apuesta',gain,true)
       return send(`💥🎰 @${short}\n¡VICTORIA! Ganaste +${gain} 💎 (x${multiplier})\nSaldo: ${user.coins} 🕹️`)
     } else { 
-      user.coins -= amount; addHistory('apuesta',amount,false)
+      user.coins -= amount
+      addHistory('apuesta',amount,false)
       return send(`💀🕹️ @${short}\n¡DERROTA! Perdeste ${amount} 💎\nSaldo: ${user.coins}`)
     }
   }
@@ -101,7 +107,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     if(win) user.coins+=amount; else user.coins-=amount
     if(user.coins<DEBT_LIMIT) user.coins=DEBT_LIMIT
     addHistory('flip',amount,win)
-    return send(`🎲🕹️ @${short}\nTirada: ${outcome}\n${win?'¡GANASTE!':'PERDISTE'} ${amount} 💎\nSaldo: ${user.coins}`)
+    return send(templates.flip_result(outcome,amount,user.coins,win))
   }
 
   // TOP COINS
