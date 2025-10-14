@@ -1,14 +1,14 @@
 /* plugins/coins.js
-   Juego de monedas avanzado - Militar Oscuro
+   Juego de monedas avanzado - Militar Oscuro + Emojis + Reacciones
    - Prefijo fijo: "."
-   - Comandos: .saldo .daily .moneda <monto> .flip [monto] .topcoins
+   - Comandos: .saldo .daily .moneda <monto> .flip [monto] .topcoins .history
    - Saldo inicial: 500
-   - Daily: 50 (24h)
-   - Probabilidad de ganar: 60% en apuesta
-   - Flip: apostar cualquier monto, 50/50
-   - Deuda máxima: -100
-   - Historial de últimas 10 jugadas
+   - Daily: 50
+   - Probabilidad: 60% apuesta, 50% flip
+   - Límite deuda: -100
+   - Historial últimas 10 jugadas
    - Menciones automáticas: @${who.split("@")[0]}
+   - Reacciones automáticas por comando
 */
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
@@ -19,9 +19,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   const short = sender.split("@")[0]
 
   // Inicializar usuario
-  if (!global.db.data.users[sender]) {
-    global.db.data.users[sender] = { coins: 500, lastDaily: 0, history: [] }
-  }
+  if (!global.db.data.users[sender]) global.db.data.users[sender] = { coins: 500, lastDaily: 0, history: [] }
   const user = global.db.data.users[sender]
   if (user.coins === undefined) user.coins = 500
   if (user.lastDaily === undefined) user.lastDaily = 0
@@ -34,7 +32,13 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   const send = async (text) => {
     try { await conn.sendMessage(m.chat, { text, mentions: [sender] }) }
-    catch (e) { try { await m.reply(text) } catch(err){console.error(err)} }
+    catch(e){ try{ await m.reply(text) } catch(err){console.error(err)} }
+  }
+
+  // Reaccionar al mensaje que activó el comando
+  const react = async (emoji) => {
+    try { await conn.sendMessage(m.chat, { react: { text: emoji, key: m.key } }) }
+    catch(e){ console.error('No se pudo reaccionar:', e) }
   }
 
   const addHistory = (type, amount, win) => {
@@ -43,29 +47,32 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   }
 
   const templates = {
-    victory: (amount, newBalance) => `🦂 @${short}\nOperación: Apuesta ${amount} fichas.\nResultado: ÉXITO ✅\nGanancia: +${amount}\nSaldo: ${newBalance}\nVuelve cuando tengas sangre en las venas.`,
-    defeat: (amount, newBalance) => `🦂 @${short}\nOperación: Apuesta ${amount} fichas.\nResultado: DERROTA ❌\nPérdida: -${amount}\nSaldo: ${newBalance}\nVuelve cuando tengas sangre en las venas.`,
-    flip_result: (outcome, amount, newBalance, win) => `🦂 @${short}\nTirada: ${outcome}\n${win ? '¡ÉXITO! Ganaste' : 'DERROTA ❌ Perdiste'} ${amount} fichas\nSaldo: ${newBalance}`,
-    saldo: (bal) => `🦂 @${short}\nInforme: Estado de recursos.\nSaldo actual: ${bal} fichas.`,
-    daily_ok: (amount, newBalance) => `🦂 @${short}\nRecompensa diaria: +${amount} fichas.\nSaldo: ${newBalance}\nCumpliste tu turno.`,
-    daily_cooldown: (h,m) => `🦂 @${short}\nEstado: En freno.\nVuelve en ${h}h ${m}m.`,
-    debt_block: (limit) => `🦂 @${short}\nALERTA: Límite de deuda alcanzado (límite ${limit}).\nNo podes seguir apostando. Recuperá recursos o esperá al daily.\nNo vuelvas sin honor.`,
-    usage_help: (p) => `🦂 @${short}\nComandos:\n${p}saldo - Ver saldo\n${p}daily - Cobrar 50 fichas (24h)\n${p}moneda <monto> - Apostar 60% éxito\n${p}flip [monto] - Tirada 50/50\n${p}topcoins - Top 5 soldados\n${p}history - Últimas 10 jugadas`
+    victory: (amount, newBalance) => `🏹💥 @${short}\nOperación: Apuesta ${amount} fichas.\nResultado: ÉXITO ✅\nGanancia: +${amount}\nSaldo: ${newBalance}\n¡Vuelve con más fuerza!`,
+    defeat: (amount, newBalance) => `💀🔥 @${short}\nOperación: Apuesta ${amount} fichas.\nResultado: DERROTA ❌\nPérdida: -${amount}\nSaldo: ${newBalance}\nNo pierdas la cabeza...`,
+    flip_result: (outcome, amount, newBalance, win) => `🎲⚔️ @${short}\nTirada: ${outcome}\n${win ? '¡ÉXITO! Ganaste' : 'DERROTA ❌ Perdiste'} ${amount} fichas\nSaldo: ${newBalance}`,
+    saldo: (bal) => `📊🛡️ @${short}\nInforme de recursos.\nSaldo actual: ${bal} fichas.`,
+    daily_ok: (amount, newBalance) => `🎖️💰 @${short}\nRecompensa diaria: +${amount} fichas.\nSaldo: ${newBalance}\nCumpliste tu misión diaria.`,
+    daily_cooldown: (h,m) => `⌛ @${short}\nDaily en espera. Vuelve en ${h}h ${m}m.`,
+    debt_block: (limit) => `🚫☠️ @${short}\nALERTA: Límite de deuda alcanzado (${limit}).\nNo sigas apostando hasta recuperarte.`
   }
 
   const cmd = command.toLowerCase()
 
   // SALDO
-  if (cmd === 'saldo' || cmd === 'coins' || cmd === 'balance') return send(templates.saldo(user.coins))
+  if (cmd === 'saldo' || cmd === 'coins' || cmd === 'balance') {
+    await react('🛡️')
+    return send(templates.saldo(user.coins))
+  }
 
   // DAILY
   if (cmd === 'daily') {
+    await react('🎖️')
     const now = Date.now()
     if (now - (user.lastDaily || 0) < DAILY_COOLDOWN) {
       const remaining = DAILY_COOLDOWN - (now - user.lastDaily)
       const hours = Math.floor(remaining/(60*60*1000))
-      const minutes = Math.floor((remaining % (60*60*1000)) / (60*1000))
-      return send(templates.daily_cooldown(hours, minutes))
+      const minutes = Math.floor((remaining%(60*60*1000))/(60*1000))
+      return send(templates.daily_cooldown(hours,minutes))
     }
     user.coins += DAILY_REWARD
     user.lastDaily = now
@@ -75,9 +82,10 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   // MONEDA/APUESTA
   if (cmd === 'moneda' || cmd === 'apostar' || cmd === 'bet') {
-    if (!args[0]) return send(templates.usage_help(usedPrefix))
+    await react('🎲')
+    if (!args[0]) return send(`📝 Uso: ${usedPrefix}moneda <cantidad>`)
     let amount = parseInt(args[0].toString().replace(/[^0-9]/g,''))
-    if (!amount || amount <= 0) return send(`🦂 @${short}\nCantidad inválida. Ingresá un número mayor a 0.`)
+    if (!amount || amount <=0) return send(`❌ @${short} Cantidad inválida.`)
     if (user.coins - amount < DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT))
 
     const win = Math.random() < WIN_PROB
@@ -94,6 +102,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   // FLIP PERSONALIZADO
   if (cmd === 'flip') {
+    await react('🎲')
     let amount = 10
     if (args[0]) amount = parseInt(args[0].toString().replace(/[^0-9]/g,''))
     if (!amount || amount <=0) amount = 10
@@ -110,15 +119,16 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   // TOP COINS
   if (cmd === 'topcoins' || cmd === 'top') {
+    await react('🏆')
     const users = Object.keys(global.db.data.users)
       .map(jid => ({ jid, coins: global.db.data.users[jid].coins ?? 0 }))
       .sort((a,b)=>b.coins-a.coins).slice(0,5)
-    if (!users.length) return send(`🦂 @${short}\nNo hay datos de soldados todavía.`)
-    let text = `🦂 RANKING MILITAR - TOP 5\n\n`
+    if (!users.length) return send(`🧐 @${short}\nNo hay soldados todavía.`)
+    let text = `🏆⚡ RANKING MILITAR - TOP 5\n\n`
     for (let i=0;i<users.length;i++){
       text+= `${i+1}) @${users[i].jid.split('@')[0]} — ${users[i].coins} fichas\n`
     }
-    text+=`\nMantengan la disciplina.`
+    text+=`\n¡Mantengan la disciplina!`
     try{ const mentions = users.map(u=>u.jid); await conn.sendMessage(m.chat,{text,mentions}) } 
     catch(e){ return send(text) }
     return
@@ -126,19 +136,20 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   // HISTORIAL
   if(cmd === 'history') {
-    if(!user.history.length) return send(`🦂 @${short}\nNo hay jugadas registradas.`)
-    let text = `🦂 @${short}\nÚltimas 10 jugadas:\n\n`
+    await react('📜')
+    if(!user.history.length) return send(`📜 @${short}\nNo hay jugadas registradas.`)
+    let text = `📜 @${short}\nÚltimas 10 jugadas:\n\n`
     user.history.forEach((h,i)=>{
-      text += `${i+1}) ${h.type.toUpperCase()} — ${h.win?'GANÓ':'PERDIÓ'} ${h.amount} fichas — ${h.date}\n`
+      text += `${i+1}) ${h.type.toUpperCase()} — ${h.win?'✅ GANÓ':'❌ PERDIÓ'} ${h.amount} fichas — ${h.date}\n`
     })
     return send(text)
   }
 
   // AYUDA
-  return send(templates.usage_help(usedPrefix))
+  return send(`🛠️ @${short}\nComandos:\n${usedPrefix}saldo\n${usedPrefix}daily\n${usedPrefix}moneda <monto>\n${usedPrefix}flip [monto]\n${usedPrefix}topcoins\n${usedPrefix}history`)
 }
 
-handler.help = ['moneda <cantidad>', 'flip [monto]', 'saldo', 'daily', 'topcoins', 'history']
+handler.help = ['moneda <cantidad>','flip [monto]','saldo','daily','topcoins','history']
 handler.tags = ['economy','fun']
 handler.command = /^(moneda|apostar|bet|flip|saldo|coins|balance|daily|topcoins|top|history)$/i
 
