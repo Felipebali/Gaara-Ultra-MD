@@ -125,7 +125,7 @@ if(['apuesta','bet','moneda'].includes(command.toLowerCase())){
   const dice1=Math.floor(Math.random()*6)+1
   const dice2=Math.floor(Math.random()*6)+1
   const total=dice1+dice2
-  user.history.unshift(`Dados: ${dice1}+${dice2}=${total}`); 
+  user.history.unshift(`Dados: ${dice1}+${dice2}=${total}`);
   if(user.history.length>5) user.history.pop()
   return send(`\u{1F3B2} @${short} — Tirada de dados: ${dice1} + ${dice2} = ${total}`);
 }
