@@ -4,6 +4,7 @@
    - Menú: .menucoins
    - Comandos de juego: saldo, daily, apuesta, flip, topcoins, history
    - Todas las menciones con ${who.split("@")[0]} y sin citar mensajes
+   - Estilo militar agresivo y emojis
 */
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
@@ -35,10 +36,9 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     return arr[Math.floor(Math.random()*arr.length)]
   }
 
-  const send = async(text, reaction=null)=>{
+  const send = async(text)=>{
     try{
-      if(reaction) await conn.sendMessage(m.chat,{reaction:{text:reaction,key:m.key}})
-      await conn.sendMessage(m.chat,{text, mentions:[who]})
+      await conn.sendMessage(m.chat,{ text, mentions:[who] })
     } catch(e){ console.error(e) }
   }
 
@@ -77,7 +77,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 📜 .history — Últimas 5 jugadas
 
 💡 Owner: usar .mecoins para activar/desactivar el sistema`
-    return send(text, randEmoji())
+    return send(text)
   }
 
   // ---------- BLOQUEO SI APAGADO ----------
@@ -85,13 +85,13 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   if(!menuState.active && mainCmds.includes(command.toLowerCase())) return send(templates.menu_disabled())
 
   // ---------- COMANDOS PRINCIPALES ----------
-  if(['saldo','coins','balance'].includes(command.toLowerCase())) return send(templates.saldo(user.coins), randEmoji())
+  if(['saldo','coins','balance'].includes(command.toLowerCase())) return send(templates.saldo(user.coins))
   
   if(command.toLowerCase()==='flip'){
     const outcome = Math.random()<0.5?'CAR A':'CRUZ'
     user.history.unshift(`Flip: ${outcome}`)
     if(user.history.length>5) user.history.pop()
-    return send(templates.flip(outcome), randEmoji())
+    return send(templates.flip(outcome))
   }
 
   if(command.toLowerCase()==='daily'){
@@ -99,42 +99,42 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     if(now-(user.lastDaily||0)<DAILY_COOLDOWN){
       const remaining = DAILY_COOLDOWN-(now-user.lastDaily)
       const h = Math.floor(remaining/3600000), m = Math.floor((remaining%3600000)/60000)
-      return send(templates.daily_cooldown(h,m), randEmoji())
+      return send(templates.daily_cooldown(h,m))
     }
     user.coins+=DAILY_REWARD
     user.lastDaily = now
     user.history.unshift(`+${DAILY_REWARD} Daily`)
     if(user.history.length>5) user.history.pop()
-    return send(templates.daily_ok(DAILY_REWARD,user.coins), randEmoji('good'))
+    return send(templates.daily_ok(DAILY_REWARD,user.coins))
   }
 
   if(['apuesta','bet','moneda'].includes(command.toLowerCase())){
-    if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}apuesta <cantidad>`,randEmoji())
+    if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}apuesta <cantidad>`)
     let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
-    if(!amount||amount<=0) return send(`💀 @${short} Cantidad inválida.`,randEmoji('bad'))
-    if(user.coins-amount<DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT),randEmoji('bad'))
+    if(!amount||amount<=0) return send(`💀 @${short} Cantidad inválida.`)
+    if(user.coins-amount<DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT))
     const win=Math.random()<WIN_PROB
-    if(win){ user.coins+=amount; user.history.unshift(`+${amount} Apuesta`); if(user.history.length>5) user.history.pop(); return send(templates.victory(amount,user.coins),randEmoji('good')) }
-    else { user.coins-=amount; user.history.unshift(`-${amount} Apuesta`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins),randEmoji('bad')) }
+    if(win){ user.coins+=amount; user.history.unshift(`+${amount} Apuesta`); if(user.history.length>5) user.history.pop(); return send(templates.victory(amount,user.coins)) }
+    else { user.coins-=amount; user.history.unshift(`-${amount} Apuesta`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins)) }
   }
 
   if(['topcoins','top'].includes(command.toLowerCase())){
     const users=Object.keys(global.db.data.users).map(jid=>({jid,coins:global.db.data.users[jid].coins||0}))
       .sort((a,b)=>b.coins-a.coins).slice(0,5)
-    if(users.length===0) return send(`🏆 @${short} — No hay soldados todavía.`,randEmoji())
+    if(users.length===0) return send(`🏆 @${short} — No hay soldados todavía.`)
     let text=`🏆 *TOP 5 SOLDADOS* 🏆\n`
     users.forEach((u,i)=>{text+=`${i+1}) @${u.jid.split('@')[0]} — ${u.coins} fichas\n`})
     return conn.sendMessage(m.chat,{text,mentions:users.map(u=>u.jid)})
   }
 
   if(command.toLowerCase()==='history'){
-    if(!user.history||user.history.length===0) return send(`🪖 @${short} — No hay jugadas recientes.`,randEmoji())
+    if(!user.history||user.history.length===0) return send(`🪖 @${short} — No hay jugadas recientes.`)
     let text=`📜 *Últimas 5 Jugadas de @${short}*\n`
     user.history.forEach(h=>text+=`- ${h}\n`)
-    return send(text,randEmoji())
+    return send(text)
   }
 
-  return send(`🪖 @${short} — Comando no reconocido. Usa .menucoins para ver comandos.`,randEmoji('bad'))
+  return send(`🪖 @${short} — Comando no reconocido. Usa .menucoins para ver comandos.`)
 }
 
 // EXPORT
