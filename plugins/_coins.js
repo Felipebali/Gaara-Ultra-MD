@@ -19,15 +19,14 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   const sender = m.sender
   const short = sender.split('@')[0]
 
-  // inicializar usuario si no existe
+  // Inicializar usuario si no existe o si quieres forzar inicio con 500
   if (!global.db.data.users[sender]) {
-    global.db.data.users[sender] = {
-      coins: 500,
-      lastDaily: 0
-    }
+    global.db.data.users[sender] = { coins: 500, lastDaily: 0 }
   }
-
   const user = global.db.data.users[sender]
+  if (user.coins === undefined) user.coins = 500
+  if (user.lastDaily === undefined) user.lastDaily = 0
+
   const cmd = command.toLowerCase()
 
   const send = async (text) => {
@@ -102,7 +101,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   // Comandos
   if (cmd === 'saldo' || cmd === 'coins' || cmd === 'balance') {
-    return send(templates.saldo(user.coins ?? 0))
+    return send(templates.saldo(user.coins))
   }
 
   if (cmd === 'flip') {
@@ -118,7 +117,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
       const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000))
       return send(templates.daily_cooldown(hours, minutes))
     }
-    user.coins = (user.coins ?? 0) + DAILY_REWARD
+    user.coins += DAILY_REWARD
     user.lastDaily = now
     return send(templates.daily_ok(DAILY_REWARD, user.coins))
   }
@@ -128,7 +127,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     let amount = parseInt(args[0].toString().replace(/[^0-9]/g, ''))
     if (!amount || amount <= 0) return send(`🦂 @${short}\nCantidad inválida. Ingresá un número mayor a 0.`)
 
-    const projected = (user.coins ?? 0) - amount
+    const projected = user.coins - amount
     if (projected < DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT))
 
     const win = Math.random() < WIN_PROB
