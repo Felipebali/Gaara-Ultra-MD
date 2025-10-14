@@ -1,8 +1,9 @@
-/* plugins/coins_militar_v2.js
-   Sistema MILITAR de monedas - Menú visual agresivo
+/* plugins/coins_militar_hud.js
+   Sistema MILITAR de monedas - Menú estilo HUD táctico
    Toggle: .mecoins (solo owner)
    Menú: .menucoins
    Juegos: saldo, daily, apuesta, flip, dados, escuadrón, minado, topcoins, history
+   Menciones con ${who.split("@")[0]} sin citar mensajes
 */
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
@@ -57,36 +58,32 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     return send(msg)
   }
 
-  // ---------- MENÚ VISUAL ----------
+  // ---------- MENÚ HUD ----------
   if(command.toLowerCase()==='menucoins'){
     if(!menuState.active) return send(templates.menu_disabled())
     
-    const deco = '═▸ ☠️🪖⚔️💣🛡️🔥 ◂═'
-    const line = '─────────────────────────'
+    const decoTop = '╔═══════════════╦════════════════╗'
+    const decoMid = '╠═══════════════╬════════════════╣'
+    const decoBot = '╚═══════════════╩════════════════╝'
+
     const text = `
-${deco}
-💀  █▄─█▀▀▀█▄─▄█▄─▀█▀─▄█  MENÚ MILITAR DE MONEDAS  █▄─█▀▀▀█▄─▄█▄─▀█▀─▄█ 💀
-${deco}
-
-💎 Estado:
-  └ .saldo — Ver recursos actuales
-
-🎖️ Recompensas:
-  └ .daily — Cobrar Daily
-
-💰 Apuestas:
-  └ .apuesta <cantidad> — Apostar fichas (60% chance)
-  └ .flip [cantidad] — Tirada rápida
-  └ .dados <cantidad> — Tirada de dados vs IA
-  └ .escuadron <cantidad> — Batalla de escuadrones
-  └ .minado <cantidad> — Minado arriesgado
-
-🏆 Rankings:
-  └ .topcoins — Top 5 soldados
-  └ .history — Últimas 5 jugadas
+${decoTop}
+║ 💎 RECURSOS      ║ 🪖 Comando HUD  ║
+${decoMid}
+║ Estado          ║ .saldo          ║
+║ Daily           ║ .daily          ║
+║ Apuesta         ║ .apuesta <cant> ║
+║ Flip            ║ .flip [cant]    ║
+║ Dados           ║ .dados <cant>   ║
+║ Escuadrón       ║ .escuadron <c>  ║
+║ Minado          ║ .minado <cant>  ║
+║ Top 5           ║ .topcoins       ║
+║ Historia        ║ .history        ║
+${decoBot}
 
 💡 Owner: usar .mecoins para activar/desactivar el sistema
-${line}`
+`
+
     return send(text)
   }
 
@@ -118,6 +115,7 @@ ${line}`
     return send(templates.daily_ok(DAILY_REWARD,user.coins))
   }
 
+  // ---------- Apuestas ----------
   if(['apuesta','bet','moneda'].includes(command.toLowerCase())){
     if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}apuesta <cantidad>`)
     let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
@@ -128,6 +126,7 @@ ${line}`
     else { user.coins-=amount; user.history.unshift(`-${amount} Apuesta`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins)) }
   }
 
+  // ---------- Dados ----------
   if(command.toLowerCase()==='dados'){
     if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}dados <cantidad>`)
     let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
@@ -139,6 +138,7 @@ ${line}`
     else { user.coins-=amount; user.history.unshift(`-${amount} Dados`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins)) }
   }
 
+  // ---------- Escuadrón ----------
   if(command.toLowerCase()==='escuadron'){
     if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}escuadron <cantidad>`)
     let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
@@ -149,6 +149,7 @@ ${line}`
     else { user.coins-=amount; user.history.unshift(`-${amount} Escuadron`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins)) }
   }
 
+  // ---------- Minado ----------
   if(command.toLowerCase()==='minado'){
     if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}minado <cantidad>`)
     let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
@@ -159,6 +160,7 @@ ${line}`
     else { user.coins-=amount; user.history.unshift(`-${amount} Minado`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins)) }
   }
 
+  // ---------- Top y History ----------
   if(['topcoins','top'].includes(command.toLowerCase())){
     const users=Object.keys(global.db.data.users).map(jid=>({jid,coins:global.db.data.users[jid].coins||0}))
       .sort((a,b)=>b.coins-a.coins).slice(0,5)
