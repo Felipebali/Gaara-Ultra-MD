@@ -1,10 +1,8 @@
-/* plugins/coins_militar.js
-   Sistema militar de monedas
-   - Toggle: .mecoins (solo owner)
-   - Menú: .menucoins
-   - Comandos de juego: saldo, daily, apuesta, flip, topcoins, history
-   - Todas las menciones con ${who.split("@")[0]} y sin citar mensajes
-   - Estilo militar agresivo y emojis
+/* plugins/coins_militar_v2.js
+   Sistema MILITAR de monedas - Menú visual agresivo
+   Toggle: .mecoins (solo owner)
+   Menú: .menucoins
+   Juegos: saldo, daily, apuesta, flip, dados, escuadrón, minado, topcoins, history
 */
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
@@ -16,8 +14,8 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   if (!global.db) global.db = { data: {} }
   if (!global.db.data.menuCoins) global.db.data.menuCoins = { active:true }
   if (!global.db.data.users) global.db.data.users = {}
-
   if (!global.db.data.users[who]) global.db.data.users[who] = { coins:500, lastDaily:0, history:[] }
+
   const user = global.db.data.users[who]
   const menuState = global.db.data.menuCoins
 
@@ -26,23 +24,18 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   const WIN_PROB = 0.6
   const DEBT_LIMIT = -100
 
-  const emojis = {
-    good: ['💥','🏆','🛡️','🎖️','🔥','💣'],
-    bad: ['☠️','💀','⚔️','💢','💣','🕷️'],
-    neutral: ['🪖','🎲','📜','🌀']
-  }
   const randEmoji = (type) => {
-    const arr = type==='good'?emojis.good:type==='bad'?emojis.bad:emojis.neutral
-    return arr[Math.floor(Math.random()*arr.length)]
+    const emojis = type==='good'?['💥','🏆','🛡️','🎖️','🔥','💣']
+                  : type==='bad'?['☠️','💀','⚔️','💢','💣','🕷️']
+                  : ['🪖','🎲','📜','🌀']
+    return emojis[Math.floor(Math.random()*emojis.length)]
   }
 
   const send = async(text)=>{
-    try{
-      await conn.sendMessage(m.chat,{ text, mentions:[who] })
-    } catch(e){ console.error(e) }
+    try{ await conn.sendMessage(m.chat,{ text, mentions:[who] }) } 
+    catch(e){ console.error(e) }
   }
 
-  // Mensajes
   const templates = {
     victory:(amount,newBalance)=>`🪖 @${short}\n${randEmoji('good')} MISION CUMPLIDA! +${amount} fichas\nSaldo: ${newBalance} ${randEmoji('good')}`,
     defeat:(amount,newBalance)=>`💀 @${short}\n${randEmoji('bad')} FALLASTE EN EL COMBATE! -${amount} fichas\nSaldo: ${newBalance} ${randEmoji('bad')}`,
@@ -64,29 +57,46 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     return send(msg)
   }
 
-  // ---------- MENÚ ----------
+  // ---------- MENÚ VISUAL ----------
   if(command.toLowerCase()==='menucoins'){
     if(!menuState.active) return send(templates.menu_disabled())
-    const deco = '☠️🪖⚔️💣🛡️🔥'
-    const text = `${deco}\n💀 *MENÚ DE MONEDAS MILITAR* 💀\n${deco}\n
-💎 .saldo — Estado de recursos
-🎖️ .daily — Cobrar Daily
-💰 .apuesta <cantidad> — Apostar fichas (60% chance)
-🎲 .flip [cantidad] — Tirada rápida
-🏆 .topcoins — Ranking top 5 soldados
-📜 .history — Últimas 5 jugadas
+    
+    const deco = '═▸ ☠️🪖⚔️💣🛡️🔥 ◂═'
+    const line = '─────────────────────────'
+    const text = `
+${deco}
+💀  █▄─█▀▀▀█▄─▄█▄─▀█▀─▄█  MENÚ MILITAR DE MONEDAS  █▄─█▀▀▀█▄─▄█▄─▀█▀─▄█ 💀
+${deco}
 
-💡 Owner: usar .mecoins para activar/desactivar el sistema`
+💎 Estado:
+  └ .saldo — Ver recursos actuales
+
+🎖️ Recompensas:
+  └ .daily — Cobrar Daily
+
+💰 Apuestas:
+  └ .apuesta <cantidad> — Apostar fichas (60% chance)
+  └ .flip [cantidad] — Tirada rápida
+  └ .dados <cantidad> — Tirada de dados vs IA
+  └ .escuadron <cantidad> — Batalla de escuadrones
+  └ .minado <cantidad> — Minado arriesgado
+
+🏆 Rankings:
+  └ .topcoins — Top 5 soldados
+  └ .history — Últimas 5 jugadas
+
+💡 Owner: usar .mecoins para activar/desactivar el sistema
+${line}`
     return send(text)
   }
 
   // ---------- BLOQUEO SI APAGADO ----------
-  const mainCmds=['saldo','coins','balance','daily','apuesta','bet','flip','topcoins','top','history']
+  const mainCmds=['saldo','coins','balance','daily','apuesta','bet','flip','topcoins','top','history','dados','escuadron','minado']
   if(!menuState.active && mainCmds.includes(command.toLowerCase())) return send(templates.menu_disabled())
 
-  // ---------- COMANDOS PRINCIPALES ----------
+  // ---------- COMANDOS ----------
   if(['saldo','coins','balance'].includes(command.toLowerCase())) return send(templates.saldo(user.coins))
-  
+
   if(command.toLowerCase()==='flip'){
     const outcome = Math.random()<0.5?'CAR A':'CRUZ'
     user.history.unshift(`Flip: ${outcome}`)
@@ -118,6 +128,37 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     else { user.coins-=amount; user.history.unshift(`-${amount} Apuesta`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins)) }
   }
 
+  if(command.toLowerCase()==='dados'){
+    if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}dados <cantidad>`)
+    let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
+    if(!amount||amount<=0) return send(`💀 @${short} Cantidad inválida.`)
+    if(user.coins-amount<DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT))
+    const player = Math.floor(Math.random()*6)+1
+    const ia = Math.floor(Math.random()*6)+1
+    if(player>ia){ user.coins+=amount; user.history.unshift(`+${amount} Dados`); if(user.history.length>5) user.history.pop(); return send(templates.victory(amount,user.coins)) }
+    else { user.coins-=amount; user.history.unshift(`-${amount} Dados`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins)) }
+  }
+
+  if(command.toLowerCase()==='escuadron'){
+    if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}escuadron <cantidad>`)
+    let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
+    if(!amount||amount<=0) return send(`💀 @${short} Cantidad inválida.`)
+    if(user.coins-amount<DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT))
+    const win=Math.random()<0.5
+    if(win){ user.coins+=amount; user.history.unshift(`+${amount} Escuadron`); if(user.history.length>5) user.history.pop(); return send(templates.victory(amount,user.coins)) }
+    else { user.coins-=amount; user.history.unshift(`-${amount} Escuadron`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins)) }
+  }
+
+  if(command.toLowerCase()==='minado'){
+    if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}minado <cantidad>`)
+    let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
+    if(!amount||amount<=0) return send(`💀 @${short} Cantidad inválida.`)
+    if(user.coins-amount<DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT))
+    const win=Math.random()<0.6
+    if(win){ const gain=Math.floor(amount*Math.random()*2); user.coins+=gain; user.history.unshift(`+${gain} Minado`); if(user.history.length>5) user.history.pop(); return send(templates.victory(gain,user.coins)) }
+    else { user.coins-=amount; user.history.unshift(`-${amount} Minado`); if(user.history.length>5) user.history.pop(); return send(templates.defeat(amount,user.coins)) }
+  }
+
   if(['topcoins','top'].includes(command.toLowerCase())){
     const users=Object.keys(global.db.data.users).map(jid=>({jid,coins:global.db.data.users[jid].coins||0}))
       .sort((a,b)=>b.coins-a.coins).slice(0,5)
@@ -138,7 +179,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 }
 
 // EXPORT
-handler.help=['mecoins','menucoins','saldo','daily','apuesta','flip','topcoins','history']
+handler.help=['mecoins','menucoins','saldo','daily','apuesta','flip','dados','escuadron','minado','topcoins','history']
 handler.tags=['economy','fun','owner']
-handler.command=/^(mecoins|menucoins|saldo|coins|balance|daily|apuesta|bet|flip|topcoins|top|history)$/i
+handler.command=/^(mecoins|menucoins|saldo|coins|balance|daily|apuesta|bet|flip|dados|escuadron|minado|topcoins|top|history)$/i
 export default handler
