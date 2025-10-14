@@ -47,12 +47,16 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   const templates = {
     victory:(amount,newBalance)=>`🪖 @${short}\n${randEmoji('good')} MISION CUMPLIDA! +${amount} fichas\nSaldo: ${newBalance} ${randEmoji('good')}`,
     defeat:(amount,newBalance)=>`💀 @${short}\n${randEmoji('bad')} FALLASTE EN EL COMBATE! -${amount} fichas\nSaldo: ${newBalance} ${randEmoji('bad')}`,
-    flip:(outcome)=>`🪖 @${short}\n🎲 Tirada de campo: ${outcome} ${randEmoji()}`,
-    saldo:(bal)=>`🪖 @${short}\n💣 Estado de recursos: ${bal} fichas`,
-    daily_ok:(amount,newBalance)=>`🛡️ @${short}\n🎖️ Daily recibido: +${amount} fichas\nSaldo: ${newBalance}`,
-    daily_cooldown:(h,m)=>`⏳ @${short}\n⚠️ Daily bloqueado. Vuelve en ${h}h ${m}m`,
-    debt_block:(limit)=>`☠️ @${short} Límite de deuda alcanzado (${limit}). Retírate y prepárate para la siguiente batalla.`,
-    menu_disabled:()=>`☠️🪖 @${short} — ¡El cuartel de monedas está cerrado! Solo el owner puede activarlo con .mecoins`
+    if(command.toLowerCase()==='flip'){
+  const outcome = Math.random()<0.5?'CAR A':'CRUZ'
+  user.history.unshift(`Flip: ${outcome}`); 
+  if(user.history.length>5) user.history.pop()
+  return send(`\u{1F3B2} @${short}\nTirada de campo: ${outcome}`);
+  saldo:(bal)=>`🪖 @${short}\n💣 Estado de recursos: ${bal} fichas`,
+  daily_ok:(amount,newBalance)=>`🛡️ @${short}\n🎖️ Daily recibido: +${amount} fichas\nSaldo: ${newBalance}`,
+  daily_cooldown:(h,m)=>`⏳ @${short}\n⚠️ Daily bloqueado. Vuelve en ${h}h ${m}m`,
+  debt_block:(limit)=>`☠️ @${short} Límite de deuda alcanzado (${limit}). Retírate y prepárate para la siguiente batalla.`,
+  menu_disabled:()=>`☠️🪖 @${short} — ¡El cuartel de monedas está cerrado! Solo el owner puede activarlo con .mecoins`
   }
 
   // ---------- TOGGLE ----------
@@ -97,9 +101,10 @@ ${deco}
 
   // ---------- COMANDOS PRINCIPALES ----------
   if(['apuesta','bet','moneda'].includes(command.toLowerCase())){
-  if(!args[0]) return send(`🪖 @${short} Uso: ${usedPrefix}apuesta <cantidad>`)
+if(['apuesta','bet','moneda'].includes(command.toLowerCase())){
+  if(!args[0]) return send(`\u{1F396} @${short} Uso: ${usedPrefix}apuesta <cantidad>`)
   let amount=parseInt(args[0].toString().replace(/[^0-9]/g,''))
-  if(!amount||amount<=0) return send(`💀 @${short} Cantidad inválida.`)
+  if(!amount||amount<=0) return send(`\u{2620} @${short} Cantidad inválida.`)
   if(user.coins-amount<DEBT_LIMIT) return send(templates.debt_block(DEBT_LIMIT))
   const win=Math.random()<WIN_PROB
   if(win){ 
@@ -117,10 +122,13 @@ ${deco}
 
   // ---------- DADOS ----------
   if(command.toLowerCase()==='dados'){
-    const dice1=Math.floor(Math.random()*6)+1, dice2=Math.floor(Math.random()*6)+1, total=dice1+dice2
-    user.history.unshift(`Dados: ${dice1}+${dice2}=${total`); if(user.history.length>5) user.history.pop()
-    return send(`🎲 @${short} — Tirada de dados: ${dice1} + ${dice2} = ${total}`);
-  }
+  const dice1=Math.floor(Math.random()*6)+1
+  const dice2=Math.floor(Math.random()*6)+1
+  const total=dice1+dice2
+  user.history.unshift(`Dados: ${dice1}+${dice2}=${total}`); 
+  if(user.history.length>5) user.history.pop()
+  return send(`\u{1F3B2} @${short} — Tirada de dados: ${dice1} + ${dice2} = ${total}`);
+}
 
   // ---------- MINAR ----------
   if(command.toLowerCase()==='minar'){
