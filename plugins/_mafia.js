@@ -1,9 +1,9 @@
 /* plugins/_casino_mafia.js
-   CASINO MAFIOSO — Estilo Italiano + Ranking “Sangre y Poder”
+   CASINO MAFIOSO — Estilo Italiano
    - Toggle: .mafioso (solo owners)
    - Menú: .menucasino
    - Juegos: apuesta, ruleta, slots
-   - Economía: fichas, daily, topchips, historial, ranking
+   - Economía: fichas, daily, historial
    - Moneda: Fichas
    - Menciones con ${who.split("@")[0]} sin citar mensajes
 */
@@ -33,7 +33,6 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
   const DAILY_REWARD = 50
   const DAILY_COOLDOWN = 24 * 60 * 60 * 1000
   const TAX_RATE = 0.05
-  const PAGE_SIZE = 10
 
   // ---------- UNICODE ----------
   const ALERT = '\u{1F6A8}'
@@ -77,14 +76,13 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
       `⫸ Ruleta: .ruleta <cantidad>`,
       `⫸ Slots: .slots`,
       `⫸ Historial: .history`,
-      `⫸ Ranking: .ranking <página>`,
       ``,
       `Owner: usar .mafioso para abrir/cerrar`
     ]
     return safeSend(m.chat, lines.join('\n'), [m.sender])
   }
 
-  if(!menuState.active && ['saldo','daily','apuesta','ruleta','slots','history','ranking'].includes(command.toLowerCase())) 
+  if(!menuState.active && ['saldo','daily','apuesta','ruleta','slots','history'].includes(command.toLowerCase())) 
     return safeSend(m.chat, `💀 @${short} — Casinò cerrado.`, [m.sender])
 
   // ---------- SALDO ----------
@@ -119,7 +117,8 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
       const net = amount-tax
       user.coins += net
       pushHistory(who, `Apuesta GANADA +${net}`)
-      return safeSend(m.chat, `${CAS} @${short} — GANASTE +${format(net)} (tax ${tax})\nFichas: ${format(user.coins)}`, [m.sender])
+      const ownerMsg = owners.includes(short)? `🎉 ¡Qué grande, capo! Tus habilidades mafiosas brillan.` : ''
+      return safeSend(m.chat, `${CAS} @${short} — GANASTE +${format(net)} (tax ${tax})\nFichas: ${format(user.coins)}\n${ownerMsg}`, [m.sender])
     } else {
       user.coins -= amount
       pushHistory(who, `Apuesta PERDIDA -${amount}`)
@@ -140,7 +139,8 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
       const net = amount-tax
       user.coins += net
       pushHistory(who, `Ruleta GANADA +${net}`)
-      return safeSend(m.chat, `${CAS} @${short} — GANASTE +${format(net)}\nFichas: ${format(user.coins)}`, [m.sender])
+      const ownerMsg = owners.includes(short)? `🎉 ¡Imparable, jefe! La ruleta es tu aliada.` : ''
+      return safeSend(m.chat, `${CAS} @${short} — GANASTE +${format(net)}\nFichas: ${format(user.coins)}\n${ownerMsg}`, [m.sender])
     } else {
       user.coins -= amount
       pushHistory(who, `Ruleta PERDIDA -${amount}`)
@@ -159,12 +159,14 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
       win=true; wonAmount=100
       user.coins += wonAmount
       pushHistory(who, `Slots GANADOS +${wonAmount}`)
+      const ownerMsg = owners.includes(short)? `🎉 ¡Perfecto, capo! Los símbolos te obedecen.` : ''
+      return safeSend(m.chat, `${CAS} @${short} — ${reel.join(' ')}\nGANASTE +${format(wonAmount)} | Fichas: ${format(user.coins)}\n${ownerMsg}`, [m.sender])
     } else {
       reel = [symbols[Math.floor(Math.random()*symbols.length)],
               symbols[Math.floor(Math.random()*symbols.length)],
               symbols[Math.floor(Math.random()*symbols.length)]]
+      return safeSend(m.chat, `${CAS} @${short} — ${reel.join(' ')}\nNo ganaste | Fichas: ${format(user.coins)}`, [m.sender])
     }
-    return safeSend(m.chat, `${CAS} @${short} — ${reel.join(' ')}\n${win?`GANASTE +${format(wonAmount)}`:`No ganaste`} | Fichas: ${format(user.coins)}`, [m.sender])
   }
 
   // ---------- HISTORY ----------
@@ -174,42 +176,9 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
     user.history.forEach(h=>txt+=`• ${h}\n`)
     return safeSend(m.chat, txt, [m.sender])
   }
-
-  // ---------- RANKING ----------
-  if(command.toLowerCase() === 'ranking'){
-    let page = parseInt(args[0]) || 1
-    if(page<1) page=1
-
-    let usersArray = Object.entries(global.db.data.users).map(([jid,u])=>({jid,coins:u.coins}))
-    const owner1 = usersArray.find(u=>u.jid.endsWith('59898719147'))
-    const owner2 = usersArray.find(u=>u.jid.endsWith('59896026646'))
-    usersArray = usersArray.filter(u=>!owners.some(o=>u.jid.endsWith(o)))
-    usersArray.sort((a,b)=>b.coins-a.coins)
-
-    const ranking = []
-    if(owner1) ranking.push({rank:1, jid:owner1.jid, coins:owner1.coins, title:'🥇 EL JEFE 👑'})
-    if(owner2) ranking.push({rank:2, jid:owner2.jid, coins:owner2.coins, title:'🥈 EL PADRINO ⚜️'})
-    usersArray.forEach((u,i)=>{
-      const rank = i+3
-      ranking.push({rank, jid:u.jid, coins:u.coins, title:`${rank}️⃣ Capo 🦅`})
-    })
-
-    const start = (page-1)*PAGE_SIZE
-    const end = start+PAGE_SIZE
-    const pageItems = ranking.slice(start,end)
-
-    let txt = '🩸 RANKING DEL BAJO MUNDO 🔪\n━━━━━━━━━━━━━━\n'
-    pageItems.forEach(u=>{
-      const shortu = u.jid.split('@')[0]
-      txt += `${u.title}: @${shortu} — ${u.coins}💰\n`
-    })
-    txt += `\nPágina ${page}`
-
-    return safeSend(m.chat, txt, [m.sender])
-  }
 }
 
-handler.help = ['mafioso','menucasino','saldo','daily','apuesta','ruleta','slots','history','ranking']
+handler.help = ['mafioso','menucasino','saldo','daily','apuesta','ruleta','slots','history']
 handler.tags = ['casino']
-handler.command = /^mafioso|menucasino|saldo|daily|apuesta|ruleta|slots|history|ranking$/i
+handler.command = /^mafioso|menucasino|saldo|daily|apuesta|ruleta|slots|history$/i
 export default handler
