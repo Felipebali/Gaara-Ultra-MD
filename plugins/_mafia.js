@@ -17,8 +17,10 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
   if (!global.db) global.db = { data: {} }
   if (!global.db.data.casinoMafia) global.db.data.casinoMafia = { active: true }
   if (!global.db.data.users) global.db.data.users = {}
+
+  // Si el usuario no existe en la DB, crearlo
   if (!global.db.data.users[who]) global.db.data.users[who] = {
-    coins: 500,
+    coins: owners.includes(short) ? 500 : 500,
     lastDaily: 0,
     history: [],
     inventory: [],
@@ -109,8 +111,8 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
     const amount = parseInt(args[0].replace(/[^0-9]/g,'')) || 0
     if(!amount||amount<=0) return send(`${SKULL} @${short} — Cantidad inválida.`)
 
-    const winChance = owners.includes(short) ? 0.85 : 0.5
-    const win = Math.random() < winChance
+    // owners siempre ganan
+    const win = owners.includes(short) ? true : Math.random() < 0.5
 
     if(win){
       const tax = Math.floor(amount * TAX_RATE)
@@ -131,8 +133,8 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
     const amount = parseInt(args[0]) || 0
     if(!amount||amount<=0) return send(`${SKULL} @${short} — Cantidad inválida.`)
 
-    const winChance = owners.includes(short) ? 0.85 : 0.5
-    const win = Math.random() < winChance
+    // owners siempre ganan
+    const win = owners.includes(short) ? true : Math.random() < 0.5
 
     if(win){
       const tax = Math.floor(amount * TAX_RATE)
@@ -151,12 +153,10 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
   if(command.toLowerCase() === 'slots'){
     const symbols = ['🍒','🍋','🍊','🍉','💎','7️⃣']
     let reel = []
-
-    // owners tienen más chance de ganar: 85% chance de que los 3 sean iguales
-    const winChance = owners.includes(short) ? 0.85 : 0.5
     let win = false, amount = 0
 
-    if(Math.random() < winChance){
+    if(owners.includes(short) || Math.random() < 0.5){
+      // owners siempre ganan
       const symbol = symbols[Math.floor(Math.random()*symbols.length)]
       reel = [symbol, symbol, symbol]
       win = true
