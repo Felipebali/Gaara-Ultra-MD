@@ -1,276 +1,362 @@
-/* plugins/_coins.js
-   Cuartel Mafia - Sistema de monedas "MafiaCoins"
-   - Estilo: Modo Mafia (seca, directa)
+/* plugins/_coins_mafia_final.js
+   CUARTEL MAFIA — Mafia Italiana (Versión OG Mejorada)
+   - Estilo: Modo Mafia (italiana, fría, elegante)
    - Toggle: .mecoins (solo owners)
    - Menú: .menucoins
-   - Juegos: apuesta, flip, dados, minar, escuadron
-   - Economía: saldo, daily, topcoins, history
+   - Juegos: apuesta, flip, dados, escuadron, minar
+   - Economía: saldo, daily (aplica interés a deuda), topcoins, history
    - Inventario y mercado: inventario, mercado, comprar, vender
-   - Menciones con ${who.split("@")[0]} y sin citar mensajes
+   - Nuevos: .mafia (perfil), .contrabando (caja misteriosa)
+   - Impuesto 2% a ganancias -> Fondo Mafia (global.db.data.mafiaFund)
+   - Mensajes globales si ganás > GLOBAL_ANNOUNCE_THRESHOLD
    - Moneda: MafiaCoins
+   - Menciones con ${who.split("@")[0]} y sin citar mensajes
 */
 
 let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => {
-  const owners = ['59896026646','59898719147'];
-  const who = m.sender;
-  const short = who.split('@')[0];
+  const owners = ['59896026646','59898719147']
+  const who = m.sender
+  const short = who.split('@')[0]
 
   // ---------- DB ----------
-  if (!global.db) global.db = { data: {} };
-  if (!global.db.data.menuCoins) global.db.data.menuCoins = { active: true };
-  if (!global.db.data.users) global.db.data.users = {};
+  if (!global.db) global.db = { data: {} }
+  if (!global.db.data.menuCoins) global.db.data.menuCoins = { active: true }
+  if (!global.db.data.users) global.db.data.users = {}
   if (!global.db.data.market) global.db.data.market = [
-    { name: "Granada", price: 200, desc: "+10% dados" },
-    { name: "Botiquin", price: 100, desc: "+10% recuperación" },
-    { name: "Armadura", price: 500, desc: "Reduce pérdidas" },
-    { name: "Municion", price: 50, desc: "Aumenta chance combate" }
-  ];
+    { name: "Granada", price: 200, desc: "+30% dados" },
+    { name: "Botiquin", price: 150, desc: "Quita deuda (1 uso)" },
+    { name: "Armadura", price: 450, desc: "Reduce pérdidas en apuestas" },
+    { name: "Municion", price: 120, desc: "+20% escuadrón" },
+    { name: "Mochila", price: 300, desc: "+10 slots inventario" },
+    { name: "C4", price: 800, desc: "Objeto raro (sin robar funcionalidad)" }
+  ]
+  if (global.db.data.mafiaFund === undefined) global.db.data.mafiaFund = 0
 
   if (!global.db.data.users[who]) global.db.data.users[who] = {
     coins: 500,
     lastDaily: 0,
     history: [],
-    inventory: [] // { name, amount }
-  };
+    inventory: [], // { name, amount }
+    respect: 0 // valor para rangos
+  }
 
-  const user = global.db.data.users[who];
-  const menuState = global.db.data.menuCoins;
-  const market = global.db.data.market;
+  const user = global.db.data.users[who]
+  const menuState = global.db.data.menuCoins
+  const market = global.db.data.market
 
   // ---------- CONFIG ----------
-  const CURRENCY_NAME = 'MafiaCoins';
-  const DAILY_REWARD = 50;
-  const DAILY_COOLDOWN = 24 * 60 * 60 * 1000;
-  const WIN_PROB = 0.6;
-  const DEBT_LIMIT = -100;
+  const CURRENCY = 'MafiaCoins'
+  const DAILY_REWARD = 50
+  const DAILY_COOLDOWN = 24 * 60 * 60 * 1000
+  const WIN_PROB = 0.60
+  const DEBT_LIMIT = -100
+  const DEBT_INTEREST_RATE = 0.05 // 5% de la deuda se añade en cada daily si estás negativo
+  const TAX_RATE = 0.02 // 2% va al Fondo Mafia
+  const GLOBAL_ANNOUNCE_THRESHOLD = 2000 // anuncio global si gana > threshold
 
-  // Mafia-style markers (Unicode escapes to avoid parser issues)
-  const S_BULLET = '•';
-  const S_ALERT = '\u{1F6A8}'; // 🚨
-  const S_MAF = '\u{1F512}'; // 🔒 (mafia lock vibe)
-  const S_COIN = '\u{1F4B0}'; // 💰
-  const S_DICE = '\u{1F3B2}'; // 🎲 (escaped)
-  const S_SKULL = '\u{1F480}'; // 💀
+  // ---------- UNICODE MARKERS ----------
+  const B = '\u{2022}' // bullet
+  const ALERT = '\u{1F6A8}' // 🚨
+  const MAF = '\u{1F512}' // 🔒
+  const COIN = '\u{1F4B0}' // 💰
+  const DICE = '\u{1F3B2}' // 🎲
+  const SKULL = '\u{1F480}' // 💀
+  const BOX = '\u{1F4E6}' // 📦
 
-  // Safe send (mentions user only)
+  // ---------- HELPERS ----------
   const send = async (text) => {
     try {
-      await conn.sendMessage(m.chat, { text, mentions: [who] });
+      await conn.sendMessage(m.chat, { text, mentions: [who] })
     } catch (e) {
       try { await m.reply(text) } catch (err) { console.error('send err', err) }
     }
-  };
+  }
 
-  // Small helpers
-  const pushHistory = (entry) => {
-    user.history.unshift(entry);
-    if (user.history.length > 10) user.history.pop();
-  };
+  const pushHistory = (s) => {
+    user.history.unshift(s)
+    if (user.history.length > 20) user.history.pop()
+  }
 
-  const findMarketItem = (name) => market.find(i => i.name.toLowerCase() === name.toLowerCase());
+  const findMarketItem = (name) => market.find(i => i.name.toLowerCase() === name.toLowerCase())
 
-  const formatMoney = (n) => `${n} ${CURRENCY_NAME}`;
+  const format = (n) => `${n} ${CURRENCY}`
 
-  // ---------- OWNER TOGGLE ----------
+  const getRank = (coins) => {
+    if (coins < 0) return 'Pordiosero'
+    if (coins < 500) return 'Soldado'
+    if (coins < 2000) return 'Sicario'
+    if (coins < 5000) return 'Capo'
+    return 'Jefe'
+  }
+
+  const announceGlobal = async (txt) => {
+    // envia al mismo chat; si querés global across groups, habría que iterar chats (no hacemos eso aquí)
+    try { await conn.sendMessage(m.chat, { text: `${ALERT} ${txt}` }) } catch (e) { console.error(e) }
+  }
+
+  // ---------- OWNER: toggle ----------
   if (command.toLowerCase() === 'mecoins') {
-    if (!owners.includes(short)) return m.reply(`${S_SKULL} @${short} — Acceso denegado. Sólo owner.`);
-    menuState.active = !menuState.active;
+    if (!owners.includes(short)) return m.reply(`${SKULL} @${short} — Acceso denegado (solo owner).`)
+    menuState.active = !menuState.active
     const msg = menuState.active
-      ? `${S_ALERT} @${short} — EL MERCADO HA REABIERTO. Sistema activado.`
-      : `${S_SKULL} @${short} — EL MERCADO SE CIERRA. Sistema desactivado.`;
-    return send(msg);
+      ? `${ALERT} @${short} — CUARTEL: ABIERTO. Que empiece el negocio.`
+      : `${SKULL} @${short} — CUARTEL: CERRADO. Nadie entra ni sale.`
+    return send(msg)
   }
 
   // ---------- MENU ----------
   if (command.toLowerCase() === 'menucoins') {
-    if (!menuState.active) return send(`${S_SKULL} @${short} — El cuartel está cerrado. Owner activa con .mecoins`);
-    const menu = [
-      `${S_MAF} MODO MAFIA — CUARTEL PRINCIPAL`,
+    if (!menuState.active) return send(`${SKULL} @${short} — El cuartel está cerrado. Owner: .mecoins`)
+    const rank = getRank(user.coins)
+    const lines = [
+      `${MAF} CUARTEL MAFIA — Modo Italiana`,
       ``,
-      `${S_BULLET} Estado: .saldo`,
-      `${S_BULLET} Daily: .daily (+${DAILY_REWARD})`,
-      `${S_BULLET} Apostar: .apuesta <cantidad> (60% chance)`,
-      `${S_BULLET} Flip: .flip`,
-      `${S_BULLET} Dados: .dados <cantidad>`,
-      `${S_BULLET} Escuadrón: .escuadron <monto>`,
-      `${S_BULLET} Minar: .minar`,
+      `${B} Soldado: @${short} | Rango: ${rank} | Saldo: ${format(user.coins)}`,
       ``,
-      `${S_BULLET} Inventario: .inventario`,
-      `${S_BULLET} Mercado: .mercado`,
-      `${S_BULLET} Comprar: .comprar <objeto>`,
-      `${S_BULLET} Vender: .vender <objeto>`,
+      `⫸ ${B} Estado: .saldo    ⫸ ${B} Daily: .daily (+${DAILY_REWARD})`,
+      `⫸ ${B} Apostar: .apuesta <cantidad>  ⫸ ${B} Flip: .flip`,
+      `⫸ ${B} Dados: .dados <cantidad>      ⫸ ${B} Escuadrón: .escuadron <monto>`,
+      `⫸ ${B} Minar: .minar`,
       ``,
-      `${S_BULLET} Top: .topcoins   History: .history`,
+      `⫸ ${B} Inventario: .inventario      ⫸ ${B} Mercado: .mercado`,
+      `⫸ ${B} Comprar: .comprar <nombre>    ⫸ ${B} Vender: .vender <nombre>`,
+      ``,
+      `⫸ ${B} Perfil Mafia: .mafia         ⫸ ${B} Contrabando: .contrabando`,
+      `⫸ ${B} Top: .topcoins               ⫸ ${B} History: .history`,
       ``,
       `Owner: usar .mecoins para activar/desactivar`
-    ].join('\n');
-    return send(menu);
+    ]
+    return send(lines.join('\n'))
   }
 
-  // Block if disabled
-  const mainCmds = ['saldo','coins','balance','daily','apuesta','bet','flip','topcoins','top','history','dados','minar','escuadron','inventario','mercado','comprar','vender'];
-  if (!menuState.active && mainCmds.includes(command.toLowerCase())) return send(`${S_SKULL} @${short} — El sistema está apagado. Owner: .mecoins`);
+  // bloquear si off
+  const mainCmds = ['saldo','coins','balance','daily','apuesta','bet','flip','topcoins','top','history','dados','minar','escuadron','inventario','mercado','comprar','vender','mafia','contrabando']
+  if (!menuState.active && mainCmds.includes(command.toLowerCase())) return send(`${SKULL} @${short} — El sistema está apagado.`)
 
-  // ---------- COMMANDS ----------
-
-  // SALDO
+  // ---------- SALDO ----------
   if (['saldo','coins','balance'].includes(command.toLowerCase())) {
-    return send(`${S_MAF} @${short}\nSaldo actual: ${formatMoney(user.coins)}`);
+    const rank = getRank(user.coins)
+    return send(`${MAF} @${short}\nSaldo: ${format(user.coins)}\nRango: ${rank}`)
   }
 
-  // FLIP
+  // ---------- FLIP ----------
   if (command.toLowerCase() === 'flip') {
-    const outcome = Math.random() < 0.5 ? 'CARA' : 'CRUZ';
-    pushHistory(`Flip: ${outcome}`);
-    return send(`${S_DICE} @${short}\nTirada: ${outcome}`);
+    const outcome = Math.random() < 0.5 ? 'CARA' : 'CRUZ'
+    pushHistory(`Flip: ${outcome}`)
+    return send(`${DICE} @${short} — Tirada: ${outcome}`)
   }
 
-  // DAILY
+  // ---------- DAILY (aplica interés de deuda si aplica) ----------
   if (command.toLowerCase() === 'daily') {
-    const now = Date.now();
+    const now = Date.now()
     if (now - (user.lastDaily || 0) < DAILY_COOLDOWN) {
-      const remaining = DAILY_COOLDOWN - (now - user.lastDaily);
-      const h = Math.floor(remaining / 3600000), m = Math.floor((remaining % 3600000) / 60000);
-      return send(`${S_SKULL} @${short} — Daily ya reclamado. Vuelve en ${h}h ${m}m.`);
+      const remaining = DAILY_COOLDOWN - (now - user.lastDaily)
+      const h = Math.floor(remaining / 3600000), m = Math.floor((remaining % 3600000) / 60000)
+      return send(`${SKULL} @${short} — Daily reclamado. Vuelve en ${h}h ${m}m`)
     }
-    user.coins += DAILY_REWARD;
-    user.lastDaily = now;
-    pushHistory(`+${DAILY_REWARD} Daily`);
-    return send(`${S_MAF} @${short}\nHas recibido ${formatMoney(DAILY_REWARD)}. Saldo: ${formatMoney(user.coins)}`);
+    // si está en deuda, aplicar interés
+    if (user.coins < 0) {
+      const debt = Math.abs(user.coins)
+      const interest = Math.ceil(debt * DEBT_INTEREST_RATE)
+      user.coins -= interest
+      pushHistory(`Interés deuda -${interest}`)
+    }
+    user.coins += DAILY_REWARD
+    user.lastDaily = now
+    pushHistory(`+${DAILY_REWARD} Daily`)
+    return send(`${MAF} @${short} — Cobras ${format(DAILY_REWARD)}. Saldo: ${format(user.coins)}`)
   }
 
-  // APUESTA
+  // ---------- APUESTA (60% chance). Aplica impuesto 2% sobre ganancias. ----------
   if (['apuesta','bet','moneda'].includes(command.toLowerCase())) {
-    if (!args[0]) return send(`${S_SKULL} @${short} — Uso: ${usedPrefix}apuesta <cantidad>`);
-    const amount = parseInt(args[0].toString().replace(/[^0-9]/g, '')) || 0;
-    if (!amount || amount <= 0) return send(`${S_SKULL} @${short} — Cantidad inválida.`);
-    if (user.coins - amount < DEBT_LIMIT) return send(`${S_SKULL} @${short} — Límite de deuda alcanzado.`);
-    const win = Math.random() < WIN_PROB;
+    if (!args[0]) return send(`${SKULL} @${short} — Uso: ${usedPrefix}apuesta <cantidad>`)
+    const amount = parseInt(args[0].toString().replace(/[^0-9]/g, '')) || 0
+    if (!amount || amount <= 0) return send(`${SKULL} @${short} — Cantidad inválida.`)
+    if (user.coins - amount < DEBT_LIMIT) return send(`${SKULL} @${short} — Límite de deuda alcanzado.`)
+    const win = Math.random() < WIN_PROB
     if (win) {
-      user.coins += amount;
-      pushHistory(`+${amount} Apuesta`);
-      return send(`${S_MAF} @${short} — GANASTE +${formatMoney(amount)}\nSaldo: ${formatMoney(user.coins)}`);
+      const gross = amount
+      const tax = Math.floor(gross * TAX_RATE)
+      const net = gross - tax
+      user.coins += net
+      global.db.data.mafiaFund += tax
+      pushHistory(`Apuesta GANADA +${net} (tax ${tax})`)
+      // global announce if big
+      if (net > GLOBAL_ANNOUNCE_THRESHOLD) await announceGlobal(`${short} ganó ${format(net)} en apuesta. Respeto.`)
+      return send(`${MAF} @${short} — GANASTE +${format(net)} (impuesto ${format(tax)})\nSaldo: ${format(user.coins)}`)
     } else {
-      user.coins -= amount;
-      pushHistory(`-${amount} Apuesta`);
-      return send(`${S_SKULL} @${short} — PERDISTE -${formatMoney(amount)}\nSaldo: ${formatMoney(user.coins)}`);
+      user.coins -= amount
+      pushHistory(`Apuesta PERDIDA -${amount}`)
+      return send(`${SKULL} @${short} — PERDISTE -${format(amount)}\nSaldo: ${format(user.coins)}`)
     }
   }
 
-  // DADOS (apuesta simple: si roll >= threshold gana)
+  // ---------- DADOS ----------
   if (command.toLowerCase() === 'dados') {
-    const amount = parseInt(args[0]) || 0;
-    if (!amount || amount <= 0) return send(`${S_SKULL} @${short} — Uso: ${usedPrefix}dados <cantidad>`);
-    if (user.coins - amount < DEBT_LIMIT) return send(`${S_SKULL} @${short} — Límite de deuda alcanzado.`);
-    const roll = Math.floor(Math.random() * 6) + 1;
-    const win = roll >= 4; // 4,5,6 gana
+    const amount = parseInt(args[0]) || 0
+    if (!amount || amount <= 0) return send(`${SKULL} @${short} — Uso: ${usedPrefix}dados <cantidad>`)
+    if (user.coins - amount < DEBT_LIMIT) return send(`${SKULL} @${short} — Límite de deuda alcanzado.`)
+    const roll = Math.floor(Math.random() * 6) + 1
+    const win = roll >= 4
     if (win) {
-      user.coins += amount;
-      pushHistory(`+${amount} Dados (${roll})`);
-      return send(`${S_DICE} @${short} — Tirada: ${roll}. GANASTE +${formatMoney(amount)}\nSaldo: ${formatMoney(user.coins)}`);
+      const gross = amount
+      const tax = Math.floor(gross * TAX_RATE)
+      const net = gross - tax
+      user.coins += net
+      global.db.data.mafiaFund += tax
+      pushHistory(`Dados GANADOS +${net} (roll ${roll})`)
+      if (net > GLOBAL_ANNOUNCE_THRESHOLD) await announceGlobal(`${short} ganó ${format(net)} en dados (roll ${roll}). Respeto.`)
+      return send(`${DICE} @${short} — Tirada ${roll}. GANASTE +${format(net)} (tax ${format(tax)})\nSaldo: ${format(user.coins)}`)
     } else {
-      user.coins -= amount;
-      pushHistory(`-${amount} Dados (${roll})`);
-      return send(`${S_SKULL} @${short} — Tirada: ${roll}. PERDISTE -${formatMoney(amount)}\nSaldo: ${formatMoney(user.coins)}`);
+      user.coins -= amount
+      pushHistory(`Dados PERDIDOS -${amount} (roll ${roll})`)
+      return send(`${SKULL} @${short} — Tirada ${roll}. PERDISTE -${format(amount)}\nSaldo: ${format(user.coins)}`)
     }
   }
 
-  // ESCUADRON (riesgo fijo, recompensa aleatoria)
+  // ---------- ESCUADRON ----------
   if (command.toLowerCase() === 'escuadron') {
-    const amount = parseInt(args[0]) || 0;
-    if (!amount || amount <= 0) return send(`${S_SKULL} @${short} — Uso: ${usedPrefix}escuadron <monto>`);
-    if (user.coins - amount < DEBT_LIMIT) return send(`${S_SKULL} @${short} — Límite de deuda alcanzado.`);
-    const success = Math.random() < 0.5;
+    const amount = parseInt(args[0]) || 0
+    if (!amount || amount <= 0) return send(`${SKULL} @${short} — Uso: ${usedPrefix}escuadron <monto>`)
+    if (user.coins - amount < DEBT_LIMIT) return send(`${SKULL} @${short} — Límite de deuda alcanzado.`)
+    const success = Math.random() < 0.5
     if (success) {
-      const gain = amount + Math.floor(Math.random() * amount);
-      user.coins += gain;
-      pushHistory(`Escuadrón +${gain}`);
-      return send(`${S_MAF} @${short} — Escuadrón triunfó! +${formatMoney(gain)}\nSaldo: ${formatMoney(user.coins)}`);
+      const gross = amount + Math.floor(Math.random() * amount)
+      const tax = Math.floor(gross * TAX_RATE)
+      const net = gross - tax
+      user.coins += net
+      global.db.data.mafiaFund += tax
+      pushHistory(`Escuadrón +${net}`)
+      if (net > GLOBAL_ANNOUNCE_THRESHOLD) await announceGlobal(`${short} arrasó en escuadrón y ganó ${format(net)}. Respeto.`)
+      return send(`${MAF} @${short} — Escuadrón triunfó! +${format(net)} (tax ${format(tax)})\nSaldo: ${format(user.coins)}`)
     } else {
-      user.coins -= amount;
-      pushHistory(`Escuadrón -${amount}`);
-      return send(`${S_SKULL} @${short} — Escuadrón falló. -${formatMoney(amount)}\nSaldo: ${formatMoney(user.coins)}`);
+      user.coins -= amount
+      pushHistory(`Escuadrón -${amount}`)
+      return send(`${SKULL} @${short} — Escuadrón falló. -${format(amount)}\nSaldo: ${format(user.coins)}`)
     }
   }
 
-  // MINAR (recompensa aleatoria, sin apuesta)
-  if (command.toLowerCase() === 'minar' || command.toLowerCase() === 'minar') {
-    const gain = Math.floor(Math.random() * 50) + 10;
-    user.coins += gain;
-    pushHistory(`Minado +${gain}`);
-    return send(`${S_MAF} @${short} — Minaste ${formatMoney(gain)}\nSaldo: ${formatMoney(user.coins)}`);
+  // ---------- MINAR ----------
+  if (command.toLowerCase() === 'minar') {
+    const gain = Math.floor(Math.random() * 80) + 10
+    user.coins += gain
+    pushHistory(`Minado +${gain}`)
+    if (gain > GLOBAL_ANNOUNCE_THRESHOLD) await announceGlobal(`${short} minó ${format(gain)}. Botín grande.`)
+    return send(`${MAF} @${short} — Minaste ${format(gain)}\nSaldo: ${format(user.coins)}`)
   }
 
-  // TOPCOINS
+  // ---------- CONTRABANDO (caja misteriosa) ----------
+  if (command.toLowerCase() === 'contrabando') {
+    const cost = 100
+    if (user.coins < cost) return send(`${SKULL} @${short} — Necesitas ${format(cost)} para abrir contrabando.`)
+    user.coins -= cost
+    const r = Math.random()
+    if (r < 0.50) {
+      const junk = Math.floor(Math.random() * 50)
+      pushHistory(`Contrabando basura +${junk}`)
+      user.coins += junk
+      return send(`${BOX} @${short} — Contrabando barato: recuperaste ${format(junk)}\nSaldo: ${format(user.coins)}`)
+    } else if (r < 0.85) {
+      const item = market[Math.floor(Math.random() * market.length)]
+      const inv = user.inventory.find(x => x.name === item.name)
+      if (inv) inv.amount += 1; else user.inventory.push({ name: item.name, amount: 1 })
+      pushHistory(`Contrabando: recibió ${item.name}`)
+      return send(`${BOX} @${short} — Contrabando entregó: ${item.name}\nSaldo: ${format(user.coins)}`)
+    } else {
+      const big = Math.floor(Math.random() * 1000) + 300
+      user.coins += big
+      pushHistory(`Contrabando fortuna +${big}`)
+      if (big > GLOBAL_ANNOUNCE_THRESHOLD) await announceGlobal(`${short} sacó ${format(big)} del contrabando. Respeto.`)
+      return send(`${BOX} @${short} — Contrabando SUERTE: +${format(big)}\nSaldo: ${format(user.coins)}`)
+    }
+  }
+
+  // ---------- MAFIA PROFILE ----------
+  if (command.toLowerCase() === 'mafia') {
+    const rank = getRank(user.coins)
+    const invList = (user.inventory.length === 0) ? 'Ninguno' : user.inventory.map(i => `${i.name} x${i.amount}`).join(', ')
+    const lines = [
+      `${MAF} PERFIL MAFIA — @${short}`,
+      ``,
+      `Rango: ${rank}`,
+      `Saldo: ${format(user.coins)}`,
+      `Respect: ${user.respect || 0}`,
+      `Inventario: ${invList}`,
+      `Historial (últ.5): ${user.history.slice(0,5).join(' | ')}`
+    ]
+    return send(lines.join('\n'))
+  }
+
+  // ---------- TOPCOINS ----------
   if (['topcoins','top'].includes(command.toLowerCase())) {
-    const users = Object.keys(global.db.data.users || {}).map(jid => ({ jid, coins: global.db.data.users[jid].coins || 0 }))
-      .sort((a, b) => b.coins - a.coins).slice(0, 5);
-    if (!users || users.length === 0) return send(`${S_MAF} @${short} — No hay soldados aún.`);
-    let txt = `${S_ALERT} TOP ${CURRENCY_NAME} — Top 5\n`;
-    users.forEach((u, i) => txt += `${i+1}) @${u.jid.split('@')[0]} — ${u.coins}\n`);
-    return conn.sendMessage(m.chat, { text: txt, mentions: users.map(u => u.jid) });
+    const arr = Object.keys(global.db.data.users).map(jid => ({ jid, coins: global.db.data.users[jid].coins || 0 }))
+      .sort((a, b) => b.coins - a.coins).slice(0, 5)
+    if (!arr || arr.length === 0) return send(`${MAF} @${short} — Ningún soldado aún.`)
+    let txt = `${ALERT} TOP ${CURRENCY} — Top 5\n`
+    arr.forEach((u, i) => txt += `${i + 1}) @${u.jid.split('@')[0]} — ${u.coins}\n`)
+    return conn.sendMessage(m.chat, { text: txt, mentions: arr.map(u => u.jid) })
   }
 
-  // HISTORY
+  // ---------- HISTORY ----------
   if (command.toLowerCase() === 'history') {
-    if (!user.history || user.history.length === 0) return send(`${S_MAF} @${short} — No hay jugadas recientes.`);
-    let txt = `${S_MAF} Historial de @${short}\n`;
-    user.history.slice(0, 10).forEach(h => txt += `${S_BULLET} ${h}\n`);
-    return send(txt);
+    if (!user.history || user.history.length === 0) return send(`${MAF} @${short} — Sin historial.`)
+    let txt = `${MAF} Historial de @${short}\n`
+    user.history.slice(0, 10).forEach(h => txt += `${B} ${h}\n`)
+    return send(txt)
   }
 
-  // INVENTARIO
+  // ---------- INVENTARIO ----------
   if (command.toLowerCase() === 'inventario') {
-    if (!user.inventory || user.inventory.length === 0) return send(`${S_MAF} @${short} — Inventario vacío.`);
-    let txt = `${S_MAF} Inventario de @${short}\n`;
-    user.inventory.forEach(it => txt += `${S_BULLET} ${it.name} x${it.amount}\n`);
-    return send(txt);
+    if (!user.inventory || user.inventory.length === 0) return send(`${MAF} @${short} — Inventario vacío.`)
+    let txt = `${MAF} Inventario de @${short}\n`
+    user.inventory.forEach(it => txt += `${B} ${it.name} x${it.amount}\n`)
+    return send(txt)
   }
 
-  // MERCADO
+  // ---------- MERCADO ----------
   if (command.toLowerCase() === 'mercado') {
-    let txt = `${S_MAF} Mercado Militar — Objetos disponibles:\n`;
-    market.forEach((it, i) => txt += `${i+1}) ${it.name} — ${it.price} (${it.desc || 'sin efecto'})\n`);
-    txt += `\nComprar: ${usedPrefix}comprar <nombre>\nVender: ${usedPrefix}vender <nombre>`;
-    return send(txt);
+    let txt = `${MAF} Mercado Militar — Objetos:\n`
+    market.forEach((it, i) => txt += `${i + 1}) ${it.name} — ${it.price} (${it.desc || 'sin efecto'})\n`)
+    txt += `\nComprar: ${usedPrefix}comprar <nombre>\nVender: ${usedPrefix}vender <nombre>`
+    return send(txt)
   }
 
-  // COMPRAR
+  // ---------- COMPRAR ----------
   if (command.toLowerCase() === 'comprar') {
-    if (!args[0]) return send(`${S_SKULL} @${short} — Uso: ${usedPrefix}comprar <nombre objeto>`);
-    const itemName = args.join(' ').trim();
-    const item = findMarketItem(itemName);
-    if (!item) return send(`${S_SKULL} @${short} — Objeto no encontrado.`);
-    if (user.coins < item.price) return send(`${S_SKULL} @${short} — No tienes suficientes ${CURRENCY_NAME}.`);
-    user.coins -= item.price;
-    const inv = user.inventory.find(x => x.name === item.name);
-    if (inv) inv.amount += 1; else user.inventory.push({ name: item.name, amount: 1 });
-    pushHistory(`Compró ${item.name} -${item.price}`);
-    return send(`${S_MAF} @${short} — Compraste ${item.name} por ${formatMoney(item.price)}\nSaldo: ${formatMoney(user.coins)}`);
+    if (!args[0]) return send(`${SKULL} @${short} — Uso: ${usedPrefix}comprar <nombre>`)
+    const name = args.join(' ').trim()
+    const item = findMarketItem(name)
+    if (!item) return send(`${SKULL} @${short} — Objeto no encontrado.`)
+    if (user.coins < item.price) return send(`${SKULL} @${short} — Sin fondos.`)
+    user.coins -= item.price
+    const inv = user.inventory.find(x => x.name === item.name)
+    if (inv) inv.amount += 1; else user.inventory.push({ name: item.name, amount: 1 })
+    pushHistory(`Compró ${item.name} -${item.price}`)
+    return send(`${MAF} @${short} — Compraste ${item.name} por ${format(item.price)}\nSaldo: ${format(user.coins)}`)
   }
 
-  // VENDER
+  // ---------- VENDER ----------
   if (command.toLowerCase() === 'vender') {
-    if (!args[0]) return send(`${S_SKULL} @${short} — Uso: ${usedPrefix}vender <nombre objeto>`);
-    const itemName = args.join(' ').trim();
-    const invItem = user.inventory.find(x => x.name.toLowerCase() === itemName.toLowerCase());
-    if (!invItem) return send(`${S_SKULL} @${short} — No tienes ese objeto.`);
-    const marketItem = findMarketItem(invItem.name);
-    const sellPrice = Math.floor((marketItem ? marketItem.price : 0) / 2);
-    user.coins += sellPrice;
-    invItem.amount -= 1;
-    if (invItem.amount <= 0) user.inventory = user.inventory.filter(x => x.amount > 0);
-    pushHistory(`Vendió ${invItem.name} +${sellPrice}`);
-    return send(`${S_MAF} @${short} — Vendiste ${invItem.name} por ${formatMoney(sellPrice)}\nSaldo: ${formatMoney(user.coins)}`);
+    if (!args[0]) return send(`${SKULL} @${short} — Uso: ${usedPrefix}vender <nombre>`)
+    const name = args.join(' ').trim()
+    const invItem = user.inventory.find(x => x.name.toLowerCase() === name.toLowerCase())
+    if (!invItem) return send(`${SKULL} @${short} — No tienes ese objeto.`)
+    const mItem = findMarketItem(invItem.name)
+    const price = Math.floor((mItem ? mItem.price : 0) / 2)
+    user.coins += price
+    invItem.amount -= 1
+    if (invItem.amount <= 0) user.inventory = user.inventory.filter(x => x.amount > 0)
+    pushHistory(`Vendió ${invItem.name} +${price}`)
+    return send(`${MAF} @${short} — Vendiste ${invItem.name} por ${format(price)}\nSaldo: ${format(user.coins)}`)
   }
 
-  // default fallback
-  return send(`${S_MAF} @${short} — Comando no reconocido. Usa ${usedPrefix}menucoins para ver comandos.`);
-};
+  // ---------- FALLBACK ----------
+  return send(`${MAF} @${short} — Comando no reconocido. Usa ${usedPrefix}menucoins para ver opciones.`)
+}
 
 // EXPORT
-handler.help = ['mecoins','menucoins','saldo','daily','apuesta','flip','dados','minar','escuadron','topcoins','history','inventario','mercado','comprar','vender'];
-handler.tags = ['economy','fun','owner'];
-handler.command = /^(mecoins|menucoins|saldo|coins|balance|daily|apuesta|bet|flip|dados|minar|escuadron|topcoins|top|history|inventario|mercado|comprar|vender)$/i;
+handler.help = ['mecoins','menucoins','saldo','daily','apuesta','flip','dados','minar','escuadron','topcoins','history','inventario','mercado','comprar','vender','mafia','contrabando']
+handler.tags = ['economy','fun','owner']
+handler.command = /^(mecoins|menucoins|saldo|coins|balance|daily|apuesta|bet|flip|dados|minar|escuadron|topcoins|top|history|inventario|mercado|comprar|vender|mafia|contrabando)$/i
 
-export default handler;
+export default handler
