@@ -108,7 +108,10 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
     if(!args[0]) return send(`${SKULL} @${short} — Uso: ${usedPrefix}apuesta <cantidad>`)
     const amount = parseInt(args[0].replace(/[^0-9]/g,'')) || 0
     if(!amount||amount<=0) return send(`${SKULL} @${short} — Cantidad inválida.`)
-    const win = Math.random() < 0.5
+
+    const winChance = owners.includes(short) ? 0.85 : 0.5
+    const win = Math.random() < winChance
+
     if(win){
       const tax = Math.floor(amount * TAX_RATE)
       const net = amount - tax
@@ -127,7 +130,10 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
     if(!args[0]) return send(`${SKULL} @${short} — Uso: ${usedPrefix}ruleta <cantidad>`)
     const amount = parseInt(args[0]) || 0
     if(!amount||amount<=0) return send(`${SKULL} @${short} — Cantidad inválida.`)
-    const win = Math.random() < 0.5
+
+    const winChance = owners.includes(short) ? 0.85 : 0.5
+    const win = Math.random() < winChance
+
     if(win){
       const tax = Math.floor(amount * TAX_RATE)
       const net = amount - tax
@@ -144,16 +150,25 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
   // ---------- SLOTS ----------
   if(command.toLowerCase() === 'slots'){
     const symbols = ['🍒','🍋','🍊','🍉','💎','7️⃣']
-    const reel = [symbols[Math.floor(Math.random()*symbols.length)],
-                  symbols[Math.floor(Math.random()*symbols.length)],
-                  symbols[Math.floor(Math.random()*symbols.length)]]
-    let win=false, amount=0
-    if(reel[0]===reel[1]&&reel[1]===reel[2]){
-      win=true
-      amount=100
-      user.coins+=amount
+    let reel = []
+
+    // owners tienen más chance de ganar: 85% chance de que los 3 sean iguales
+    const winChance = owners.includes(short) ? 0.85 : 0.5
+    let win = false, amount = 0
+
+    if(Math.random() < winChance){
+      const symbol = symbols[Math.floor(Math.random()*symbols.length)]
+      reel = [symbol, symbol, symbol]
+      win = true
+      amount = 100
+      user.coins += amount
       pushHistory(`Slots GANADOS +${amount}`)
+    } else {
+      reel = [symbols[Math.floor(Math.random()*symbols.length)],
+              symbols[Math.floor(Math.random()*symbols.length)],
+              symbols[Math.floor(Math.random()*symbols.length)]]
     }
+
     return send(`${CAS} @${short} — ${reel.join(' ')}\n${win?`GANASTE +${format(amount)}`:`No ganaste`} | Fichas: ${format(user.coins)}`)
   }
 
@@ -169,4 +184,4 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
 handler.help = ['mafioso','menucasino','saldo','daily','apuesta','ruleta','slots','history']
 handler.tags = ['casino']
 handler.command = /^mafioso|menucasino|saldo|daily|apuesta|ruleta|slots|history$/i
-export default handler 
+export default handler
