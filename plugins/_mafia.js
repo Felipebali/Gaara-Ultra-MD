@@ -6,26 +6,43 @@
    - Economía: fichas, daily, historial
    - Moneda: Fichas
    - Menciones con ${who.split("@")[0]} sin citar mensajes
+   - Owners reciben mensajes especiales (estilo D - Violento Mafia)
 */
 
 let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => {
   const owners = ['59898719147','59896026646'] // principal primero
-  const who = m.sender
+  const who = m.sender // jid completo: '5989...@s.whatsapp.net'
   const short = who.split('@')[0]
 
-  // ---------- DB ----------
+  // ===== INICIALIZACIÓN SEGURA DB =====
   if (!global.db) global.db = { data: {} }
+  if (!global.db.data) global.db.data = {}
   if (!global.db.data.casinoMafia) global.db.data.casinoMafia = { active: true }
   if (!global.db.data.users) global.db.data.users = {}
-
-  if (!global.db.data.users[who]) global.db.data.users[who] = {
-    coins: 500,
-    lastDaily: 0,
-    history: [],
-    inventory: [],
+  // ===== HELPERS DE USUARIO =====
+  const ensureUser = (jid) => {
+    if(!global.db.data.users) global.db.data.users = {}
+    if(!global.db.data.users[jid]){
+      const num = jid.split('@')[0]
+      global.db.data.users[jid] = {
+        coins: owners.includes(num) ? 500 : 0, // owners arrancan con 500, otros 0 si no existían
+        lastDaily: 0,
+        history: [],
+        inventory: [],
+      }
+    } else {
+      // aseguro que props existan incluso si DB está corrupta
+      const u = global.db.data.users[jid]
+      if(typeof u.coins !== 'number') u.coins = owners.includes(jid.split('@')[0]) ? 500 : 0
+      if(!u.history || !Array.isArray(u.history)) u.history = []
+      if(typeof u.lastDaily !== 'number') u.lastDaily = 0
+      if(!u.inventory || !Array.isArray(u.inventory)) u.inventory = []
+    }
+    return global.db.data.users[jid]
   }
 
-  const user = global.db.data.users[who]
+  // inicializo el usuario que ejecuta
+  const user = ensureUser(who)
   const menuState = global.db.data.casinoMafia
 
   // ---------- CONFIG ----------
@@ -40,17 +57,39 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
   const DICE = '\u{1F3B2}'
   const SKULL = '\u{1F480}'
 
+  // ---------- MENSAJES MAFIA (ESTILO D) ----------
+  const ownerWinMessages = [
+    '💀 El negocio es el negocio... y vos sos la ley en la calle.',
+    '👑 Cuando el patrón apuesta, el destino obedece.',
+    '🔫 Plata o plomo, pero el capo siempre gana.',
+    '🩸 Sangre fría y billete caliente… tu estilo, jefe.',
+    '💼 El poder no se discute, se demuestra.'
+  ]
+  const ownerLoseMessages = [
+    '🩸 Hasta los capos sangran a veces… pero vuelven más fuertes.',
+    '💀 Nadie gana siempre… pero vos no sos cualquiera.',
+    '🔥 Caer está permitido. Arrodillarse jamás.',
+    '🕯️ Hoy duele, mañana se ajusta la cuenta.',
+    '⚖️ La calle cobra y devuelve: aprendé, patrón.'
+  ]
+  const randomFrom = (arr) => arr[Math.floor(Math.random()*arr.length)]
+
   // ---------- HELPERS ----------
   const safeSend = async (chat, text, mentions = []) => {
-    try { await conn.sendMessage(chat, { text, mentions }) }
-    catch { try{ await conn.sendMessage(chat, { text }) } catch(e){ console.error(e) } }
+    try {
+      await conn.sendMessage(chat, { text, mentions })
+    } catch (e) {
+      try { await conn.sendMessage(chat, { text }) } catch (err) { console.error(err) }
+    }
   }
 
-  const pushHistory = (jid,s) => {
+  const pushHistory = (jid, s) => {
+    if(!jid) return
+    ensureUser(jid) // se asegura estructura
     const u = global.db.data.users[jid]
-    if(!u) return
+    if(!u.history) u.history = []
     u.history.unshift(s)
-    if(u.history.length>50) u.history.pop()
+    if(u.history.length > 50) u.history.pop()
   }
 
   const format = n => `${n} ${CURRENCY}`
@@ -82,11 +121,11 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
     return safeSend(m.chat, lines.join('\n'), [m.sender])
   }
 
-  if(!menuState.active && ['saldo','daily','apuesta','ruleta','slots','history'].includes(command.toLowerCase())) 
+  if(!menuState.active && ['saldo','daily','apuesta','ruleta','slots','history'].includes(command.toLowerCase()))
     return safeSend(m.chat, `💀 @${short} — Casinò cerrado.`, [m.sender])
 
   // ---------- SALDO ----------
-  if(command.toLowerCase() === 'saldo') 
+  if(command.toLowerCase() === 'saldo')
     return safeSend(m.chat, `${CAS} @${short}\nFichas: ${format(user.coins)}`, [m.sender])
 
   // ---------- DAILY ----------
@@ -108,21 +147,27 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
   if(command.toLowerCase() === 'apuesta'){
     if(!args[0]) return safeSend(m.chat, `💀 @${short} — Uso: ${usedPrefix}apuesta <cantidad>`, [m.sender])
     let amount = parseInt(args[0].replace(/[^0-9]/g,'')) || 0
-    if(!amount||amount<=0) return safeSend(m.chat, `💀 @${short} — Cantidad inválida.`, [m.sender])
-    if(user.coins<amount) return safeSend(m.chat, `💀 @${short} — No tienes suficientes fichas.`, [m.sender])
+    if(!amount || amount <= 0) return safeSend(m.chat, `💀 @${short} — Cantidad inválida.`, [m.sender])
+    if(user.coins < amount) return safeSend(m.chat, `💀 @${short} — No tienes suficientes fichas.`, [m.sender])
+
     const winChance = owners.includes(short) ? 0.85 : 0.5
     const win = Math.random() < winChance
+
     if(win){
-      const tax = Math.floor(amount*TAX_RATE)
-      const net = amount-tax
+      const tax = Math.floor(amount * TAX_RATE)
+      const net = amount - tax
       user.coins += net
       pushHistory(who, `Apuesta GANADA +${net}`)
-      const ownerMsg = owners.includes(short)? `🎉 ¡Qué grande, capo! Tus habilidades mafiosas brillan.` : ''
-      return safeSend(m.chat, `${CAS} @${short} — GANASTE +${format(net)} (tax ${tax})\nFichas: ${format(user.coins)}\n${ownerMsg}`, [m.sender])
+      // mensaje especial para owners
+      let ownerMsg = ''
+      if(owners.includes(short)) ownerMsg = '\n' + randomFrom(ownerWinMessages)
+      return safeSend(m.chat, `${CAS} @${short} — GANASTE +${format(net)} (tax ${tax})\nFichas: ${format(user.coins)}${ownerMsg}`, [m.sender])
     } else {
       user.coins -= amount
       pushHistory(who, `Apuesta PERDIDA -${amount}`)
-      return safeSend(m.chat, `💀 @${short} — PERDISTE -${format(amount)}\nFichas: ${format(user.coins)}`, [m.sender])
+      let ownerMsg = ''
+      if(owners.includes(short)) ownerMsg = '\n' + randomFrom(ownerLoseMessages)
+      return safeSend(m.chat, `💀 @${short} — PERDISTE -${format(amount)}\nFichas: ${format(user.coins)}${ownerMsg}`, [m.sender])
     }
   }
 
@@ -130,50 +175,63 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
   if(command.toLowerCase() === 'ruleta'){
     if(!args[0]) return safeSend(m.chat, `💀 @${short} — Uso: ${usedPrefix}ruleta <cantidad>`, [m.sender])
     let amount = parseInt(args[0].replace(/[^0-9]/g,'')) || 0
-    if(!amount||amount<=0) return safeSend(m.chat, `💀 @${short} — Cantidad inválida.`, [m.sender])
-    if(user.coins<amount) return safeSend(m.chat, `💀 @${short} — No tienes suficientes fichas.`, [m.sender])
+    if(!amount || amount <= 0) return safeSend(m.chat, `💀 @${short} — Cantidad inválida.`, [m.sender])
+    if(user.coins < amount) return safeSend(m.chat, `💀 @${short} — No tienes suficientes fichas.`, [m.sender])
+
     const winChance = owners.includes(short) ? 0.85 : 0.5
     const win = Math.random() < winChance
+
     if(win){
-      const tax = Math.floor(amount*TAX_RATE)
-      const net = amount-tax
+      const tax = Math.floor(amount * TAX_RATE)
+      const net = amount - tax
       user.coins += net
       pushHistory(who, `Ruleta GANADA +${net}`)
-      const ownerMsg = owners.includes(short)? `🎉 ¡Imparable, jefe! La ruleta es tu aliada.` : ''
-      return safeSend(m.chat, `${CAS} @${short} — GANASTE +${format(net)}\nFichas: ${format(user.coins)}\n${ownerMsg}`, [m.sender])
+      let ownerMsg = ''
+      if(owners.includes(short)) ownerMsg = '\n' + randomFrom(ownerWinMessages)
+      return safeSend(m.chat, `${CAS} @${short} — GANASTE +${format(net)}\nFichas: ${format(user.coins)}${ownerMsg}`, [m.sender])
     } else {
       user.coins -= amount
       pushHistory(who, `Ruleta PERDIDA -${amount}`)
-      return safeSend(m.chat, `💀 @${short} — PERDISTE -${format(amount)}\nFichas: ${format(user.coins)}`, [m.sender])
+      let ownerMsg = ''
+      if(owners.includes(short)) ownerMsg = '\n' + randomFrom(ownerLoseMessages)
+      return safeSend(m.chat, `💀 @${short} — PERDISTE -${format(amount)}\nFichas: ${format(user.coins)}${ownerMsg}`, [m.sender])
     }
   }
 
   // ---------- SLOTS ----------
   if(command.toLowerCase() === 'slots'){
     const symbols = ['🍒','🍋','🍊','🍉','💎','7️⃣']
-    let reel=[],win=false,wonAmount=0
-    const winChance = owners.includes(short)?0.85:0.5
-    if(Math.random()<winChance){
+    let reel = [], win = false, wonAmount = 0
+    const winChance = owners.includes(short) ? 0.85 : 0.5
+    if(Math.random() < winChance){
       const symbol = symbols[Math.floor(Math.random()*symbols.length)]
-      reel = [symbol,symbol,symbol]
-      win=true; wonAmount=100
+      reel = [symbol, symbol, symbol]
+      win = true
+      wonAmount = 100
       user.coins += wonAmount
       pushHistory(who, `Slots GANADOS +${wonAmount}`)
-      const ownerMsg = owners.includes(short)? `🎉 ¡Perfecto, capo! Los símbolos te obedecen.` : ''
-      return safeSend(m.chat, `${CAS} @${short} — ${reel.join(' ')}\nGANASTE +${format(wonAmount)} | Fichas: ${format(user.coins)}\n${ownerMsg}`, [m.sender])
+      let ownerMsg = ''
+      if(owners.includes(short)) ownerMsg = '\n' + randomFrom(ownerWinMessages)
+      return safeSend(m.chat, `${CAS} @${short} — ${reel.join(' ')}\nGANASTE +${format(wonAmount)} | Fichas: ${format(user.coins)}${ownerMsg}`, [m.sender])
     } else {
-      reel = [symbols[Math.floor(Math.random()*symbols.length)],
-              symbols[Math.floor(Math.random()*symbols.length)],
-              symbols[Math.floor(Math.random()*symbols.length)]]
-      return safeSend(m.chat, `${CAS} @${short} — ${reel.join(' ')}\nNo ganaste | Fichas: ${format(user.coins)}`, [m.sender])
+      reel = [
+        symbols[Math.floor(Math.random()*symbols.length)],
+        symbols[Math.floor(Math.random()*symbols.length)],
+        symbols[Math.floor(Math.random()*symbols.length)]
+      ]
+      pushHistory(who, `Slots NO GANADOS`)
+      let ownerMsg = ''
+      if(owners.includes(short)) ownerMsg = '\n' + randomFrom(ownerLoseMessages)
+      return safeSend(m.chat, `${CAS} @${short} — ${reel.join(' ')}\nNo ganaste | Fichas: ${format(user.coins)}${ownerMsg}`, [m.sender])
     }
   }
 
   // ---------- HISTORY ----------
   if(command.toLowerCase() === 'history'){
-    if(!user.history||user.history.length===0) return safeSend(m.chat, `${CAS} @${short} — Sin historial.`, [m.sender])
-    let txt=`${CAS} Historial @${short}\n`
-    user.history.forEach(h=>txt+=`• ${h}\n`)
+    ensureUser(who)
+    if(!user.history || user.history.length === 0) return safeSend(m.chat, `${CAS} @${short} — Sin historial.`, [m.sender])
+    let txt = `${CAS} Historial @${short}\n`
+    user.history.slice(0,50).forEach(h => txt += `• ${h}\n`)
     return safeSend(m.chat, txt, [m.sender])
   }
 }
