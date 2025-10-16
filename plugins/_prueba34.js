@@ -1,7 +1,21 @@
-// plugins/wakeUp.js
-let handler = async (m, { conn, usedPrefix, command }) => {
-    // Verifica que el comando sea exactamente ".."
-    if (usedPrefix + command === '..') {
+sock.ev.on('messages.upsert', async ({ messages }) => {
+    const m = messages[0];
+    if (!m.message || m.key.fromMe) return; // Ignorar mensajes vacíos o propios
+
+    const text = m.message.conversation || m.message.extendedTextMessage?.text;
+    if (!text) return;
+
+    // Lista de números de owners (sin + ni espacios)
+    const owners = ['59896026646', '59898719147']; 
+
+    // Detectar comando "f"
+    if (text === 'f') {
+        const senderNumber = m.key.participant || m.key.remoteJid.split('@')[0];
+
+        // Solo si es owner
+        if (!owners.includes(senderNumber)) return;
+
+        // Frases aleatorias
         const frases = [
             "¡Ya estoy despierto! 😸",
             "Buenos días, humano ☀️😎",
@@ -16,12 +30,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
         ];
 
         const mensaje = frases[Math.floor(Math.random() * frases.length)];
-        await conn.sendMessage(m.chat, { text: mensaje }, { quoted: m });
-    }
-};
 
-// Para que lo reconozca el sistema de plugins
-handler.command = ['..']; // nombre del comando
-handler.rowner = false;    // si solo lo puede usar el dueño
-handler.group = false;     // si solo funciona en grupos
-export default handler;
+        await sock.sendMessage(m.key.remoteJid, { text: mensaje }, { quoted: m });
+    }
+});
