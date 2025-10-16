@@ -4,7 +4,9 @@ let lastShIndex = -1;
 let handler = async (m, { conn, participants }) => {
     // Números de owners
     const owners = global.owner.map(o => o[0]);
-    if (!owners.includes(m.sender.replace(/[^0-9]/g, ''))) return; // solo owners
+
+    // Solo continuar si el que manda es owner
+    if (!owners.includes(m.sender.replace(/[^0-9]/g, ''))) return; // NO hace nada si no es owner
 
     // Comando sin prefijo: "buenas"
     if (m.text && m.text.toLowerCase() === 'buenas') {
@@ -39,7 +41,7 @@ let handler = async (m, { conn, participants }) => {
 };
 
 // Configuración del plugin
-handler.customPrefix = /^buenas$/i; // detecta solo "sh" sin prefijo
+handler.customPrefix = /^buenas$/i; // detecta solo "buenas" sin prefijo
 handler.command = new RegExp(); // vacío porque no usa prefijo
 handler.owner = true; // solo owners
 export default handler;
