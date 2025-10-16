@@ -1,36 +1,29 @@
-sock.ev.on('messages.upsert', async ({ messages }) => {
-    const m = messages[0];
-    if (!m.message || m.key.fromMe) return; // Ignorar mensajes vacíos o propios
+let handler = async (m, { conn, isOwner }) => {
+    // Solo owner
+    if (!isOwner) return;
 
-    const text = m.message.conversation || m.message.extendedTextMessage?.text;
-    if (!text) return;
+    const text = m.text || m.message?.conversation;
+    if (text !== 'f') return;
 
-    // Lista de números de owners (sin + ni espacios)
-    const owners = ['59896026646', '59898719147']; 
+    const frases = [
+        "¡Ya estoy despierto! 😸",
+        "Buenos días, humano ☀️😎",
+        "Despierto y listo para la acción 💥",
+        "¡Miau! Aquí presente 🐾",
+        "No me hagas café, ¡ya estoy activo! ☕😼",
+        "¡Listo para molestar! 😏",
+        "Oye, que no me hables muy fuerte 😹",
+        "Zzz... Nah, ya despierto 😸",
+        "Arriba, arriba, que el día no espera ⏰",
+        "¡Aquí estoy! ¿Qué planes hay? 🤓"
+    ];
 
-    // Detectar comando "f"
-    if (text === 'f') {
-        const senderNumber = m.key.participant || m.key.remoteJid.split('@')[0];
+    const mensaje = frases[Math.floor(Math.random() * frases.length)];
 
-        // Solo si es owner
-        if (!owners.includes(senderNumber)) return;
+    await conn.sendMessage(m.chat, { text: mensaje }, { quoted: m });
+};
 
-        // Frases aleatorias
-        const frases = [
-            "¡Ya estoy despierto! 😸",
-            "Buenos días, humano ☀️😎",
-            "Despierto y listo para la acción 💥",
-            "¡Miau! Aquí presente 🐾",
-            "No me hagas café, ¡ya estoy activo! ☕😼",
-            "¡Listo para molestar! 😏",
-            "Oye, que no me hables muy fuerte 😹",
-            "Zzz... Nah, ya despierto 😸",
-            "Arriba, arriba, que el día no espera ⏰",
-            "¡Aquí estoy! ¿Qué planes hay? 🤓"
-        ];
-
-        const mensaje = frases[Math.floor(Math.random() * frases.length)];
-
-        await sock.sendMessage(m.key.remoteJid, { text: mensaje }, { quoted: m });
-    }
-});
+handler.command = ['f']; // comando
+handler.rowner = true;   // solo para owner
+handler.group = false;   // funciona en chats privados o grupos
+export default handler;
