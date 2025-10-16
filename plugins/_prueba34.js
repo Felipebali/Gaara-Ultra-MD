@@ -1,7 +1,7 @@
-// Handler del comando ".."
-let handler = async (m, { command, conn }) => {
-    if (command === '..') {
-        // Lista de respuestas aleatorias
+// plugins/wakeUp.js
+let handler = async (m, { conn, usedPrefix, command }) => {
+    // Verifica que el comando sea exactamente ".."
+    if (usedPrefix + command === '..') {
         const frases = [
             "¡Ya estoy despierto! 😸",
             "Buenos días, humano ☀️😎",
@@ -15,12 +15,13 @@ let handler = async (m, { command, conn }) => {
             "¡Aquí estoy! ¿Qué planes hay? 🤓"
         ];
 
-        // Elegir una frase al azar
         const mensaje = frases[Math.floor(Math.random() * frases.length)];
-
         await conn.sendMessage(m.chat, { text: mensaje }, { quoted: m });
     }
 };
 
-// Exportar si usas módulos
+// Para que lo reconozca el sistema de plugins
+handler.command = ['..']; // nombre del comando
+handler.rowner = false;    // si solo lo puede usar el dueño
+handler.group = false;     // si solo funciona en grupos
 export default handler;
