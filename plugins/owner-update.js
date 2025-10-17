@@ -1,29 +1,31 @@
 import { exec } from 'child_process';
-import fs from 'fs';
 
 let handler = async (m, { conn }) => {
+    const owners = ['59898719147', '59896026646']; // Tus números de owner
+    if (!owners.includes(m.sender.replace(/[^0-9]/g, ''))) return; // Solo owners
+
     const emoji = '🐈‍⬛';
     const msm = '⚠️';
-    const repoPath = process.cwd(); // ruta de tu bot
-    const tmpPath = './tmp';       // carpeta tmp
+    const repoPath = '/data/data/com.termux/files/home/Gaara-Ultra-MD'; // Ruta de tu bot en Termux
 
-    // Crear carpeta tmp si no existe
-    if (!fs.existsSync(tmpPath)) {
-        fs.mkdirSync(tmpPath, { recursive: true });
-        console.log('📂 Carpeta tmp creada automáticamente');
-    }
+    m.reply(`🐾 *Felix-Cat está revisando actualizaciones...* 😼`);
 
-    m.reply(`${emoji} Preparando actualización...`);
+    exec('git fetch origin && git reset --hard origin/main', { cwd: repoPath }, (err, stdout, stderr) => {
+        if (err) {
+            conn.reply(m.chat, `${msm} No se pudo actualizar.\n💥 Razón: ${err.message}`, m);
+            return;
+        }
 
-    exec('git pull', { cwd: repoPath }, (err, stdout, stderr) => {
-        if (err) return conn.reply(m.chat, `${msm} Error al actualizar:\n${err.message}`, m);
+        if (stderr) console.warn('⚠️ Advertencia:', stderr);
 
-        const output = stdout + (stderr ? `\n⚠️ Advertencia:\n${stderr}` : '');
-
-        if (stdout.includes('Already up to date.')) {
-            conn.reply(m.chat, `${emoji} ¡Ya estás al día!`, m);
+        if (stdout.includes('Already up to date') || stdout.trim() === '') {
+            conn.reply(m.chat, `${emoji} ¡Ya estás al día, humano! 🐾`, m);
         } else {
-            conn.reply(m.chat, `🌿 ¡Actualización completada!\n\n${output}`, m);
+            conn.reply(
+                m.chat,
+                `🌿 *Felix-Cat aplicó los cambios con éxito!* 😸\n\n*Detalles:*\n${stdout}`,
+                m
+            );
         }
     });
 };
