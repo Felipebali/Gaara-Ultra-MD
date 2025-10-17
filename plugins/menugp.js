@@ -33,7 +33,7 @@ let handler = async (m, { conn, isAdmin, chat }) => {
 
 ╭━━━〔 📢 MENCIÓN GENERAL 〕━━━⬣
 ┃ 🐾 .tagall - Mencionar a todos 📣
-┃ 🐾 .hidetag - Mención oculta 👻
+┃ 🐾 .ht - Mención oculta 👻
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 ╭━━━〔 🗑️ BORRAR MENSAJE 〕━━━⬣
