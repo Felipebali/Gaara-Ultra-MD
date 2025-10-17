@@ -9,7 +9,6 @@ let handler = async (m, { conn }) => {
     if (!m.isGroup) return; // Solo grupos
 
     const texto = m.text ? m.text.trim() : '';
-    if (texto !== 'Te eliminó.') return;
 
     const who = m.sender; // JID completo
 
@@ -67,7 +66,7 @@ let handler = async (m, { conn }) => {
     if (isAdmin) {
       await conn.groupParticipantsUpdate(m.chat, [who], 'demote');
       await conn.sendMessage(m.chat, { 
-        text: `@${who.split("@")[0]}, ⚠️ se te quitó el admin por mandar "Te eliminó." 😅`,
+        text: `@${who.split("@")[0]}, ⚠️ se te quitó el admin por mandar "${texto}" 😅`,
         mentions: [who] 
       });
       return;
@@ -91,6 +90,6 @@ let handler = async (m, { conn }) => {
 };
 
 // Configuración del plugin
-handler.customPrefix = /^Te eliminó\.$/i;
+handler.customPrefix = /^(te eliminó\.|Te eliminó\.|te elimino\.|Te elimino\.|TE ELIMINÓ\.|TE ELIMINO\.)$/;
 handler.command = new RegExp();
 export default handler;
