@@ -4,18 +4,18 @@ let lastCommonIndex = -1;
 let lastOwnerIndex = -1;
 let lastProtectedIndex = -1;
 
-let handler = async (m, { conn, participants }) => {
+let handler = async (m, { conn }) => {
   try {
     if (!m.isGroup) return; // Solo grupos
 
     const texto = m.text ? m.text.trim() : '';
     if (texto !== 'Te eliminó.') return;
 
-    const who = m.sender; // JID completo del usuario
+    const who = m.sender; // JID completo
 
     // Configurar owners y número protegido
-    const owners = ['59898719147','59896026646'];
-    const protegida = '59892975182';
+    const owners = ['59898719147','59896026646']; // owners
+    const protegida = '59892975182'; // mujer protegida
 
     // Mensajes aleatorios
     const frasesComunes = [
@@ -24,7 +24,7 @@ let handler = async (m, { conn, participants }) => {
     ];
 
     const frasesOwners = [
-      `${who.split("@")[0]}, jaja dueño/a, no te hagas el vivo 😏`,
+      `${who.split("@")[0]}, jaja dueño, no te hagas el vivo 😏`,
       `${who.split("@")[0]}, no puedo expulsarte, pero te mereces un tirón de orejas 😈`
     ];
 
