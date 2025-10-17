@@ -1,4 +1,4 @@
-const handler = async (m, { conn, isAdmin }) => { const emoji = '🎲'; const sender = m.sender.replace(/\D/g, '');
+const handler = async (m, { conn, isAdmin }) => { const sender = m.sender.replace(/\D/g, '');
 
 const groupInfo = await conn.groupMetadata(m.chat); const ownerGroup = groupInfo.owner.replace(/\D/g, ''); const botJid = conn.user.jid.replace(/\D/g, '');
 
@@ -12,7 +12,7 @@ if (!candidates.length) return conn.reply(m.chat, '❌ No hay participantes vál
 
 const idx = Math.floor(Math.random() * candidates.length); const participant = candidates[idx];
 
-try { await conn.groupParticipantsUpdate(m.chat, [participant.jid], 'remove'); await m.react(emoji).catch(() => {}); await conn.reply(m.chat, 💥 La ruleta giró y @${participant.jid.split('@')[0]} fue expulsado., m, { mentions: [participant.jid] }); try { await conn.deleteMessage(m.chat, m.key); } catch {} } catch (err) { console.log('Error expulsando:', err); return conn.reply(m.chat, '❌ Ocurrió un error al intentar expulsar. Asegúrate de que el bot sea administrador.', m); } };
+try { await conn.groupParticipantsUpdate(m.chat, [participant.jid], 'remove'); await conn.reply(m.chat, La ruleta giró y @${participant.jid.split('@')[0]} fue expulsado., m, { mentions: [participant.jid] }); } catch (err) { console.log('Error expulsando:', err); return conn.reply(m.chat, '❌ Ocurrió un error al intentar expulsar. Asegúrate de que el bot sea administrador.', m); } };
 
 handler.help = ['ruletaban']; handler.tags = ['grupo']; handler.command = ['ruletaban']; handler.admin = true; handler.group = true; handler.register = true; handler.botAdmin = true;
 
