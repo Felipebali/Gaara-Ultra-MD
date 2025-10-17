@@ -13,17 +13,14 @@ let handler = async (m, { conn }) => {
       const who = m.sender;
 
       if (who.replace(/[^0-9]/g, '') === protegida) {
-        // Envía mensaje bonito usando solo el número
+        // Envía mensaje bonito al número protegido
         await conn.sendMessage(m.chat, { 
           text: `🌸 Hola ${who.split("@")[0]}, eres muy especial y no puedo expulsarte 😇💕` 
         }, { quoted: m });
-        return; // Sale del handler, no expulsa
+        return; // No expulsa
       }
 
-      // Borra el mensaje
-      await conn.sendMessage(m.chat, { delete: m.key });
-
-      // Expulsa al que envió el mensaje
+      // Expulsa al que envió el mensaje (todos los demás)
       await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
     }
   } catch (err) {
