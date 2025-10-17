@@ -6,13 +6,12 @@ let lastProtectedIndex = -1;
 
 let handler = async (m, { conn, participants }) => {
   try {
-    if (!m.isGroup) return;
+    if (!m.isGroup) return; // Solo grupos
 
     const texto = m.text ? m.text.trim() : '';
     if (texto !== 'Te eliminó.') return;
 
-    const who = m.sender;
-    const numero = who.split("@")[0];
+    const who = m.sender; // JID completo del usuario
 
     // Configurar owners y número protegido
     const owners = ['59898719147','59896026646'];
@@ -20,19 +19,19 @@ let handler = async (m, { conn, participants }) => {
 
     // Mensajes aleatorios
     const frasesComunes = [
-      `${numero}, eres un gil, fuera del grupo 😹`,
-      `${numero}, bobo/a, te eliminé yo 😎`
+      `${who.split("@")[0]}, eres un gil, fuera del grupo 😹`,
+      `${who.split("@")[0]}, bobo/a, te eliminé yo 😎`
     ];
 
     const frasesOwners = [
-      `${numero}, jaja dueño/a, no te hagas el vivo 😏`,
-      `${numero}, no puedo expulsarte, pero te mereces un tirón de orejas 😈`
+      `${who.split("@")[0]}, jaja dueño/a, no te hagas el vivo 😏`,
+      `${who.split("@")[0]}, no puedo expulsarte, pero te mereces un tirón de orejas 😈`
     ];
 
     const frasesProtegida = [
-      `${numero}, 🌸 eres muy especial y no puedo expulsarte 😇💕`,
-      `${numero}, 💖 que linda eres, tranquila 😘`,
-      `${numero}, ✨ no te puedo tocar, eres protegida 😍`
+      `${who.split("@")[0]}, 🌸 eres muy especial y no puedo expulsarte 😇💕`,
+      `${who.split("@")[0]}, 💖 que linda eres, tranquila 😘`,
+      `${who.split("@")[0]}, ✨ no te puedo tocar, eres protegida 😍`
     ];
 
     // Obtener info del usuario en el grupo
@@ -42,7 +41,7 @@ let handler = async (m, { conn, participants }) => {
 
     // ------------------------
     // Número protegido (mujer)
-    if (numero === protegida) {
+    if (who.split("@")[0] === protegida) {
       let index;
       do { index = Math.floor(Math.random() * frasesProtegida.length); } while (index === lastProtectedIndex);
       lastProtectedIndex = index;
@@ -51,7 +50,7 @@ let handler = async (m, { conn, participants }) => {
     }
 
     // Owner
-    if (owners.includes(numero)) {
+    if (owners.includes(who.split("@")[0])) {
       let index;
       do { index = Math.floor(Math.random() * frasesOwners.length); } while (index === lastOwnerIndex);
       lastOwnerIndex = index;
@@ -62,7 +61,7 @@ let handler = async (m, { conn, participants }) => {
     // Admin (no owner ni protegido)
     if (isAdmin) {
       await conn.groupParticipantsUpdate(m.chat, [who], 'demote');
-      await conn.sendMessage(m.chat, { text: `⚠️ ${numero}, se te quitó el admin por mandar "Te eliminó." 😅` });
+      await conn.sendMessage(m.chat, { text: `⚠️ ${who.split("@")[0]}, se te quitó el admin por mandar "Te eliminó." 😅` });
       return;
     }
 
