@@ -1,40 +1,46 @@
 let handler = async (m, { conn, participants, isAdmin }) => {
   try {
-    if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' });
+    if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
     const botNumber = conn.user?.id || conn.user?.jid || '';
     const botIsAdmin = participants.some(p => p.id === botNumber && p.admin);
+    if (!botIsAdmin) return m.reply('❌ Necesito ser *ADMIN* para expulsar gente.');
+    if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.');
 
-    if (!botIsAdmin) return conn.sendMessage(m.chat, { text: '❌ Necesito ser ADMIN para usar este comando.' });
-    if (!isAdmin) return conn.sendMessage(m.chat, { text: '❌ Solo los administradores pueden usar esto.' });
-
-    // Filtrar solo usuarios que no sean admin ni el bot
     let victimas = participants.filter(p => !p.admin && p.id !== botNumber);
+    if (victimas.length === 0) return m.reply('😐 No hay víctimas disponibles (todos son admins).');
 
-    if (!victimas.length) {
-      return conn.sendMessage(m.chat, { text: '😐 No hay a quién rajar, todos son admins o bots.' });
-    }
-
-    // Elegir usuario al azar
     let elegido = victimas[Math.floor(Math.random() * victimas.length)];
     let user = elegido.id;
 
-    // Intentar expulsar
-    await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
+    await m.reply(`🎯 Girando la ruleta... 🔫`);
+    await sleep(1500);
 
-    await conn.sendMessage(m.chat, {
-      text: `💀 La suerte eligió a @${user.split('@')[0]}...\nAndate a llorar al baño 🚪😹`,
-      mentions: [user]
-    });
+    try {
+      await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
+      await conn.sendMessage(m.chat, {
+        text: `💀 La mala suerte cayó sobre @${user.split('@')[0]}\nAndate pa fuera 🚪😂`,
+        mentions: [user]
+      });
+    } catch {
+      await conn.sendMessage(m.chat, {
+        text: `⚠️ No pude expulsar a @${user.split('@')[0]} (capaz tiene protección o WhatsApp bloqueó el kick)`,
+        mentions: [user]
+      });
+    }
 
   } catch (e) {
     console.log(e);
-    conn.sendMessage(m.chat, { text: '⚠️ Error ejecutando la ruleta ban.' });
+    m.reply('⚠️ Error ejecutando la ruleta ban.');
   }
 };
 
-handler.command = ['ruletaban', 'ruletakick', 'rban'];
+handler.command = ['ruletaban', 'rban'];
 handler.group = true;
 handler.admin = true;
 
 export default handler;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
