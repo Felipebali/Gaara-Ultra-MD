@@ -1,47 +1,39 @@
-// plugins/ruletaban.js
-let handler = async (m, { conn, isAdmin }) => {
-    try {
-        if (!m.isGroup) {
-            return conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' });
-        }
+let handler = async (m, { conn, participants, isAdmin }) => {
+  try {
+    if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' });
 
-        // Verificar si el bot es admin
-        const groupMetadata = await conn.groupMetadata(m.chat);
-        const botNumber = conn.user.id.split(':')[0] + '@s.whatsapp.net';
-        const botIsAdmin = groupMetadata.participants.some(p => p.id === botNumber && p.admin);
+    const botNumber = conn.user?.id || conn.user?.jid || '';
+    const botIsAdmin = participants.some(p => p.id === botNumber && p.admin);
 
-        if (!botIsAdmin) {
-            return conn.sendMessage(m.chat, { text: '❌ Necesito ser *ADMIN* para expulsar gente.' });
-        }
+    if (!botIsAdmin) return conn.sendMessage(m.chat, { text: '❌ Necesito ser ADMIN para usar este comando.' });
+    if (!isAdmin) return conn.sendMessage(m.chat, { text: '❌ Solo los administradores pueden usar esto.' });
 
-        if (!isAdmin) {
-            return conn.sendMessage(m.chat, { text: '❌ Solo administradores pueden usar este comando.' });
-        }
+    // Filtrar solo usuarios que no sean admin ni el bot
+    let victimas = participants.filter(p => !p.admin && p.id !== botNumber);
 
-        const participantes = groupMetadata.participants.filter(p => !p.admin && !p.id.includes(conn.user.id));
-        if (participantes.length === 0) {
-            return conn.sendMessage(m.chat, { text: '😎 No hay víctimas disponibles, todos son admins o bots.' });
-        }
-
-        const elegido = participantes[Math.floor(Math.random() * participantes.length)];
-        const userJid = elegido.id;
-
-        // Expulsar del grupo
-        await conn.groupParticipantsUpdate(m.chat, [userJid], 'remove');
-
-        // Enviar mensaje
-        await conn.sendMessage(m.chat, {
-            text: `🎯 Te llegó la hora @${userJid.split('@')[0]}, fuera del grupo 💣`,
-            mentions: [userJid]
-        });
-
-    } catch (e) {
-        console.error(e);
-        conn.sendMessage(m.chat, { text: '❌ Ocurrió un error ejecutando la ruleta ban.' });
+    if (!victimas.length) {
+      return conn.sendMessage(m.chat, { text: '😐 No hay a quién rajar, todos son admins o bots.' });
     }
-}
 
-handler.command = ['ruletaban'];
+    // Elegir usuario al azar
+    let elegido = victimas[Math.floor(Math.random() * victimas.length)];
+    let user = elegido.id;
+
+    // Intentar expulsar
+    await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
+
+    await conn.sendMessage(m.chat, {
+      text: `💀 La suerte eligió a @${user.split('@')[0]}...\nAndate a llorar al baño 🚪😹`,
+      mentions: [user]
+    });
+
+  } catch (e) {
+    console.log(e);
+    conn.sendMessage(m.chat, { text: '⚠️ Error ejecutando la ruleta ban.' });
+  }
+};
+
+handler.command = ['ruletaban', 'ruletakick', 'rban'];
 handler.group = true;
 handler.admin = true;
 
