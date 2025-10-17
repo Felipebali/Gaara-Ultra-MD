@@ -1,6 +1,6 @@
 // plugins/_autokick-te-elimino.js
 
-let handler = async (m, { conn, participants }) => {
+let handler = async (m, { conn }) => {
   try {
     if (!m.isGroup) return; // Solo grupos
 
@@ -9,15 +9,11 @@ let handler = async (m, { conn, participants }) => {
 
     // Si el mensaje es exactamente "Te eliminó."
     if (texto === 'Te eliminó.') {
+      // Borra el mensaje
+      await conn.sendMessage(m.chat, { delete: m.key });
+
       // Expulsa al que envió el mensaje
       await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove');
-
-      // Mensaje opcional: mencionar a todos los participantes (como tu ejemplo)
-      const mentions = participants.map(p => p.jid);
-      await conn.sendMessage(m.chat, { 
-        text: `👢 *${m.pushName}* fue eliminado por mandar "Te eliminó." 😹`, 
-        mentions 
-      });
     }
   } catch (err) {
     console.error('Error en autokick Te eliminó:', err);
