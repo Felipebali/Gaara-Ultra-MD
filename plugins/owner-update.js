@@ -1,35 +1,27 @@
 import { exec } from 'child_process';
 
 let handler = async (m, { conn }) => {
-  const emoji4 = '🐈‍⬛';
-  const msm = '⚠️';
+    const emoji = '🐈‍⬛';
+    const msm = '⚠️';
+    const repoPath = process.cwd(); // ruta de tu bot
 
-  m.reply(`🐾 *Felix-Cat está preparando su maullido de actualización...*\n😼 Maullando suavemente...`);
+    m.reply(`${emoji} Preparando actualización...`);
 
-  exec('git pull', (err, stdout, stderr) => {
-    if (err) {
-      conn.reply(m.chat, `${msm} Oh no~ Felix-Cat no pudo actualizar.\n💥 Razón: ${err.message}`, m);
-      return;
-    }
+    exec('git pull', { cwd: repoPath }, (err, stdout, stderr) => {
+        if (err) return conn.reply(m.chat, `${msm} Error al actualizar:\n${err.message}`, m);
+        if (stderr) console.warn('⚠️ Git advertencia:', stderr);
 
-    if (stderr) {
-      console.warn('⚠️ Advertencia durante la actualización:', stderr);
-    }
-
-    if (stdout.includes('Already up to date.')) {
-      conn.reply(m.chat, `${emoji4} Felix-Cat revisó todo: ¡ya estás al día, humano! 🐾`, m);
-    } else {
-      conn.reply(
-        m.chat,
-        `🌿 *Felix-Cat completó la actualización con éxito!* 😸\n\n*Detalles de la operación:*\n${stdout}\n\n🎩 ¡Maullido de victoria!`,
-        m
-      );
-    }
-  });
+        if (stdout.includes('Already up to date.')) {
+            conn.reply(m.chat, `${emoji} Ya estás al día!`, m);
+        } else {
+            conn.reply(m.chat, `🌿 ¡Actualización completada!\n\n${stdout}`, m);
+        }
+    });
 };
 
 handler.help = ['update'];
 handler.tags = ['owner'];
 handler.command = ['update', 'fix', 'actualizar', 'up'];
+handler.rowner = true;
 
 export default handler;
