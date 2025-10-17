@@ -1,65 +1,64 @@
 // plugins/ruletaban.js
-let handler = async (m, { conn, isAdmin }) => {
-    try {
-        // 1️⃣ Verificar si es grupo
-        if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
+import { jidNormalizedUser } from '@whiskeysockets/baileys'
 
-        // 2️⃣ Obtener metadata del grupo
+let handler = async (m, { conn }) => {
+    try {
+        // 1️⃣ Solo grupos
+        if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' });
+
+        // 2️⃣ Metadata del grupo
         const groupMetadata = await conn.groupMetadata(m.chat);
         const participants = groupMetadata.participants;
 
-        // 3️⃣ Revisar si el bot es admin
+        // 3️⃣ Verificar admin bot
         const botNumber = conn.user?.id?.split(':')[0] + '@s.whatsapp.net';
-        const botIsAdmin = participants.some(p => p.id === botNumber && p.admin);
-        if (!botIsAdmin) return m.reply('❌ Necesito ser ADMIN para expulsar gente.');
+        const botAdmin = participants.find(p => p.id === botNumber)?.admin;
+        if (!botAdmin) return conn.sendMessage(m.chat, { text: '❌ Necesito ser ADMIN para expulsar gente.' });
 
-        // 4️⃣ Verificar que el que ejecuta sea admin
-        if (!isAdmin) return m.reply('❌ Solo administradores pueden usar este comando.');
+        // 4️⃣ Verificar admin usuario que ejecuta
+        const sender = m.sender;
+        const senderAdmin = participants.find(p => p.id === sender)?.admin;
+        if (!senderAdmin) return conn.sendMessage(m.chat, { text: '❌ Solo admins pueden usar este comando.' });
 
-        // 5️⃣ Filtrar participantes válidos (no admin, no bot)
-        let victimas = participants.filter(p => !p.admin && p.id !== botNumber);
-        if (victimas.length === 0) return m.reply('😐 No hay víctimas disponibles (todos son admins o bots).');
+        // 5️⃣ Filtrar posibles víctimas
+        const victimas = participants.filter(p => !p.admin && p.id !== botNumber);
+        if (victimas.length === 0) return conn.sendMessage(m.chat, { text: '😐 No hay a quién expulsar, todos son admins o bots.' });
 
         // 6️⃣ Elegir al azar
-        let elegido = victimas[Math.floor(Math.random() * victimas.length)];
-        let user = elegido.id;
+        const elegido = victimas[Math.floor(Math.random() * victimas.length)];
+        const userJid = jidNormalizedUser(elegido.id);
 
-        // 7️⃣ Mensaje previo de "girando la ruleta"
-        await m.reply('🎯 Girando la ruleta... 🔫');
-        await delay(1500); // efecto de suspenso
+        // 7️⃣ Girando la ruleta
+        await conn.sendMessage(m.chat, { text: '🎯 Girando la ruleta... 🔫' });
+        await delay(1500);
 
-        // 8️⃣ Expulsar del grupo
+        // 8️⃣ Intentar expulsar
         try {
-            await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
+            await conn.groupParticipantsUpdate(m.chat, [userJid], 'remove');
 
-            // 9️⃣ Mensaje de despedida
             await conn.sendMessage(m.chat, {
-                text: `💀 La mala suerte eligió a @${user.split('@')[0]}...\n¡Fuera del grupo! 🚪😂`,
-                mentions: [user]
+                text: `💀 La mala suerte eligió a @${userJid.split('@')[0]}... fuera del grupo 🚪😂`,
+                mentions: [userJid]
             });
-
         } catch {
-            // Si no se puede expulsar
             await conn.sendMessage(m.chat, {
-                text: `⚠️ No pude expulsar a @${user.split('@')[0]} (posible protección o bloqueo de WhatsApp)`,
-                mentions: [user]
+                text: `⚠️ No pude expulsar a @${userJid.split('@')[0]} (posible protección o bloqueo de WhatsApp)`,
+                mentions: [userJid]
             });
         }
 
     } catch (e) {
-        console.error(e);
-        m.reply('⚠️ Ocurrió un error ejecutando la ruleta ban.');
+        console.log(e);
+        conn.sendMessage(m.chat, { text: '⚠️ Error ejecutando la ruleta ban.' });
     }
 };
 
-// Configuración del comando
+// Comando
 handler.command = ['ruletaban', 'rban', 'ruletakick'];
 handler.group = true;
-handler.admin = true;
-
 export default handler;
 
-// Función delay para suspenso
+// Delay para suspenso
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
