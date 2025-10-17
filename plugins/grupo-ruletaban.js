@@ -1,37 +1,42 @@
-let handler = async (m, { conn, participants, isAdmin }) => {
+let handler = async (m, { conn, isAdmin }) => {
   try {
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
-    const botNumber = conn.user?.id || conn.user?.jid || '';
+    const groupMetadata = await conn.groupMetadata(m.chat);
+    const participants = groupMetadata.participants;
+
+    const botNumber = conn.user?.id?.split(':')[0] + '@s.whatsapp.net';
     const botIsAdmin = participants.some(p => p.id === botNumber && p.admin);
-    if (!botIsAdmin) return m.reply('❌ Necesito ser *ADMIN* para expulsar gente.');
-    if (!isAdmin) return m.reply('❌ Solo los administradores pueden usar este comando.');
+
+    if (!botIsAdmin) return m.reply('❌ Necesito ser *ADMIN* para expulsar.');
+    if (!isAdmin) return m.reply('❌ Solo administradores pueden usar este comando.');
 
     let victimas = participants.filter(p => !p.admin && p.id !== botNumber);
-    if (victimas.length === 0) return m.reply('😐 No hay víctimas disponibles (todos son admins).');
+    if (!victimas.length) return m.reply('😐 No hay víctimas disponibles (todos son admins).');
 
     let elegido = victimas[Math.floor(Math.random() * victimas.length)];
     let user = elegido.id;
 
-    await m.reply(`🎯 Girando la ruleta... 🔫`);
-    await sleep(1500);
+    await m.reply('🎯 Girando la ruleta... 🔫');
+    await delay(1200);
 
-    try {
-      await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
-      await conn.sendMessage(m.chat, {
-        text: `💀 La mala suerte cayó sobre @${user.split('@')[0]}\nAndate pa fuera 🚪😂`,
-        mentions: [user]
+    await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
+      .then(() => {
+        conn.sendMessage(m.chat, {
+          text: `💀 Mala suerte @${user.split('@')[0]}, afuera del grupo 🚪😂`,
+          mentions: [user]
+        });
+      })
+      .catch(() => {
+        conn.sendMessage(m.chat, {
+          text: `⚠️ No pude expulsar a @${user.split('@')[0]} (capaz tiene protección o WhatsApp bloqueó el kick)`,
+          mentions: [user]
+        });
       });
-    } catch {
-      await conn.sendMessage(m.chat, {
-        text: `⚠️ No pude expulsar a @${user.split('@')[0]} (capaz tiene protección o WhatsApp bloqueó el kick)`,
-        mentions: [user]
-      });
-    }
 
   } catch (e) {
     console.log(e);
-    m.reply('⚠️ Error ejecutando la ruleta ban.');
+    m.reply('⚠️ Error en la ruleta ban.');
   }
 };
 
@@ -41,6 +46,6 @@ handler.admin = true;
 
 export default handler;
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function delay(ms) {
+  return new Promise(res => setTimeout(res, ms));
 }
