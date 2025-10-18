@@ -7,8 +7,7 @@ let handler = async (m, { conn }) => {
         return m.reply('🔞 El contenido *NSFW* está desactivado en este grupo.\n> Un owner puede activarlo con el comando » *.nsfw*');
     }
 
-    const menuText = `
-╭━━━〔 🔞 NSFW 🐾 〕━━━⬣
+    const menuText = `╭━━━〔 🔞 NSFW 🐾 〕━━━⬣
 ┃ 🐾 .sixnine/69 @tag 🍆
 ┃ 🐾 .anal/culiar @tag 🍑
 ┃ 🐾 .blowjob/mamada @tag 💦
@@ -28,10 +27,13 @@ let handler = async (m, { conn }) => {
 ┃ 🐾 .chupartetas 🍒
 ┃ 🐾 .kiss18 🫦
 ╰━━━━━━━━━━━━━━━━━━━━⬣
-> 👑 Powered by FelixCat 🥷🏽
-    `.trim();
+> 👑 Powered by FelixCat 🥷🏽`;
 
-    await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
+    // Enviar mensaje con imagen NSFW
+    await conn.sendMessage(m.chat, {
+        image: { url: 'https://i.imgur.com/NSFWexample.png' }, // Reemplazar con tu imagen NSFW
+        caption: menuText
+    }, { quoted: m });
 };
 
 handler.help = ['menuhot'];
