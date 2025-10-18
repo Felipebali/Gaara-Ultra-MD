@@ -31,7 +31,7 @@ let handler = async (m, { conn }) => {
 
     try {
         await conn.sendMessage(m.chat, {
-            image: { url: 'https://i.ibb.co/8mVZz6K/nsfw-placeholder.png' }, // Imagen NSFW confiable
+            image: { url: 'https://files.catbox.moe/gc9jou.png' }, // Imagen NSFW confiable
             caption: menuText
         }, { quoted: m });
     } catch (e) {
