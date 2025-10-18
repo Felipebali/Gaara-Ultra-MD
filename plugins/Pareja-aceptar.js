@@ -1,93 +1,101 @@
 import fs from 'fs'
 import path from 'path'
 
+const normalize = s => (s || '').toString().replace(/\D/g, '')
+
 const handler = async (m, { conn, args }) => {
   const solicitudesPath = path.join('./database', 'solicitudes.json')
   const parejasPath = path.join('./database', 'parejas.json')
+  const casadosPath = path.join('./database', 'casados.json')
 
-  if (!fs.existsSync(solicitudesPath)) return m.reply('❌ No hay solicitudes registradas.')
-
+  // Cargar solicitudes
   let solicitudes = {}
-  try {
-    solicitudes = JSON.parse(fs.readFileSync(solicitudesPath))
-  } catch {
-    solicitudes = {}
+  if (fs.existsSync(solicitudesPath)) {
+    try { solicitudes = JSON.parse(fs.readFileSync(solicitudesPath, 'utf8') || '{}') } 
+    catch(e){ solicitudes = {} }
+  }
+
+  let parejas = {}
+  if (fs.existsSync(parejasPath)) {
+    try { parejas = JSON.parse(fs.readFileSync(parejasPath, 'utf8') || '{}') } 
+    catch(e){ parejas = {} }
+  }
+
+  let casados = {}
+  if (fs.existsSync(casadosPath)) {
+    try { casados = JSON.parse(fs.readFileSync(casadosPath, 'utf8') || '{}') } 
+    catch(e){ casados = {} }
   }
 
   const yoJid = m.sender
-  const yoRaw = yoJid.split('@')[0]
-  const isGroup = m.isGroup || m.chat.endsWith('@g.us')
+  const yoRaw = normalize(yoJid)
 
-  let otro, otroRaw
-
-  // Si se está citando un mensaje, tomar sender del mensaje citado
-  if (m.quoted) {
-    otro = m.quoted.sender
-    otroRaw = otro.split('@')[0]
+  let otroJid, otroRaw
+  if (m.quoted && m.quoted.sender) {
+    otroJid = m.quoted.sender
+    otroRaw = normalize(otroJid)
   } else if (m.mentionedJid && m.mentionedJid.length > 0) {
-    // Mención directa
-    otro = m.mentionedJid[0]
-    otroRaw = otro.split('@')[0]
+    otroJid = m.mentionedJid[0]
+    otroRaw = normalize(otroJid)
   } else if (args[0]) {
-    // Número en texto
     const numMatch = args[0].match(/\d{5,15}/)
     if (!numMatch) return m.reply('⚠️ Formato inválido. Usa un número o mención.')
-    otroRaw = numMatch[0]
-
-    if (isGroup) {
-      const senderDomain = yoJid.split('@')[1]
-      otro = `${otroRaw}@${senderDomain}`
-    } else {
-      otro = `${otroRaw}@s.whatsapp.net`
-    }
+    otroRaw = normalize(numMatch[0])
+    const domain = yoJid.split('@')[1] || 's.whatsapp.net'
+    otroJid = `${otroRaw}@${domain}`
   } else {
     return m.reply('❌ Debes escribir o mencionar a la persona cuya solicitud quieres aceptar.\n\nEjemplo:\n*.aceptar @123456789*')
   }
 
-  // Buscar la solicitud enviada a mí por esa persona
-  const misSolicitudes = solicitudes[yoJid] || solicitudes[yoRaw]
-  if (!misSolicitudes || !Array.isArray(misSolicitudes)) {
-    return m.reply('❌ No tienes ninguna solicitud pendiente.')
-  }
+  // 🔹 Buscar la solicitud correcta usando la clave del destinatario
+  const solicitudesPendientes = Object.entries(solicitudes)
+    .filter(([key, arr]) => Array.isArray(arr))
+    .map(([key, arr]) => ({ key, arr }))
+    .find(item => item.arr.some(s => normalize(s.numero || s.jid) === otroRaw && normalize(s.targetNumero || s.targetJid) === yoRaw))
 
-  const solicitud = misSolicitudes.find(s =>
-    s.jid === otro || s.numero === otroRaw
+  if (!solicitudesPendientes) return m.reply('❌ No tienes una solicitud de esa persona.')
+
+  const solicitudIndex = solicitudesPendientes.arr.findIndex(s =>
+    normalize(s.numero || s.jid) === otroRaw
   )
-  if (!solicitud) {
-    return m.reply('❌ No tienes una solicitud de esa persona.')
-  }
+
+  const solicitud = solicitudesPendientes.arr[solicitudIndex]
+
+  // Guardar relación en parejas.json
+  parejas[yoJid] = { pareja: otroJid, fecha: new Date().toISOString() }
+  parejas[otroJid] = { pareja: yoJid, fecha: new Date().toISOString() }
+
+  // Opcional: si querés casados.json
+  casados[yoJid] = { pareja: otroJid, fecha: new Date().toISOString() }
+  casados[otroJid] = { pareja: yoJid, fecha: new Date().toISOString() }
 
   // Eliminar la solicitud aceptada
-  solicitudes[yoJid] = misSolicitudes.filter(s => s.jid !== otro && s.numero !== otroRaw)
-  if (solicitudes[yoJid]?.length === 0) delete solicitudes[yoJid]
-  fs.writeFileSync(solicitudesPath, JSON.stringify(solicitudes, null, 2))
+  solicitudesPendientes.arr.splice(solicitudIndex,1)
+  if (solicitudesPendientes.arr.length === 0) {
+    delete solicitudes[solicitudesPendientes.key]
+  } else {
+    solicitudes[solicitudesPendientes.key] = solicitudesPendientes.arr
+  }
 
-  // Guardar pareja
-  if (!fs.existsSync(parejasPath)) fs.writeFileSync(parejasPath, JSON.stringify({}, null, 2))
-  const parejas = JSON.parse(fs.readFileSync(parejasPath))
-  const fecha = new Date().toISOString()
+  // Guardar todos los archivos
+  try {
+    fs.writeFileSync(solicitudesPath, JSON.stringify(solicitudes, null,2))
+    fs.writeFileSync(parejasPath, JSON.stringify(parejas, null,2))
+    fs.writeFileSync(casadosPath, JSON.stringify(casados, null,2))
+  } catch(e) {
+    console.error('Error guardando archivos:', e)
+    return m.reply('⚠️ Ocurrió un error al actualizar las bases de datos.')
+  }
 
-  parejas[yoJid] = { pareja: otro, desde: fecha }
-  parejas[otro] = { pareja: yoJid, desde: fecha }
-  fs.writeFileSync(parejasPath, JSON.stringify(parejas, null, 2))
+  // Mensaje de aceptación
+  const mensaje = `💖 @${normalize(otroJid)} ¡Tu declaración fue aceptada por @${yoRaw}! 💖
 
-  // Mensaje con menciones reales
-  const mensaje = `💖 *¡Felicidades! Ahora están oficialmente en pareja* 💖
-
-@${yoRaw} ❤️ @${otroRaw}
-
-🌹 *Un nuevo amor florece* 🌹
-_"Se cruzaron las almas sin buscarse,_
-y el destino las unió sin avisar._
-Ahora caminan juntas, paso a paso,_
-en un mismo compás, en un mismo amar."_ 💕
-
-✨ Que su amor crezca fuerte y hermoso. ✨`
+🌹 ¡Que el amor florezca y sea eterno! 🌹`
 
   await conn.sendMessage(m.chat, {
     text: mensaje,
-    mentions: [yoJid, otro],
-    quoted: m.quoted ? m.quoted : null
+    mentions: [yoJid, otroJid],
+    quoted: m.quoted ? m.quoted : undefined
   })
 }
 
@@ -95,4 +103,4 @@ handler.help = ['aceptar @usuario']
 handler.tags = ['pareja']
 handler.command = /^aceptar$/i
 
-export default handler 
+export default handler
