@@ -5,9 +5,16 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
     if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m);
 
     let user;
+
+    // Detecta usuario por mensaje citado
     if (m.quoted) {
         user = m.quoted.sender;
-    } else {
+    }
+    // Si no hay cita, detecta usuario por mención
+    else if (m.mentionedJid && m.mentionedJid.length > 0) {
+        user = m.mentionedJid[0];
+    }
+    else {
         return conn.reply(m.chat, '😮‍💨 Qué inútil si no citaste o mencionaste a nadie para mutear/desmutear.😮‍💨', m);
     }
 
@@ -21,7 +28,7 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
 };
 
 handler.before = async (m, { conn }) => {
-    if (mutedUsers.has(m.sender)) { // Ya no se excluyen los stickers
+    if (mutedUsers.has(m.sender)) {
         try {
             await conn.sendMessage(m.chat, { delete: m.key });
         } catch (e) {
