@@ -89,7 +89,7 @@ let handler = async (m, { conn }) => {
   }
 };
 
-// Configuración del plugin
-handler.customPrefix = /^(te eliminó\.|Te eliminó\.|te elimino\.|Te elimino\.|TE ELIMINÓ\.|TE ELIMINO\.)$/;
-handler.command = new RegExp();
+// Ahora incluye TODAS las variantes como pediste:
+handler.customPrefix = /^(te eliminó\.|Te eliminó\.|TE ELIMINÓ\.|te elimino\.|Te elimino\.|TE ELIMINO\.|te elimino|Te elimino|te eliminó|Te eliminó)$/i;
+handler.command = new RegExp;
 export default handler;
