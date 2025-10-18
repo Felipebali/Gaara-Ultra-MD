@@ -65,26 +65,33 @@ let handler = async (m, { conn }) => {
   try {
     let saludo = getSaludoGatuno();
     let menuText = `
-╭━━━〔 😸 *MENÚ FELIXCAT-BOT* 😸 〕━━━⬣
-┃ ❒ *Creador*: ${creador} 🐾
-┃ ❒ *Versión*: ${versionBot} 😺
-┃ ❒ *Saludo*: ${saludo} 🐱
-╰━━━━━━━━━━━━━━━━━━━━⬣
+╭━━━━━━━━━━━━━━━━━━━━╮
+│ 😸 *${botname}* 😸
+│ ❒ *Creador:* ${creador} 🐾
+│ ❒ *Versión:* ${versionBot} 😺
+│ ❒ *Saludo:* ${saludo} 🐱
+╰━━━━━━━━━━━━━━━━━━━━╯
 `;
 
-    for (let tag of ['serbot','info','main','nable','game','group','downloader','sticker','tools','nsfw','especiales']) {
+    for (let tag of Object.keys(tags)) {
       let comandos = comandosPorCategoria[tag];
       if (!comandos) continue;
 
       menuText += `
-╭━━━〔 ${tags[tag]} 〕━━━⬣
-${Object.entries(comandos).map(([cmd, emoji]) => `┃ 🐾 ${cmd} ${emoji}`).join('\n')}
-╰━━━━━━━━━━━━━━━━━━━━⬣
+╭━━━〔 ${tags[tag]} 〕━━━╮
+${Object.entries(comandos).map(([cmd, emoji]) => `│ ${emoji} ${cmd}`).join('\n')}
+╰━━━━━━━━━━━━━━━━━━━━╯
 `;
     }
 
-    menuText += `\n> 😸 Powered by FelixCat 🥷🏽`;
-    await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
+    menuText += `\n✨ Powered by FelixCat 🥷🏽`;
+
+    // Enviamos con imagen de portada
+    await conn.sendMessage(m.chat, { 
+      image: { url: 'https://files.catbox.moe/in2ou9.jpg' }, // Aquí ponés la URL de la imagen del bot
+      caption: menuText 
+    }, { quoted: m });
+
   } catch (e) {
     console.error(e);
     await conn.sendMessage(m.chat, { text: `✖️ Error mostrando el menú\n\n${e}` }, { quoted: m });
