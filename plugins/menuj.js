@@ -1,4 +1,5 @@
 // plugins/menuj.js
+
 let handler = async (m, { conn }) => {
     try {
         const chatSettings = global.db.data.chats[m.chat] || {};
@@ -39,7 +40,11 @@ Menciona a un admin para activarlos 🔴
 
         menuText += `👑 *Powered by FelixCat 🐾*`;
 
-        await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
+        // 🌐 Imagen desde URL
+        await conn.sendMessage(m.chat, {
+            image: { url: 'https://files.catbox.moe/377o01.jpg' }, // ← tu URL aquí
+            caption: menuText
+        }, { quoted: m });
 
     } catch (e) {
         console.error(e);
