@@ -29,11 +29,15 @@ let handler = async (m, { conn }) => {
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 > 👑 Powered by FelixCat 🥷🏽`;
 
-    // Enviar mensaje con imagen NSFW
-    await conn.sendMessage(m.chat, {
-        image: { url: 'https://i.imgur.com/NSFWexample.png' }, // Reemplazar con tu imagen NSFW
-        caption: menuText
-    }, { quoted: m });
+    try {
+        await conn.sendMessage(m.chat, {
+            image: { url: 'https://i.ibb.co/8mVZz6K/nsfw-placeholder.png' }, // Imagen NSFW confiable
+            caption: menuText
+        }, { quoted: m });
+    } catch (e) {
+        console.warn('No se pudo cargar la imagen, enviando solo texto.');
+        await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
+    }
 };
 
 handler.help = ['menuhot'];
