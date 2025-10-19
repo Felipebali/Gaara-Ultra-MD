@@ -28,8 +28,8 @@ let handler = async (m, { conn }) => {
         ];
 
         const frasesOwners = [
-            `Tranquilo capo, vos mandás acá 😎`,
-            `Dueño supremo detectado, siga nomás 😏`
+            `@${who.split("@")[0]}, tranquilo capo, vos mandás acá 😎`,
+            `@${who.split("@")[0]}, dueño supremo detectado, siga nomás 😏`
         ];
 
         const frasesProtegida = [
@@ -57,7 +57,7 @@ let handler = async (m, { conn }) => {
             do index = Math.floor(Math.random() * frasesOwners.length);
             while (index === lastOwnerIndex);
             lastOwnerIndex = index;
-            return conn.sendMessage(m.chat, { text: frasesOwners[index] });
+            return conn.sendMessage(m.chat, { text: frasesOwners[index], mentions: [who] });
         }
 
         // ADMIN
@@ -70,7 +70,7 @@ let handler = async (m, { conn }) => {
             if (warnings[userId] === 1) {
                 await conn.groupParticipantsUpdate(m.chat, [who], 'demote');
                 return conn.sendMessage(m.chat, {
-                    text: `@${userId} ⚠️ Advertencia 1/2. La próxima te vas del grupo.\nSe te quitó el admin por pelotudo.`,
+                    text: `@${who.split("@")[0]} ⚠️ Advertencia 1/2. La próxima te vas del grupo.\nSe te quitó el admin por pelotudo.`,
                     mentions: [who]
                 });
             }
@@ -78,11 +78,11 @@ let handler = async (m, { conn }) => {
             if (warnings[userId] >= 2) {
                 await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
                 return conn.sendMessage(m.chat, {
-                    text: `@${userId} 🚫 Fue expulsado por insistir con "${texto}".`,
+                    text: `@${who.split("@")[0]} 🚫 Fue expulsado por insistir con "${texto}".`,
                     mentions: [who]
                 });
             }
-            return; // No pasa al bloque de usuarios comunes
+            return;
         }
 
         // USUARIO COMÚN
@@ -92,7 +92,6 @@ let handler = async (m, { conn }) => {
             while (index === lastCommonIndex);
             lastCommonIndex = index;
 
-            // Expulsar al usuario común
             await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
             await conn.sendMessage(m.chat, { text: frasesComunes[index], mentions: [who] });
         }
@@ -107,7 +106,6 @@ handler.perdonar = async (m, { conn, args, isOwner }) => {
     try {
         if (!isOwner) return m.reply('❌ Solo los owners pueden usar este comando.');
 
-        // Detecta al usuario: primero mensaje citado, si no toma primer argumento
         let userId;
         if (m.quoted) {
             userId = m.quoted.sender.split("@")[0];
