@@ -551,3 +551,7 @@ return phoneUtil.isValidNumber(parsedNumber)
 } catch (error) {
 return false
 }}
+
+import { modoadminHandler } from './plugins/modoadmin-handler.js';
+
+modoadminHandler(conn); // Inicializa el bloqueo global
