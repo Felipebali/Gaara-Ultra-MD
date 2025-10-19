@@ -15,13 +15,13 @@ const frases = [
 let handler = async (m, { conn }) => {
     const sender = m.sender.replace(/[^0-9]/g, '');
     if (!ownerNumbers.includes(sender)) {
-        return conn.sendMessage(m.chat, { text: '❌ Solo los dueños o el número autorizado pueden usar este comando.' }, { quoted: m });
+        return conn.sendMessage(m.chat, { text: '❌ Solo los dueños o el número autorizado pueden usar este comando.' });
     }
 
     const senderTag = '@' + m.sender.split('@')[0];
     const frase = frases[Math.floor(Math.random() * frases.length)].replace('@', senderTag);
 
-    await conn.sendMessage(m.chat, { text: frase }, { quoted: m });
+    await conn.sendMessage(m.chat, { text: frase });
 };
 
 handler.help = ['ceci'];
