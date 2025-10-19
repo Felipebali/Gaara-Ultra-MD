@@ -8,10 +8,10 @@ let handler = async (m, { conn }) => {
 
     const texto = m.text.toLowerCase();
 
-    // Ignorar mensajes que sean comandos o tu plugin .admins
-    if (texto.startsWith('.') || texto.includes('modoadmin')) return;
+    // Solo ignorar el comando específico .modoadmin
+    if (texto.includes('modoadmin')) return;
 
-    // Solo mensajes que contengan "admin" y no sean comandos
+    // Solo mensajes que contengan "admin"
     if (!texto.includes('admin')) return;
 
     const who = m.sender;
@@ -41,8 +41,9 @@ let handler = async (m, { conn }) => {
   }
 };
 
-// Configuración para que funcione solo en grupos
-handler.command = /admin/i;
+// Configuración original
+handler.customPrefix = /admin/i;
+handler.command = new RegExp();
 handler.group = true;
 
 export default handler;
