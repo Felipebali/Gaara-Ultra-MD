@@ -8,10 +8,11 @@ let handler = async (m, { conn }) => {
 
     const texto = m.text.toLowerCase();
 
-    // Ignorar mensajes que sean comandos (ej: empiecen con ".")
+    // Ignorar mensajes que sean comandos o tu plugin .admins
     if (texto.startsWith('.') || texto.includes('modoadmin')) return;
 
-    if (!texto.includes('admin')) return; // Solo mensajes que tengan "admin"
+    // Solo mensajes que contengan "admin" y no sean comandos
+    if (!texto.includes('admin')) return;
 
     const who = m.sender;
 
@@ -40,8 +41,6 @@ let handler = async (m, { conn }) => {
   }
 };
 
-// Configuración del plugin
-handler.customPrefix = /admin/i;
-handler.command = new RegExp();
+// Quitamos customPrefix para que no escuche comandos
 handler.group = true;
 export default handler;
