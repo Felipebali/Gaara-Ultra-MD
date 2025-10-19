@@ -1,17 +1,20 @@
-// ✅ Modo Admin Global para Gaara-Ultra-MD
-// ✅ Comando único: .modoadmin (toggle)
-// ✅ Bloqueo global de comandos de usuarios normales
-// ✅ Estilo similar a antifake-offline.js
+const ownerNumbers = ['59896026646','59898719147'];
 
-const ownerNumbers = ['59896026646','59898719147']; // Dueños
-
-let handler = async (m, { conn, isAdmin }) => {
-    if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' });
+let handler = async (m, { conn }) => {
+    if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
 
     const sender = m.sender.replace(/[^0-9]/g, '');
     const isOwner = ownerNumbers.includes(sender);
 
-    if (!isAdmin && !isOwner) return conn.sendMessage(m.chat, { text: '❌ Solo administradores o dueños pueden usar este comando.' });
+    // Revisar si es admin
+    let isAdmin = false;
+    if (m.isGroup) {
+        const chat = await conn.groupMetadata(m.chat);
+        const participant = chat.participants.find(p => p.id === m.sender);
+        isAdmin = participant?.admin != null;
+    }
+
+    if (!isAdmin && !isOwner) return conn.reply(m.chat, '❌ Solo administradores o dueños pueden usar este comando.', m);
 
     if (!global.db.data.settings) global.db.data.settings = {};
     global.db.data.settings.modoadmin = !global.db.data.settings.modoadmin;
@@ -20,29 +23,34 @@ let handler = async (m, { conn, isAdmin }) => {
         ? '🛡️ *MODO ADMIN ACTIVADO*\nSolo administradores y dueños pueden usar comandos ahora.'
         : '⚠️ *MODO ADMIN DESACTIVADO*\nTodos los miembros pueden usar comandos nuevamente.';
 
-    await conn.sendMessage(m.chat, { text: msg });
+    await conn.sendMessage(m.chat, { text: msg }, { quoted: m });
 };
 
 // ---------- BLOQUEO GLOBAL ----------
-handler.before = async function (m) {
-    if (!m.isGroup) return false;
-    if (!global.db.data.settings?.modoadmin) return false;
+conn.ev.on('messages.upsert', async ({ messages }) => {
+    const m = messages[0];
+    if (!m.message || !m.key.remoteJid.endsWith('@g.us')) return; // solo grupos
+    if (!global.db.data.settings?.modoadmin) return;
 
-    const sender = m.sender.replace(/[^0-9]/g, '');
-    const isOwner = ownerNumbers.includes(sender);
-    const isAdmin = m.isAdmin;
+    const sender = m.key.participant || m.key.remoteJid;
+    const cleanSender = sender.replace(/[^0-9]/g, '');
+    const isOwner = ownerNumbers.includes(cleanSender);
 
-    if (!isOwner && !isAdmin && m.text && m.text.startsWith('.')) {
-        const lc = m.text.toLowerCase();
-        if (lc.startsWith('.modoadmin')) return false; // Excepción
+    // Revisar si es admin
+    const chat = await conn.groupMetadata(m.key.remoteJid);
+    const participant = chat.participants.find(p => p.id === sender);
+    const isAdmin = participant?.admin != null;
 
-        await this.sendMessage(m.chat, {
+    const text = m.message.conversation || m.message.extendedTextMessage?.text;
+    if (!text) return;
+    if (text.startsWith('.modoadmin')) return; // excepción
+
+    if (!isOwner && !isAdmin && text.startsWith('.')) {
+        await conn.sendMessage(m.key.remoteJid, {
             text: '🚫 *MODO ADMIN ACTIVADO*\nSolo administradores y dueños pueden usar comandos ahora.'
         }, { quoted: m });
-        return true;
     }
-    return false;
-};
+});
 
 handler.help = ['modoadmin'];
 handler.tags = ['group'];
