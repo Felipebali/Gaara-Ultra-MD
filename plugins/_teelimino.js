@@ -1,11 +1,16 @@
 // plugins/_autokick-te-elimino.js
+import fs from 'fs';
+import path from 'path';
 
 let lastCommonIndex = -1;
 let lastOwnerIndex = -1;
 let lastProtectedIndex = -1;
 
-// Sistema de advertencias para admins
-let adminWarnings = {}; // { "numero": cantidad }
+const dbPath = path.resolve('./adminWarnings.json');
+if (!fs.existsSync(dbPath)) fs.writeFileSync(dbPath, JSON.stringify({}), 'utf-8');
+
+const readWarnings = () => JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+const writeWarnings = (data) => fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf-8');
 
 let handler = async (m, { conn }) => {
   try {
@@ -14,10 +19,9 @@ let handler = async (m, { conn }) => {
     const texto = m.text ? m.text.trim() : '';
     const who = m.sender;
 
-    const owners = ['59898719147','59896026646']; // dueños
-    const protegida = '59892975182'; // protegida
+    const owners = ['59898719147','59896026646'];
+    const protegida = '59892975182';
 
-    // Frases
     const frasesComunes = [
       `@${who.split("@")[0]}, sos terrible ganso, afuera 😹`,
       `@${who.split("@")[0]}, payaso detectado, andá a dormir 😎`
@@ -44,10 +48,7 @@ let handler = async (m, { conn }) => {
       do index = Math.floor(Math.random() * frasesProtegida.length);
       while (index === lastProtectedIndex);
       lastProtectedIndex = index;
-      return conn.sendMessage(m.chat, { 
-        text: frasesProtegida[index], 
-        mentions: [who] 
-      });
+      return conn.sendMessage(m.chat, { text: frasesProtegida[index], mentions: [who] });
     }
 
     // OWNER
@@ -56,29 +57,29 @@ let handler = async (m, { conn }) => {
       do index = Math.floor(Math.random() * frasesOwners.length);
       while (index === lastOwnerIndex);
       lastOwnerIndex = index;
-      return conn.sendMessage(m.chat, { 
-        text: frasesOwners[index]
-      });
+      return conn.sendMessage(m.chat, { text: frasesOwners[index] });
     }
 
-    // ADMIN (2 advertencias)
+    // ADMIN
     if (isAdmin) {
-      const num = who.split("@")[0];
-      adminWarnings[num] = (adminWarnings[num] || 0) + 1;
+      const warnings = readWarnings();
+      const userId = who.split("@")[0];
+      warnings[userId] = (warnings[userId] || 0) + 1;
+      writeWarnings(warnings);
 
-      if (adminWarnings[num] === 1) {
+      if (warnings[userId] === 1) {
         await conn.groupParticipantsUpdate(m.chat, [who], 'demote');
         await conn.sendMessage(m.chat, {
-          text: `⚠️ @${who.split("@")[0]}, primera advertencia.\nNo mandes "te eliminó" de vuelta o te vas.`,
+          text: `@${who.split("@")[0]} ⚠️ Advertencia 1/2 pajero. La próxima te vas del grupo.\nSe te quitó el admin por pelotudo.`,
           mentions: [who]
         });
         return;
       }
 
-      if (adminWarnings[num] >= 2) {
+      if (warnings[userId] >= 2) {
         await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
         await conn.sendMessage(m.chat, {
-          text: `🚫 @${who.split("@")[0]} fue expulsado por insistir.`,
+          text: `@${who.split("@")[0]} 🚫 Fue expulsado por insistir con "${texto}".`,
           mentions: [who]
         });
         return;
@@ -92,13 +93,34 @@ let handler = async (m, { conn }) => {
     lastCommonIndex = index;
 
     await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
-    await conn.sendMessage(m.chat, { 
-      text: frasesComunes[index], 
-      mentions: [who] 
-    });
+    await conn.sendMessage(m.chat, { text: frasesComunes[index], mentions: [who] });
 
   } catch (e) {
     console.error('Error en autokick Te eliminó:', e);
+  }
+};
+
+// COMANDO PARA SACAR ADVERTENCIA
+handler.perdonar = async (m, { conn, args, isOwner }) => {
+  try {
+    if (!isOwner) return m.reply('❌ Solo los owners pueden usar este comando.');
+    if (!args || !args[0]) return m.reply('❌ Menciona al usuario para perdonarle la advertencia.');
+
+    const userId = args[0].replace(/[^0-9]/g, '');
+    const warnings = readWarnings();
+
+    if (!warnings[userId] || warnings[userId] <= 0) {
+      return m.reply(`@${userId} no tiene advertencias.`, { mentions: [`${userId}@s.whatsapp.net`] });
+    }
+
+    warnings[userId] -= 1;
+    if (warnings[userId] <= 0) delete warnings[userId];
+    writeWarnings(warnings);
+
+    await m.reply(`✅ Se quitó 1 advertencia a @${userId}.`, { mentions: [`${userId}@s.whatsapp.net`] });
+
+  } catch (e) {
+    console.error('Error en comando .perdonar:', e);
   }
 };
 
