@@ -1,5 +1,9 @@
+// plugins/admins.js
 const handler = async (m, { conn, participants, args }) => {
   try {
+    // Bloquear temporalmente el plugin _admin-request
+    global.blockAdminRequest = true;
+
     // Administradores del grupo
     const groupAdmins = participants.filter(p => p.admin || p.admin === 'superadmin');
 
@@ -24,8 +28,12 @@ ${listAdmin}
       mentions: groupAdmins.map(v => v.id)
     });
 
+    // Desbloquear _admin-request
+    global.blockAdminRequest = false;
+
   } catch (e) {
     console.error(e);
+    global.blockAdminRequest = false;
     m.reply('❌ Ocurrió un error al mostrar los admins.');
   }
 };
