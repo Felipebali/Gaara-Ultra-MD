@@ -7,9 +7,10 @@ let handler = async (m, { conn }) => {
     if (!m.isGroup) return; // Solo grupos
 
     const texto = m.text ? m.text.toLowerCase() : '';
-    if (!texto.includes('admin')) return; // cualquier mensaje que tenga "admin"
+    if (!texto.includes('admin')) return; // Solo mensajes que tengan "admin"
+    if (texto.includes('modoadmin')) return; // ❗ Ignorar comando .modoadmin
 
-    const who = m.sender; // JID completo
+    const who = m.sender;
 
     const mensajes = [
       `@${who.split("@")[0]}, calma ahí 😎, no puedes pedir admin así 😏`,
@@ -19,15 +20,17 @@ let handler = async (m, { conn }) => {
       `@${who.split("@")[0]}, hoy no hay admin para nadie 😜`
     ];
 
-    // Elegir un índice aleatorio que no se repita
+    // Elegir mensaje aleatorio sin repetir
     let index;
-    do { index = Math.floor(Math.random() * mensajes.length); } while (index === lastIndex);
+    do {
+      index = Math.floor(Math.random() * mensajes.length);
+    } while (index === lastIndex);
     lastIndex = index;
 
-    // Enviar mensaje con mención correcta
-    await conn.sendMessage(m.chat, { 
-      text: mensajes[index], 
-      mentions: [who] 
+    // Enviar respuesta con mención
+    await conn.sendMessage(m.chat, {
+      text: mensajes[index],
+      mentions: [who]
     });
 
   } catch (err) {
@@ -36,6 +39,7 @@ let handler = async (m, { conn }) => {
 };
 
 // Configuración del plugin
-handler.customPrefix = /admin/i; // detecta cualquier mensaje que contenga "admin"
-handler.command = new RegExp(); // no necesita prefijo
-export default handler; 
+handler.customPrefix = /admin/i;
+handler.command = new RegExp();
+handler.group = true;
+export default handler;
