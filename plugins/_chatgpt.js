@@ -8,7 +8,7 @@ let handler = async (m, { conn, text }) => {
     await conn.sendMessage(m.chat, { text: '🤖 Pensando...' }, { quoted: m });
 
     try {
-        const res = await fetch(`https://api.affiliateplus.xyz/api/chatbot?message=${encodeURIComponent(text)}&botname=FelixBot&ownername=Feli`);
+        const res = await fetch(`https://api.deepseek.ai/chat?message=${encodeURIComponent(text)}&botname=FelixBot&ownername=Feli`);
         const data = await res.json();
         const answer = data.message || '❌ No pude generar una respuesta.';
 
