@@ -2,6 +2,7 @@
 // ✅ Toggle .modoadmin para admins y dueños
 // ✅ Bloqueo global de comandos de usuarios normales
 // ✅ Guardado en DB y persistente
+// ✅ Excepción para que .modoadmin siempre funcione
 
 const ownerNumbers = ['59896026646','59898719147']; // Dueños
 
@@ -45,8 +46,11 @@ handler.before = async function (m) {
     const isOwner = ownerNumbers.includes(sender);
     const isAdmin = m.isAdmin;
 
-    // Bloquear cualquier comando con prefijo "." a usuarios normales
+    // Bloquear comandos con prefijo "." a usuarios normales
     if (!isOwner && !isAdmin && m.text && m.text.startsWith('.')) {
+        // ❗ Excepción: permitir siempre .modoadmin
+        if (m.text.toLowerCase().startsWith('.modoadmin')) return false;
+
         this.reply(m.chat, '🚫 *MODO ADMIN ACTIVADO*\nSolo administradores y dueños pueden usar comandos ahora.', m);
         return true;
     }
