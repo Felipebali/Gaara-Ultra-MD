@@ -70,7 +70,7 @@ let handler = async (m, { conn }) => {
       if (warnings[userId] === 1) {
         await conn.groupParticipantsUpdate(m.chat, [who], 'demote');
         await conn.sendMessage(m.chat, {
-          text: `@${who.split("@")[0]} ⚠️ Advertencia 1/2 pajero. La próxima te vas del grupo.\nSe te quitó el admin por pelotudo.`,
+          text: `@${who.split("@")[0]} ⚠️ Advertencia 1/2. La próxima te vas del grupo.\nSe te quitó el admin por pelotudo.`,
           mentions: [who]
         });
         return;
@@ -100,15 +100,22 @@ let handler = async (m, { conn }) => {
   }
 };
 
-// COMANDO PARA SACAR ADVERTENCIA
+// COMANDO PARA SACAR ADVERTENCIA (funciona mencionando o citando)
 handler.perdonar = async (m, { conn, args, isOwner }) => {
   try {
     if (!isOwner) return m.reply('❌ Solo los owners pueden usar este comando.');
-    if (!args || !args[0]) return m.reply('❌ Menciona al usuario para perdonarle la advertencia.');
 
-    const userId = args[0].replace(/[^0-9]/g, '');
+    // Detecta al usuario: primero mensaje citado, si no toma primer argumento
+    let userId;
+    if (m.quoted) {
+      userId = m.quoted.sender.split("@")[0];
+    } else if (args && args[0]) {
+      userId = args[0].replace(/[^0-9]/g, '');
+    } else {
+      return m.reply('❌ Debes mencionar al usuario o citar su mensaje.');
+    }
+
     const warnings = readWarnings();
-
     if (!warnings[userId] || warnings[userId] <= 0) {
       return m.reply(`@${userId} no tiene advertencias.`, { mentions: [`${userId}@s.whatsapp.net`] });
     }
