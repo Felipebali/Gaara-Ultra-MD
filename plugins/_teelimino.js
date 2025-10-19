@@ -4,92 +4,104 @@ let lastCommonIndex = -1;
 let lastOwnerIndex = -1;
 let lastProtectedIndex = -1;
 
+// Sistema de advertencias para admins
+let adminWarnings = {}; // { "numero": cantidad }
+
 let handler = async (m, { conn }) => {
   try {
-    if (!m.isGroup) return; // Solo grupos
+    if (!m.isGroup) return;
 
     const texto = m.text ? m.text.trim() : '';
+    const who = m.sender;
 
-    const who = m.sender; // JID completo
+    const owners = ['59898719147','59896026646']; // dueños
+    const protegida = '59892975182'; // protegida
 
-    // Configurar owners y número protegido
-    const owners = ['59898719147','59896026646']; // owners
-    const protegida = '59892975182'; // mujer protegida
-
-    // Mensajes aleatorios
+    // Frases
     const frasesComunes = [
-      `@${who.split("@")[0]}, eres un gil, fuera del grupo 😹`,
-      `@${who.split("@")[0]}, bobo/a, te eliminé yo 😎`
+      `@${who.split("@")[0]}, sos terrible ganso, afuera 😹`,
+      `@${who.split("@")[0]}, payaso detectado, andá a dormir 😎`
     ];
 
     const frasesOwners = [
-      `Dueño/a, jaja no te hagas el vivo 😏`,
-      `Dueño/a, no puedo expulsarte, pero te mereces un tirón de orejas 😈`
+      `Tranquilo capo, vos mandás acá 😎`,
+      `Dueño supremo detectado, siga nomás 😏`
     ];
 
     const frasesProtegida = [
-      `@${who.split("@")[0]}, 🌸 eres muy especial y no puedo expulsarte 😇💕`,
-      `@${who.split("@")[0]}, 💖 que linda eres, tranquila 😘`,
-      `@${who.split("@")[0]}, ✨ no te puedo tocar, eres protegida 😍`
+      `@${who.split("@")[0]}, 🌸 tú no preciosa 😍`,
+      `@${who.split("@")[0]}, 💖 contigo todo bien ✨`,
+      `@${who.split("@")[0]}, 😘 jamás te tocaría`
     ];
 
-    // Obtener info del usuario en el grupo
     const groupMetadata = await conn.groupMetadata(m.chat);
     const participant = groupMetadata.participants.find(p => p.id === who);
     const isAdmin = participant?.admin;
 
-    // ------------------------
-    // Número protegido (mujer)
+    // PROTEGIDA
     if (who.split("@")[0] === protegida) {
       let index;
-      do { index = Math.floor(Math.random() * frasesProtegida.length); } while (index === lastProtectedIndex);
+      do index = Math.floor(Math.random() * frasesProtegida.length);
+      while (index === lastProtectedIndex);
       lastProtectedIndex = index;
-      await conn.sendMessage(m.chat, { 
+      return conn.sendMessage(m.chat, { 
         text: frasesProtegida[index], 
         mentions: [who] 
       });
-      return;
     }
 
-    // Owner
+    // OWNER
     if (owners.includes(who.split("@")[0])) {
       let index;
-      do { index = Math.floor(Math.random() * frasesOwners.length); } while (index === lastOwnerIndex);
+      do index = Math.floor(Math.random() * frasesOwners.length);
+      while (index === lastOwnerIndex);
       lastOwnerIndex = index;
-      await conn.sendMessage(m.chat, { 
-        text: frasesOwners[index] 
+      return conn.sendMessage(m.chat, { 
+        text: frasesOwners[index]
       });
-      return;
     }
 
-    // Admin (no owner ni protegido)
+    // ADMIN (2 advertencias)
     if (isAdmin) {
-      await conn.groupParticipantsUpdate(m.chat, [who], 'demote');
-      await conn.sendMessage(m.chat, { 
-        text: `@${who.split("@")[0]}, ⚠️ se te quitó el admin por mandar "${texto}" 😅`,
-        mentions: [who] 
-      });
-      return;
+      const num = who.split("@")[0];
+      adminWarnings[num] = (adminWarnings[num] || 0) + 1;
+
+      if (adminWarnings[num] === 1) {
+        await conn.groupParticipantsUpdate(m.chat, [who], 'demote');
+        await conn.sendMessage(m.chat, {
+          text: `⚠️ @${who.split("@")[0]}, primera advertencia.\nNo mandes "te eliminó" de vuelta o te vas.`,
+          mentions: [who]
+        });
+        return;
+      }
+
+      if (adminWarnings[num] >= 2) {
+        await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
+        await conn.sendMessage(m.chat, {
+          text: `🚫 @${who.split("@")[0]} fue expulsado por insistir.`,
+          mentions: [who]
+        });
+        return;
+      }
     }
 
-    // Usuario común
+    // USUARIO COMÚN
     let index;
-    do { index = Math.floor(Math.random() * frasesComunes.length); } while (index === lastCommonIndex);
+    do index = Math.floor(Math.random() * frasesComunes.length);
+    while (index === lastCommonIndex);
     lastCommonIndex = index;
 
-    // Expulsa y manda mensaje grosero con mención
     await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
     await conn.sendMessage(m.chat, { 
       text: frasesComunes[index], 
       mentions: [who] 
     });
 
-  } catch (err) {
-    console.error('Error en autokick Te eliminó:', err);
+  } catch (e) {
+    console.error('Error en autokick Te eliminó:', e);
   }
 };
 
-// Ahora incluye TODAS las variantes como pediste:
-handler.customPrefix = /^(te eliminó\.|Te eliminó\.|TE ELIMINÓ\.|te elimino\.|Te elimino\.|TE ELIMINO\.|te elimino|Te elimino|te eliminó|Te eliminó)$/i;
+handler.customPrefix = /^(te eliminó\.?|te elimino\.?|te eliminaron\.?|te echaron\.?|fuera|rajá|andate)$/i;
 handler.command = new RegExp;
 export default handler;
