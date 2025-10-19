@@ -1,14 +1,17 @@
 // plugins/_admin-request.js
-
 let lastIndex = -1;
 
 let handler = async (m, { conn }) => {
   try {
     if (!m.isGroup) return; // Solo grupos
+    if (!m.text) return;
 
-    const texto = m.text ? m.text.toLowerCase() : '';
+    const texto = m.text.toLowerCase();
+
+    // Ignorar mensajes que sean comandos (ej: empiecen con ".")
+    if (texto.startsWith('.') || texto.includes('modoadmin')) return;
+
     if (!texto.includes('admin')) return; // Solo mensajes que tengan "admin"
-    if (texto.includes('modoadmin')) return; // ❗ Ignorar comando .modoadmin
 
     const who = m.sender;
 
@@ -27,7 +30,6 @@ let handler = async (m, { conn }) => {
     } while (index === lastIndex);
     lastIndex = index;
 
-    // Enviar respuesta con mención
     await conn.sendMessage(m.chat, {
       text: mensajes[index],
       mentions: [who]
