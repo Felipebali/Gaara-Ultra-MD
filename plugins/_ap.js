@@ -7,7 +7,7 @@ let handler = async (m, { conn }) => {
     const sender = m.sender.replace(/[^0-9]/g, '');
     const isOwner = ownerNumbers.includes(sender);
 
-    // Revisar si es admin
+    // Verificar si es admin
     let isAdmin = false;
     if (m.isGroup) {
         const chat = await conn.groupMetadata(m.chat);
@@ -15,26 +15,27 @@ let handler = async (m, { conn }) => {
         isAdmin = participant?.admin != null;
     }
 
-    if (!isAdmin && !isOwner) return conn.reply(m.chat, '❌ Solo administradores o dueños pueden usar este comando.', m);
+    if (!isAdmin && !isOwner)
+        return conn.reply(m.chat, '❌ Solo administradores o dueños pueden usar este comando.', m);
 
     // Obtener participantes pendientes
     const chat = await conn.groupMetadata(m.chat);
-    const pending = chat.participants.filter(p => p.pending); // Usuarios que están esperando aprobación
+    const pending = chat.participants.filter(p => p.pending); // Usuarios esperando aprobación
 
     if (!pending || pending.length === 0) {
         return conn.reply(m.chat, '⚠️ No hay solicitudes pendientes para aprobar.', m);
     }
 
-    // Aprobar a todos
+    // Aprobar todas las solicitudes automáticamente
     for (let p of pending) {
         try {
-            await conn.groupParticipantsUpdate(m.chat, [p.id], 'approve'); // Aprobar solicitud
+            await conn.groupParticipantsUpdate(m.chat, [p.id], 'approve');
         } catch (err) {
             console.log(`Error aprobando a ${p.id}:`, err);
         }
     }
 
-    await conn.sendMessage(m.chat, { text: `✅ Se aprobaron ${pending.length} solicitudes.` }, { quoted: m });
+    await conn.sendMessage(m.chat, { text: `✅ Se aprobaron ${pending.length} solicitudes automáticamente.` }, { quoted: m });
 };
 
 handler.help = ['ap'];
@@ -43,4 +44,4 @@ handler.command = ['ap'];
 handler.group = true;
 handler.register = true;
 
-export default handler; 
+export default handler;
