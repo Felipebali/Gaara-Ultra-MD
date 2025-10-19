@@ -41,6 +41,8 @@ let handler = async (m, { conn }) => {
   }
 };
 
-// Quitamos customPrefix para que no escuche comandos
+// Configuración para que funcione solo en grupos
+handler.command = /admin/i;
 handler.group = true;
+
 export default handler;
