@@ -1,66 +1,88 @@
-// plugins/playaudio_ytdl.js
 import yts from 'yt-search';
-import ytdl from 'ytdl-core';
-import fs from 'fs';
-import path from 'path';
+import fetch from 'node-fetch';
 
-const handler = async (m, { conn, args }) => {
-    if (!args[0]) return conn.reply(m.chat, '⚠️ Ingresa un título o enlace de YouTube.', m);
+const handler = async (m, { conn, args, usedPrefix, command }) => {
+    if (!args[0]) return conn.reply(m.chat, `*🍧 Ingresa un título para buscar en YouTube.*`, m, fake);
 
+    await m.react('🕓');
     try {
-        await m.react('🕓');
+        let searchResults = await searchVideos(args.join(" "));
 
-        // Buscar video
-        const videos = await searchVideos(args.join(" "));
-        if (!videos.length) throw new Error('✖️ No se encontraron resultados.');
+        if (!searchResults.length) throw new Error('*✖️ No se encontraron resultados.*');
 
-        const video = videos[0];
+        let video = searchResults[0];
+        let thumbnail = await (await fetch(video.miniatura)).buffer();
 
-        // Descargar audio con ytdl
-        const audioPath = path.join('/tmp', `${video.title.replace(/[^a-zA-Z0-9]/g, '_')}.mp3`);
-        const stream = ytdl(video.url, { filter: 'audioonly', quality: 'highestaudio' });
-        const writeStream = fs.createWriteStream(audioPath);
+        let messageText = `  \`[ Y O U T U B E - P L A Y ]\`\n`;
+        messageText += `🍧 *${video.titulo}*\n`;
+        messageText += `> ❑ *\`𝐂𝐚𝐧𝐚𝐥:\`* ${video.canal}\n`;
+        messageText += `> ✧ *\`𝐃𝐮𝐫𝐚𝐜𝐢𝐨𝐧:\`* ${video.duracion}\n`;
+        messageText += `> ♡ *\`𝐕𝐢𝐬𝐭𝐚𝐬:\`* ${video.vistas}\n`;
+        messageText += `> ☁︎ *\`𝐏𝐮𝐛𝐢𝐜𝐚𝐝𝐨:\`* ${video.publicado}\n`;
+        messageText += `> ➪ *\`𝐋𝐢𝐧𝐤:\`* ${video.url}`;
 
-        stream.pipe(writeStream);
-
-        await new Promise((resolve, reject) => {
-            writeStream.on('finish', resolve);
-            writeStream.on('error', reject);
-            stream.on('error', reject);
-        });
-
-        // Enviar audio
         await conn.sendMessage(m.chat, {
-            audio: { url: audioPath },
-            mimetype: 'audio/mpeg',
-            fileName: `${video.title}.mp3`
+            image: thumbnail,
+            caption: messageText,
+            footer: club,
+            contextInfo: {
+                mentionedJid: [m.sender],
+                forwardingScore: 999,
+                isForwarded: true
+            },
+            buttons: [
+                {
+                    buttonId: `${usedPrefix}ytmp3doc ${video.url}`,
+                    buttonText: { displayText: '𝘠𝘖𝘜𝘛𝘜𝘉𝘌 𝘔𝘗3 𝘋𝘖𝘊' },
+                    type: 1,
+                },
+                {
+                    buttonId: `${usedPrefix}ytmp4doc ${video.url}`,
+                    buttonText: { displayText: '𝘠𝘖𝘜𝘛𝘜𝘉𝘌 𝘔𝘗4 𝘋𝘖𝘊' },
+                    type: 1,
+                },
+                {
+                    buttonId: `${usedPrefix}yta ${video.url}`,
+                    buttonText: { displayText: '𝘠𝘖𝘜𝘛𝘜𝘉𝘌 𝘔𝘗3' },
+                    type: 1,
+                },
+                {
+                    buttonId: `${usedPrefix}ytmp4 ${video.url}`,
+                    buttonText: { displayText: '𝘠𝘖𝘜𝘛𝘜𝘉𝘌 𝘔𝘗4' },
+                    type: 1,
+                }
+            ],
+            headerType: 1,
+            viewOnce: true
         }, { quoted: m });
 
-        await m.react('✅');
-
-        // Borrar archivo temporal
-        fs.unlinkSync(audioPath);
-
-    } catch (err) {
-        console.error(err);
+        await m.react('✔️');
+    } catch (e) {
+        console.error(e);
         await m.react('✖️');
-        return conn.reply(m.chat, `⚠️ No se pudo obtener el audio.\nError: ${err.message}`, m);
+        conn.reply(m.chat, '*Video no encontrado en Youtube.*', m);
     }
 };
 
 handler.help = ['play'];
 handler.tags = ['descargas'];
-handler.command = ['play', 'playaudio'];
+handler.command = ['play', 'play2'];
 export default handler;
 
 async function searchVideos(query) {
-    const res = await yts(query);
-    return res.videos.slice(0, 1).map(v => ({
-        title: v.title,
-        url: v.url,
-        thumbnail: v.thumbnail,
-        channel: v.author.name,
-        duration: v.duration.timestamp || 'No disponible',
-        views: v.views?.toLocaleString() || 'No disponible'
-    }));
+    try {
+        const res = await yts(query);
+        return res.videos.slice(0, 10).map(video => ({
+            titulo: video.title,
+            url: video.url,
+            miniatura: video.thumbnail,
+            canal: video.author.name,
+            publicado: video.ago || 'No disponible',
+            vistas: video.views?.toLocaleString() || 'No disponible',
+            duracion: video.duration.timestamp || 'No disponible'
+        }));
+    } catch (error) {
+        console.error('*Error en yt-search:*', error.message);
+        return [];
+    }
 }
