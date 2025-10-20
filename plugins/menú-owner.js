@@ -25,7 +25,7 @@ let handler = async (m, { conn }) => {
 ✨ ⚡ FelixCat - Owner`;
 
     await conn.sendMessage(m.chat, {
-      image: { url: 'https://files.catbox.moe/3ryutp.jpg' }, // URL de imagen del Owner
+      image: { url: '' }, // URL de imagen del Owner
       caption: menuText
     }, { quoted: m });
 
