@@ -17,11 +17,15 @@ let handler = async (m, { conn }) => {
     // Elegimos una frase al azar
     const frase = frases[Math.floor(Math.random() * frases.length)];
 
-    await conn.sendMessage(m.chat, { text: frase }, { quoted: m });
+    // Enviamos mensaje sin mención visible
+    await conn.sendMessage(m.chat, {
+      text: frase,
+      mentions: [m.sender] // Mención oculta, no hace ping
+    });
 
   } catch (e) {
     console.error(e);
-    await conn.sendMessage(m.chat, { text: `✖️ Error ejecutando antigordas\n\n${e}` }, { quoted: m });
+    await conn.sendMessage(m.chat, { text: `✖️ Error ejecutando antigordas\n\n${e}` });
   }
 };
 
