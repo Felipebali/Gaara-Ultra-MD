@@ -7,7 +7,8 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
     const chat = global.db.data.chats[m.chat];
     if (!chat || !chat.antiSpam) return; // Solo si antiSpam está activado
 
-    const who = m.sender; // <-- definimos quien envió el mensaje
+    const who = m.sender; // quien envió el mensaje
+    const username = who.split("@")[0]; // <-- solo la parte antes de @
     const currentTime = Date.now();
     const timeWindow = 5000; // 5 segundos
     const messageLimit = 5;  // mensajes permitidos en ese tiempo
@@ -28,15 +29,15 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
             let warningMessage = '';
 
             if (isOwner) {
-                warningMessage = `👑 Owner alerta: ${who.split("@")[0]}, estás enviando muchos mensajes pero no puedo kickearte.`;
+                warningMessage = `👑 Owner alerta: ${username}, estás enviando muchos mensajes pero no puedo kickearte.`;
             } else if (isAdmin) {
-                warningMessage = `⚡️ Admin alerta: ${who.split("@")[0]}, demasiados mensajes seguidos, controla el ritmo.`;
+                warningMessage = `⚡️ Admin alerta: ${username}, demasiados mensajes seguidos, controla el ritmo.`;
             } else {
                 // Usuario común
                 userData.warnings += 1;
 
                 if (userData.warnings >= warningLimit) {
-                    warningMessage = `❌ ${who.split("@")[0]} ha alcanzado la 4ta advertencia por spam. Serás expulsado del grupo.`;
+                    warningMessage = `❌ ${username} ha alcanzado la 4ta advertencia por spam. Serás expulsado del grupo.`;
                     
                     // Intentar kickear al usuario
                     try {
@@ -54,7 +55,7 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
                     // Resetear advertencias
                     userData.warnings = 0;
                 } else {
-                    warningMessage = `🔥 Usuario spameando: ${who.split("@")[0]}, advertencia ${userData.warnings}/${warningLimit}`;
+                    warningMessage = `🔥 Usuario spameando: ${username}, advertencia ${userData.warnings}/${warningLimit}`;
                 }
             }
 
