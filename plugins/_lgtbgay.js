@@ -1,55 +1,72 @@
-// plugins/_lgtbgay.js
+// plugins/_ppbandera.js
 // Requiere: jimp, axios
-// Instalar dependencias: npm i jimp axios
+// Instalar: npm i jimp axios
 
 const Jimp = require('jimp');
 const axios = require('axios');
 
 const handler = async (m, { conn, command }) => {
   try {
-    const userId = m.sender || (m.quoted && m.quoted.sender);
-    if (!userId) return conn.sendMessage(m.chat, { text: 'No pude obtener el usuario.' }, { quoted: m });
+    // Detectar usuario a procesar
+    let userId;
+    if (m.mentionedJid && m.mentionedJid.length > 0) {
+      userId = m.mentionedJid[0]; // toma la primera mención
+    } else {
+      userId = m.sender; // si no mencionan, toma al que envía el comando
+    }
 
     // Obtener foto de perfil
     let ppUrl;
     try { ppUrl = await conn.profilePictureUrl(userId); } catch (e) { ppUrl = null; }
     if (!ppUrl) return conn.sendMessage(m.chat, { text: 'El usuario no tiene foto de perfil pública.' }, { quoted: m });
 
-    // URLs válidas de banderas
+    // URLs de banderas
     const flags = {
       lgtb: 'https://upload.wikimedia.org/wikipedia/commons/4/48/Gay_pride_flag_2016.png',
       gay:  'https://upload.wikimedia.org/wikipedia/commons/9/9f/Progress_Pride_flag.png'
     };
     const flagUrl = command.toLowerCase().includes('lgtb') ? flags.lgtb : flags.gay;
 
-    // Descargar buffers
+    // Descargar imágenes
     const fetchBuffer = async (url) => {
       const res = await axios.get(url, { responseType: 'arraybuffer' });
       return Buffer.from(res.data, 'binary');
     };
-
     const [ppBuf, flagBuf] = await Promise.all([fetchBuffer(ppUrl), fetchBuffer(flagUrl)]);
 
-    // Procesar imágenes con Jimp
+    // Procesar con Jimp
     const [ppImg, flagImg] = await Promise.all([Jimp.read(ppBuf), Jimp.read(flagBuf)]);
 
-    // Ajustar tamaño
     const size = 512;
-    ppImg.cover(size, size); 
+    ppImg.cover(size, size);
     flagImg.resize(size, size);
 
-    // Aplicar bandera encima con transparencia
-    const output = ppImg.clone();
-    output.composite(flagImg, 0, 0, {
+    // Hacer avatar circular
+    const mask = await new Jimp(size, size, 0x00000000);
+    mask.scan(0, 0, size, size, function(x, y, idx){
+      const rx = x - size/2;
+      const ry = y - size/2;
+      if (Math.sqrt(rx*rx + ry*ry) <= size/2) {
+        mask.bitmap.data[idx+3] = 255;
+      }
+    });
+    ppImg.mask(mask, 0, 0);
+
+    // Poner bandera encima con transparencia
+    ppImg.composite(flagImg, 0, 0, {
       mode: Jimp.BLEND_OVERLAY,
       opacitySource: 0.55,
       opacityDest: 1
     });
 
-    const finalBuf = await output.getBufferAsync(Jimp.MIME_PNG);
+    const finalBuf = await ppImg.getBufferAsync(Jimp.MIME_PNG);
 
-    // Enviar imagen
-    await conn.sendMessage(m.chat, { image: finalBuf, caption: `Foto de perfil con bandera (${command})` }, { quoted: m });
+    // Enviar resultado mencionando
+    await conn.sendMessage(m.chat, {
+      image: finalBuf,
+      caption: `🌈 Foto de perfil con bandera (${command})`,
+      mentions: [userId]
+    }, { quoted: m });
 
   } catch (err) {
     console.error(err);
