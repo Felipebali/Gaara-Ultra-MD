@@ -24,10 +24,7 @@ let handler = async (m, { conn }) => {
 🐾 .join <link> - Unirse a un grupo
 ✨ ⚡ FelixCat - Owner`;
 
-    await conn.sendMessage(m.chat, {
-      image: { url: '' }, // URL de imagen del Owner
-      caption: menuText
-    }, { quoted: m });
+    await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 
   } catch (e) {
     console.error(e);
