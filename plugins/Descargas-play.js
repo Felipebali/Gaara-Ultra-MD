@@ -1,29 +1,30 @@
-// plugins/playaudio_termux.js
+// plugins/playaudio_termux_safe.js
 import yts from 'yt-search';
 import youtubedl from 'youtube-dl-exec';
 import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
-const handler = async (m, { conn, args, usedPrefix }) => {
+const handler = async (m, { conn, args }) => {
     if (!args[0]) return conn.reply(m.chat, '⚠️ Ingresa un título o enlace de YouTube.', m);
 
     await m.react('🕓');
 
     try {
-        // Buscar video en YouTube
+        // Buscar video
         const videos = await searchVideos(args.join(" "));
         if (!videos.length) throw new Error('✖️ No se encontraron resultados.');
         const video = videos[0];
 
-        // Preparar ruta de audio temporal
-        const audioFileName = `${video.titulo.replace(/[\\/:"*?<>|]/g, '')}.m4a`;
-        const audioPath = path.resolve('./tmp', audioFileName);
-
         // Crear carpeta tmp si no existe
-        if (!fs.existsSync('./tmp')) fs.mkdirSync('./tmp');
+        const tmpDir = path.resolve('./tmp');
+        if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
 
-        // Borrar archivo anterior si existe
+        // Limpiar nombre de archivo
+        const cleanName = video.titulo.replace(/[^a-zA-Z0-9 _-]/g, '');
+        const audioPath = path.join(tmpDir, cleanName + '.m4a');
+
+        // Borrar archivo previo si existe
         if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
 
         // Enviar miniatura + info
@@ -31,7 +32,7 @@ const handler = async (m, { conn, args, usedPrefix }) => {
         const infoMsg = `🎬 *${video.titulo}*\n> 📺 *Canal:* ${video.canal}\n> ⏱ *Duración:* ${video.duracion}\n> 👁 Vistas: ${video.vistas}\n> 🔗 Link: ${video.url}`;
         await conn.sendMessage(m.chat, { image: thumbBuffer, caption: infoMsg }, { quoted: m });
 
-        // Descargar audio con yt-dlp
+        // Descargar audio
         await youtubedl(video.url, {
             extractAudio: true,
             audioFormat: 'm4a',
@@ -41,11 +42,14 @@ const handler = async (m, { conn, args, usedPrefix }) => {
             allowUnplayableFormats: true,
         });
 
-        // Enviar audio al chat
+        // Verificar que el archivo se creó
+        if (!fs.existsSync(audioPath)) throw new Error('❌ Falló la creación del archivo de audio.');
+
+        // Enviar audio
         await conn.sendMessage(m.chat, {
             audio: { url: audioPath },
             mimetype: 'audio/m4a',
-            fileName: audioFileName
+            fileName: cleanName + '.m4a'
         }, { quoted: m });
 
         await m.react('✅');
@@ -60,7 +64,6 @@ const handler = async (m, { conn, args, usedPrefix }) => {
 handler.help = ['play'];
 handler.tags = ['descargas'];
 handler.command = ['play', 'playaudio'];
-
 export default handler;
 
 // Función para buscar video
