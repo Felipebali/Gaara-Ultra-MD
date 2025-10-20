@@ -6,7 +6,7 @@ let handler = async (m, { conn }) => {
         const gamesEnabled = chatSettings.games !== false; // Por defecto activados
 
         let menuText = `╔═════════════════════╗
-      🎮  MINI-JUEGOS FELIXCAT 🐾
+🎮  MINI-JUEGOS FELIXCAT 🐾
 ╚═════════════════════╝
 Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 ────────────────────────────
@@ -40,11 +40,8 @@ Menciona a un admin para activarlos 🔴
 
         menuText += `👑 *Powered by FelixCat 🐾*`;
 
-        // 🌐 Imagen desde URL
-        await conn.sendMessage(m.chat, {
-            image: { url: 'https://files.catbox.moe/377o01.jpg' }, // ← tu URL aquí
-            caption: menuText
-        }, { quoted: m });
+        // Enviar solo el texto (sin imagen)
+        await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 
     } catch (e) {
         console.error(e);
