@@ -1,88 +1,74 @@
+// plugins/playaudio_termux.js
 import yts from 'yt-search';
-import fetch from 'node-fetch';
+import ytdl from 'ytdl-core';
+import fs from 'fs';
+import path from 'path';
 
-const handler = async (m, { conn, args, usedPrefix, command }) => {
-    if (!args[0]) return conn.reply(m.chat, `*🍧 Ingresa un título para buscar en YouTube.*`, m, fake);
+const handler = async (m, { conn, args }) => {
+    if (!args[0]) return conn.reply(m.chat, '⚠️ Ingresa un título o enlace de YouTube.', m);
 
-    await m.react('🕓');
     try {
-        let searchResults = await searchVideos(args.join(" "));
+        // Buscar video
+        const videos = await searchVideos(args.join(" "));
+        if (!videos.length) throw new Error('✖️ No se encontraron resultados.');
 
-        if (!searchResults.length) throw new Error('*✖️ No se encontraron resultados.*');
+        const video = videos[0];
 
-        let video = searchResults[0];
-        let thumbnail = await (await fetch(video.miniatura)).buffer();
+        // Obtener thumbnail
+        const thumbBuffer = Buffer.from(await (await fetch(video.thumbnail)).arrayBuffer());
 
-        let messageText = `  \`[ Y O U T U B E - P L A Y ]\`\n`;
-        messageText += `🍧 *${video.titulo}*\n`;
-        messageText += `> ❑ *\`𝐂𝐚𝐧𝐚𝐥:\`* ${video.canal}\n`;
-        messageText += `> ✧ *\`𝐃𝐮𝐫𝐚𝐜𝐢𝐨𝐧:\`* ${video.duracion}\n`;
-        messageText += `> ♡ *\`𝐕𝐢𝐬𝐭𝐚𝐬:\`* ${video.vistas}\n`;
-        messageText += `> ☁︎ *\`𝐏𝐮𝐛𝐢𝐜𝐚𝐝𝐨:\`* ${video.publicado}\n`;
-        messageText += `> ➪ *\`𝐋𝐢𝐧𝐤:\`* ${video.url}`;
+        // Enviar info con miniatura
+        const infoMessage = `🎬 *${video.title}*\n> 📺 *Canal:* ${video.channel}\n> ⏱ *Duración:* ${video.duration}\n> 👁 *Vistas:* ${video.views}\n> 🔗 *Link:* ${video.url}`;
+        await conn.sendMessage(m.chat, { image: thumbBuffer, caption: infoMessage }, { quoted: m });
 
+        // Descargar audio con ytdl
+        const safeName = video.title.replace(/[^a-zA-Z0-9]/g, '_');
+        const audioPath = path.join('./', `${safeName}.mp3`);
+        const stream = ytdl(video.url, { filter: 'audioonly', quality: 'highestaudio' });
+        const writeStream = fs.createWriteStream(audioPath);
+
+        stream.pipe(writeStream);
+
+        await new Promise((resolve, reject) => {
+            writeStream.on('finish', resolve);
+            writeStream.on('error', reject);
+            stream.on('error', reject);
+        });
+
+        // Enviar audio
         await conn.sendMessage(m.chat, {
-            image: thumbnail,
-            caption: messageText,
-            footer: club,
-            contextInfo: {
-                mentionedJid: [m.sender],
-                forwardingScore: 999,
-                isForwarded: true
-            },
-            buttons: [
-                {
-                    buttonId: `${usedPrefix}ytmp3doc ${video.url}`,
-                    buttonText: { displayText: '𝘠𝘖𝘜𝘛𝘜𝘉𝘌 𝘔𝘗3 𝘋𝘖𝘊' },
-                    type: 1,
-                },
-                {
-                    buttonId: `${usedPrefix}ytmp4doc ${video.url}`,
-                    buttonText: { displayText: '𝘠𝘖𝘜𝘛𝘜𝘉𝘌 𝘔𝘗4 𝘋𝘖𝘊' },
-                    type: 1,
-                },
-                {
-                    buttonId: `${usedPrefix}yta ${video.url}`,
-                    buttonText: { displayText: '𝘠𝘖𝘜𝘛𝘜𝘉𝘌 𝘔𝘗3' },
-                    type: 1,
-                },
-                {
-                    buttonId: `${usedPrefix}ytmp4 ${video.url}`,
-                    buttonText: { displayText: '𝘠𝘖𝘜𝘛𝘜𝘉𝘌 𝘔𝘗4' },
-                    type: 1,
-                }
-            ],
-            headerType: 1,
-            viewOnce: true
+            audio: { url: audioPath },
+            mimetype: 'audio/mpeg',
+            fileName: `${video.title}.mp3`
         }, { quoted: m });
 
-        await m.react('✔️');
-    } catch (e) {
-        console.error(e);
-        await m.react('✖️');
-        conn.reply(m.chat, '*Video no encontrado en Youtube.*', m);
+        // Borrar archivo temporal
+        fs.unlinkSync(audioPath);
+
+    } catch (err) {
+        console.error(err);
+        return conn.reply(m.chat, `⚠️ No se pudo obtener el audio.\nError: ${err.message}`, m);
     }
 };
 
 handler.help = ['play'];
 handler.tags = ['descargas'];
-handler.command = ['play', 'play2'];
+handler.command = ['play', 'playaudio'];
 export default handler;
 
 async function searchVideos(query) {
     try {
         const res = await yts(query);
-        return res.videos.slice(0, 10).map(video => ({
-            titulo: video.title,
-            url: video.url,
-            miniatura: video.thumbnail,
-            canal: video.author.name,
-            publicado: video.ago || 'No disponible',
-            vistas: video.views?.toLocaleString() || 'No disponible',
-            duracion: video.duration.timestamp || 'No disponible'
+        return res.videos.slice(0, 1).map(v => ({
+            title: v.title,
+            url: v.url,
+            thumbnail: v.thumbnail,
+            channel: v.author.name,
+            duration: v.duration.timestamp || 'No disponible',
+            views: v.views?.toLocaleString() || 'No disponible'
         }));
-    } catch (error) {
-        console.error('*Error en yt-search:*', error.message);
+    } catch (err) {
+        console.error('Error en yt-search:', err.message);
         return [];
     }
 }
