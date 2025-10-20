@@ -1,24 +1,24 @@
-// plugins/_ppbandera.js
+// plugins/_lgtbgay.js
 // Requiere: jimp, axios
 // Instalar: npm i jimp axios
 
-const Jimp = require('jimp');
-const axios = require('axios');
+import Jimp from 'jimp';
+import axios from 'axios';
 
 const handler = async (m, { conn, command }) => {
   try {
-    // Detectar usuario a procesar
+    // Detectar usuario a procesar (mencionado o propio)
     let userId;
     if (m.mentionedJid && m.mentionedJid.length > 0) {
-      userId = m.mentionedJid[0]; // toma la primera mención
+      userId = m.mentionedJid[0];
     } else {
-      userId = m.sender; // si no mencionan, toma al que envía el comando
+      userId = m.sender;
     }
 
     // Obtener foto de perfil
     let ppUrl;
     try { ppUrl = await conn.profilePictureUrl(userId); } catch (e) { ppUrl = null; }
-    if (!ppUrl) return conn.sendMessage(m.chat, { text: 'El usuario no tiene foto de perfil pública.' }, { quoted: m });
+    if (!ppUrl) return await conn.sendMessage(m.chat, { text: 'El usuario no tiene foto de perfil pública.' }, { quoted: m });
 
     // URLs de banderas
     const flags = {
@@ -43,12 +43,10 @@ const handler = async (m, { conn, command }) => {
 
     // Hacer avatar circular
     const mask = await new Jimp(size, size, 0x00000000);
-    mask.scan(0, 0, size, size, function(x, y, idx){
+    mask.scan(0, 0, size, size, (x, y, idx) => {
       const rx = x - size/2;
       const ry = y - size/2;
-      if (Math.sqrt(rx*rx + ry*ry) <= size/2) {
-        mask.bitmap.data[idx+3] = 255;
-      }
+      if (Math.sqrt(rx*rx + ry*ry) <= size/2) mask.bitmap.data[idx+3] = 255;
     });
     ppImg.mask(mask, 0, 0);
 
@@ -78,4 +76,4 @@ handler.help = ['lgtb', 'gay'];
 handler.tags = ['fun', 'image'];
 handler.command = /^(lgtb|gay)$/i;
 
-module.exports = handler;
+export default handler;
