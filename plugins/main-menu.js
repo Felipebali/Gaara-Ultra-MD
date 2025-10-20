@@ -86,9 +86,7 @@ ${Object.entries(comandos).map(([cmd, emoji]) => `│ ${emoji} ${cmd}`).join('\n
 
     menuText += `\n✨ Powered by FelixCat 🥷🏽`;
 
-    // Si es chat privado, agregamos aviso
-    if (!m.isGroup) menuText += `\n\n🐾 Este menú se muestra por privado.`;
-
+    // Enviamos el menú sin restricción
     await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 
   } catch (e) {
@@ -101,7 +99,7 @@ handler.help = ['menu'];
 handler.tags = ['main'];
 handler.command = ['menu','allmenu','menú'];
 
-// Para que funcione para todos
+// 🔥 Ignorar cualquier restricción global
 handler.owner = false;
 handler.admin = false;
 handler.group = false;
