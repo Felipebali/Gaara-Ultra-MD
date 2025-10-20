@@ -7,12 +7,12 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
     const chat = global.db.data.chats[m.chat];
     if (!chat || !chat.antiSpam) return; // Solo si antiSpam está activado
 
-    const who = m.sender; // quien envió el mensaje
-    const username = who.split("@")[0]; // <-- solo la parte antes de @
+    const who = m.sender;
+    const username = who.split("@")[0]; // solo el nombre antes de @
     const currentTime = Date.now();
     const timeWindow = 5000; // 5 segundos
     const messageLimit = 5;  // mensajes permitidos en ese tiempo
-    const warningLimit = 4;  // número máximo de advertencias antes del kick
+    const warningLimit = 4;  // límite de advertencias antes del kick
 
     if (!(who in userSpamData)) {
         userSpamData[who] = { lastMessageTime: currentTime, messageCount: 1, warnings: 0 };
@@ -29,17 +29,16 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
             let warningMessage = '';
 
             if (isOwner) {
-                warningMessage = `👑 Owner alerta: ${username}, estás enviando muchos mensajes pero no puedo kickearte.`;
+                warningMessage = `👑 _*Owner alerta*_ ⚡️\nUsuario: @${username}\n¡Estás enviando muchos mensajes pero no puedo kickearte!`;
             } else if (isAdmin) {
-                warningMessage = `⚡️ Admin alerta: ${username}, demasiados mensajes seguidos, controla el ritmo.`;
+                warningMessage = `⚡️ _*Admin alerta*_ ⚡️\nUsuario: @${username}\nDemasiados mensajes seguidos, controla el ritmo.`;
             } else {
                 // Usuario común
                 userData.warnings += 1;
 
                 if (userData.warnings >= warningLimit) {
-                    warningMessage = `❌ ${username} ha alcanzado la 4ta advertencia por spam. Serás expulsado del grupo.`;
-                    
-                    // Intentar kickear al usuario
+                    warningMessage = `❌ _*Límite de spam alcanzado*_ ⚡️\nUsuario: @${username}\nSerás expulsado del grupo.`;
+
                     try {
                         const groupMetadata = await conn.groupMetadata(m.chat);
                         const isBotAdmin = groupMetadata.participants.find(p => p.jid === conn.user.jid)?.admin;
@@ -52,22 +51,19 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
                         warningMessage += `\n⚠️ Error al kickear: ${err.message}`;
                     }
 
-                    // Resetear advertencias
-                    userData.warnings = 0;
+                    userData.warnings = 0; // reset
                 } else {
-                    warningMessage = `🔥 Usuario spameando: ${username}, advertencia ${userData.warnings}/${warningLimit}`;
+                    warningMessage = `🔥 _*Mucho Spam*_ ⚡️\nUsuario: @${username}\nAdvertencia ${userData.warnings}/${warningLimit}`;
                 }
             }
 
-            // Enviar advertencia con mención
+            // Enviar advertencia con mención real
             await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
 
-            // Resetear contador de mensajes
             userData.messageCount = 0;
             userData.lastMessageTime = currentTime;
         }
     } else {
-        // Resetear contador si pasó suficiente tiempo
         userData.messageCount = 1;
         userData.lastMessageTime = currentTime;
     }
