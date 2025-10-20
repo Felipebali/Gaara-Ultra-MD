@@ -86,9 +86,8 @@ ${Object.entries(comandos).map(([cmd, emoji]) => `│ ${emoji} ${cmd}`).join('\n
 
     menuText += `\n✨ Powered by FelixCat 🥷🏽`;
 
-    // Enviamos con imagen de portada
     await conn.sendMessage(m.chat, { 
-      image: { url: 'https://files.catbox.moe/in2ou9.jpg' }, // Aquí ponés la URL de la imagen del bot
+      image: { url: 'https://files.catbox.moe/in2ou9.jpg' },
       caption: menuText 
     }, { quoted: m });
 
