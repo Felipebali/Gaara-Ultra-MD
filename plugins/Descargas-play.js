@@ -5,9 +5,9 @@ import fetch from 'node-fetch';
 const handler = async (m, { conn, args, usedPrefix }) => {
   if (!args[0]) return conn.reply(m.chat, '⚠️ Ingresa un título o enlace de YouTube.', m);
 
-  await m.react('🕓');
-
   try {
+    await m.react('🕓');
+
     // Buscar video
     const videos = await searchVideos(args.join(" "));
     if (!videos.length) throw new Error('✖️ No se encontraron resultados.');
@@ -15,11 +15,11 @@ const handler = async (m, { conn, args, usedPrefix }) => {
     const video = videos[0];
 
     // Obtener thumbnail
-    const thumbnailBuffer = await (await fetch(video.miniatura)).buffer();
+    const thumbBuffer = Buffer.from(await (await fetch(video.thumbnail)).arrayBuffer());
 
-    // Enviar miniatura con info básica
-    const infoMessage = `🎬 *${video.titulo}*\n> 📺 *Canal:* ${video.canal}\n> ⏱ *Duración:* ${video.duracion}\n> 👁 *Vistas:* ${video.vistas}\n> 🔗 *Link:* ${video.url}`;
-    await conn.sendMessage(m.chat, { image: thumbnailBuffer, caption: infoMessage }, { quoted: m });
+    // Enviar info con miniatura
+    const infoMessage = `🎬 *${video.title}*\n> 📺 *Canal:* ${video.channel}\n> ⏱ *Duración:* ${video.duration}\n> 👁 *Vistas:* ${video.views}\n> 🔗 *Link:* ${video.url}`;
+    await conn.sendMessage(m.chat, { image: thumbBuffer, caption: infoMessage }, { quoted: m });
 
     // Descargar audio mediante API
     const apiUrl = `https://dark-core-api.vercel.app/api/download/YTMP3?key=api&url=${encodeURIComponent(video.url)}`;
@@ -28,11 +28,11 @@ const handler = async (m, { conn, args, usedPrefix }) => {
 
     if (!json.status || !json.download) throw new Error('⚠️ No se pudo obtener el audio.');
 
-    // Enviar audio directamente
+    // Enviar audio
     await conn.sendMessage(m.chat, {
       audio: { url: json.download },
       mimetype: 'audio/mpeg',
-      fileName: `${json.title || video.titulo}.mp3`
+      fileName: `${json.title || video.title}.mp3`
     }, { quoted: m });
 
     await m.react('✅');
@@ -40,7 +40,7 @@ const handler = async (m, { conn, args, usedPrefix }) => {
   } catch (e) {
     console.error(e);
     await m.react('✖️');
-    return conn.reply(m.chat, '⚠️ Ocurrió un error o no se encontró el video.', m);
+    return conn.reply(m.chat, `⚠️ Ocurrió un error o no se encontró el video.\nError: ${e.message}`, m);
   }
 };
 
@@ -54,12 +54,12 @@ async function searchVideos(query) {
   try {
     const res = await yts(query);
     return res.videos.slice(0, 1).map(v => ({
-      titulo: v.title,
+      title: v.title,
       url: v.url,
-      miniatura: v.thumbnail,
-      canal: v.author.name,
-      duracion: v.duration.timestamp || 'No disponible',
-      vistas: v.views?.toLocaleString() || 'No disponible'
+      thumbnail: v.thumbnail,
+      channel: v.author.name,
+      duration: v.duration.timestamp || 'No disponible',
+      views: v.views?.toLocaleString() || 'No disponible'
     }));
   } catch (err) {
     console.error('Error en yt-search:', err.message);
