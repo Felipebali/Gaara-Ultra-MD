@@ -86,7 +86,7 @@ ${Object.entries(comandos).map(([cmd, emoji]) => `│ ${emoji} ${cmd}`).join('\n
 
     menuText += `\n✨ Powered by FelixCat 🥷🏽`;
 
-    // Enviamos el menú sin restricción
+    // ✅ Enviamos el menú sin chequear owner/admin, funciona para todos
     await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 
   } catch (e) {
@@ -99,7 +99,7 @@ handler.help = ['menu'];
 handler.tags = ['main'];
 handler.command = ['menu','allmenu','menú'];
 
-// 🔥 Ignorar cualquier restricción global
+// 🔥 Fuerza que el comando funcione para todos
 handler.owner = false;
 handler.admin = false;
 handler.group = false;
