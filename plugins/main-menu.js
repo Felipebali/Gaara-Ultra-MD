@@ -32,8 +32,8 @@ let comandosPorCategoria = {
     '.ruletaban':'🎯'
   },
   'game': {
-    '.acertijo':'❓', '.math':'➗', '.dance *<@user>*':'💃',
-    '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.capital':'🏛️', '.trivia':'🎯','.miau':'🐈‍⬛' 
+    '.acertijo':'❓', '.math':'➗', '.dance <@user>':'💃',
+    '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.capital':'🏛️', '.trivia':'🎯','.miau':'🐈‍⬛'
   },
   'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
   'downloader': {
@@ -86,7 +86,7 @@ ${Object.entries(comandos).map(([cmd, emoji]) => `│ ${emoji} ${cmd}`).join('\n
 
     menuText += `\n✨ Powered by FelixCat 🥷🏽`;
 
-    // ✅ Enviamos el menú sin chequear owner/admin, funciona para todos
+    // ✅ Enviamos solo texto, sin imagen ni link
     await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 
   } catch (e) {
@@ -99,7 +99,7 @@ handler.help = ['menu'];
 handler.tags = ['main'];
 handler.command = ['menu','allmenu','menú'];
 
-// 🔥 Fuerza que el comando funcione para todos
+// 🔥 Hacemos que funcione para todos
 handler.owner = false;
 handler.admin = false;
 handler.group = false;
