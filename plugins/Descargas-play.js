@@ -1,8 +1,9 @@
-// plugins/playaudio_termux.js
+// plugins/playaudio_ytdl-exec.js
 import yts from 'yt-search';
-import ytdl from 'ytdl-core';
+import youtubedl from 'youtube-dl-exec';
 import fs from 'fs';
 import path from 'path';
+import fetch from 'node-fetch';
 
 const handler = async (m, { conn, args }) => {
     if (!args[0]) return conn.reply(m.chat, '⚠️ Ingresa un título o enlace de YouTube.', m);
@@ -21,18 +22,16 @@ const handler = async (m, { conn, args }) => {
         const infoMessage = `🎬 *${video.title}*\n> 📺 *Canal:* ${video.channel}\n> ⏱ *Duración:* ${video.duration}\n> 👁 *Vistas:* ${video.views}\n> 🔗 *Link:* ${video.url}`;
         await conn.sendMessage(m.chat, { image: thumbBuffer, caption: infoMessage }, { quoted: m });
 
-        // Descargar audio con ytdl
+        // Descargar audio con youtube-dl-exec
         const safeName = video.title.replace(/[^a-zA-Z0-9]/g, '_');
         const audioPath = path.join('./', `${safeName}.mp3`);
-        const stream = ytdl(video.url, { filter: 'audioonly', quality: 'highestaudio' });
-        const writeStream = fs.createWriteStream(audioPath);
 
-        stream.pipe(writeStream);
-
-        await new Promise((resolve, reject) => {
-            writeStream.on('finish', resolve);
-            writeStream.on('error', reject);
-            stream.on('error', reject);
+        await youtubedl(video.url, {
+            extractAudio: true,
+            audioFormat: 'mp3',
+            audioQuality: 0, // mejor calidad
+            output: audioPath,
+            noCheckCertificates: true
         });
 
         // Enviar audio
@@ -56,19 +55,15 @@ handler.tags = ['descargas'];
 handler.command = ['play', 'playaudio'];
 export default handler;
 
+// Función para buscar video en YouTube
 async function searchVideos(query) {
-    try {
-        const res = await yts(query);
-        return res.videos.slice(0, 1).map(v => ({
-            title: v.title,
-            url: v.url,
-            thumbnail: v.thumbnail,
-            channel: v.author.name,
-            duration: v.duration.timestamp || 'No disponible',
-            views: v.views?.toLocaleString() || 'No disponible'
-        }));
-    } catch (err) {
-        console.error('Error en yt-search:', err.message);
-        return [];
-    }
+    const res = await yts(query);
+    return res.videos.slice(0, 1).map(v => ({
+        title: v.title,
+        url: v.url,
+        thumbnail: v.thumbnail,
+        channel: v.author.name,
+        duration: v.duration.timestamp || 'No disponible',
+        views: v.views?.toLocaleString() || 'No disponible'
+    }));
 }
