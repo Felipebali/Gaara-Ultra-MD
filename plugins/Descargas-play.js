@@ -1,69 +1,82 @@
-// plugins/playaudio_ytdl-exec.js
+// plugins/playaudio_termux.js
 import yts from 'yt-search';
 import youtubedl from 'youtube-dl-exec';
 import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
-const handler = async (m, { conn, args }) => {
+const handler = async (m, { conn, args, usedPrefix }) => {
     if (!args[0]) return conn.reply(m.chat, '⚠️ Ingresa un título o enlace de YouTube.', m);
 
+    await m.react('🕓');
+
     try {
-        // Buscar video
+        // Buscar video en YouTube
         const videos = await searchVideos(args.join(" "));
         if (!videos.length) throw new Error('✖️ No se encontraron resultados.');
-
         const video = videos[0];
 
-        // Obtener thumbnail
-        const thumbBuffer = Buffer.from(await (await fetch(video.thumbnail)).arrayBuffer());
+        // Preparar ruta de audio temporal
+        const audioFileName = `${video.titulo.replace(/[\\/:"*?<>|]/g, '')}.m4a`;
+        const audioPath = path.resolve('./tmp', audioFileName);
 
-        // Enviar info con miniatura
-        const infoMessage = `🎬 *${video.title}*\n> 📺 *Canal:* ${video.channel}\n> ⏱ *Duración:* ${video.duration}\n> 👁 *Vistas:* ${video.views}\n> 🔗 *Link:* ${video.url}`;
-        await conn.sendMessage(m.chat, { image: thumbBuffer, caption: infoMessage }, { quoted: m });
+        // Crear carpeta tmp si no existe
+        if (!fs.existsSync('./tmp')) fs.mkdirSync('./tmp');
 
-        // Descargar audio con youtube-dl-exec
-        const safeName = video.title.replace(/[^a-zA-Z0-9]/g, '_');
-        const audioPath = path.join('./', `${safeName}.mp3`);
+        // Borrar archivo anterior si existe
+        if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
 
+        // Enviar miniatura + info
+        const thumbBuffer = await (await fetch(video.miniatura)).buffer();
+        const infoMsg = `🎬 *${video.titulo}*\n> 📺 *Canal:* ${video.canal}\n> ⏱ *Duración:* ${video.duracion}\n> 👁 Vistas: ${video.vistas}\n> 🔗 Link: ${video.url}`;
+        await conn.sendMessage(m.chat, { image: thumbBuffer, caption: infoMsg }, { quoted: m });
+
+        // Descargar audio con yt-dlp
         await youtubedl(video.url, {
             extractAudio: true,
-            audioFormat: 'mp3',
-            audioQuality: 0, // mejor calidad
+            audioFormat: 'm4a',
+            audioQuality: 0,
             output: audioPath,
-            noCheckCertificates: true
+            noCheckCertificates: true,
+            allowUnplayableFormats: true,
         });
 
-        // Enviar audio
+        // Enviar audio al chat
         await conn.sendMessage(m.chat, {
             audio: { url: audioPath },
-            mimetype: 'audio/mpeg',
-            fileName: `${video.title}.mp3`
+            mimetype: 'audio/m4a',
+            fileName: audioFileName
         }, { quoted: m });
 
-        // Borrar archivo temporal
-        fs.unlinkSync(audioPath);
+        await m.react('✅');
 
     } catch (err) {
         console.error(err);
-        return conn.reply(m.chat, `⚠️ No se pudo obtener el audio.\nError: ${err.message}`, m);
+        await m.react('✖️');
+        return conn.reply(m.chat, `⚠️ No se pudo obtener el audio.\n${err.message}`, m);
     }
 };
 
 handler.help = ['play'];
 handler.tags = ['descargas'];
 handler.command = ['play', 'playaudio'];
+
 export default handler;
 
-// Función para buscar video en YouTube
+// Función para buscar video
 async function searchVideos(query) {
-    const res = await yts(query);
-    return res.videos.slice(0, 1).map(v => ({
-        title: v.title,
-        url: v.url,
-        thumbnail: v.thumbnail,
-        channel: v.author.name,
-        duration: v.duration.timestamp || 'No disponible',
-        views: v.views?.toLocaleString() || 'No disponible'
-    }));
+    try {
+        const res = await yts(query);
+        return res.videos.slice(0, 1).map(v => ({
+            titulo: v.title,
+            url: v.url,
+            miniatura: v.thumbnail,
+            canal: v.author.name,
+            duracion: v.duration.timestamp || 'No disponible',
+            vistas: v.views?.toLocaleString() || 'No disponible'
+        }));
+    } catch (err) {
+        console.error('Error en yt-search:', err.message);
+        return [];
+    }
 }
