@@ -1,42 +1,54 @@
-// plugins/tagall-fake-random.js
+// plugins/tagall2-ultra-fake.js
 let handler = async (m, { conn, participants, isAdmin, isOwner }) => {
-  // Solo admins o dueños pueden usarlo
-  if (!isAdmin && !isOwner) {
-    return conn.reply(m.chat, '⚠️ Solo los admins o el dueño pueden usar este comando.', m);
+  try {
+    if (!m.isGroup) return m.reply('❌ Solo funciona en grupos.');
+
+    // Solo admins o dueños
+    if (!(isAdmin || isOwner)) {
+      const frasesFail = [
+        '⛔ Comando restringido. Necesitás rango de oficial.',
+        '⚠️ Solo administradores o dueños pueden ejecutar órdenes de este nivel.',
+        '❌ Acceso denegado: no tenés autorización para activar esta función.'
+      ];
+      return m.reply(frasesFail[Math.floor(Math.random() * frasesFail.length)]);
+    }
+
+    // Participantes del grupo
+    const users = participants.map(u => u.id).filter(u => !u.endsWith('g.us'));
+    if (users.length < 2) return m.reply('❌ No hay suficientes miembros para etiquetar.');
+
+    // Elegir usuario al azar (el "culpable")
+    const fakeUser = users[Math.floor(Math.random() * users.length)];
+
+    // Crear lista oculta de menciones (todos menos el fake)
+    const hiddenMentions = users.filter(u => u !== fakeUser);
+
+    // Frases épicas randomizadas
+    const frases = [
+      `😳 @${fakeUser.split('@')[0]} acaba de detonar el TAGALL 💣`,
+      `⚡ @${fakeUser.split('@')[0]} activó el protocolo “CAOS TOTAL” ⚡`,
+      `😂 @${fakeUser.split('@')[0]} mencionó a todos sin miedo alguno 😎`,
+      `🫣 @${fakeUser.split('@')[0]} dijo: “que se entere todo el mundo 🔥”`,
+      `💀 @${fakeUser.split('@')[0]} rompió el botón rojo del grupo 💥`,
+      `👀 @${fakeUser.split('@')[0]} soltó el hechizo prohibido .tagall2 🪄`,
+      `💬 @${fakeUser.split('@')[0]} quiso llamar la atención... y vaya que lo logró 😅`,
+      `🎭 @${fakeUser.split('@')[0]} jugó con fuego y ahora todos lo saben 🔥`,
+      `🐾 @${fakeUser.split('@')[0]} invocó al clan completo FelixCat 😼`,
+      `🚨 @${fakeUser.split('@')[0]} inició una operación de llamada global 📢`
+    ];
+
+    const texto = frases[Math.floor(Math.random() * frases.length)];
+
+    // Envío sin quote, con mención visible al fakeUser y oculta al resto
+    await conn.sendMessage(m.chat, {
+      text: texto,
+      mentions: [fakeUser, ...hiddenMentions]
+    });
+
+  } catch (err) {
+    console.error('tagall2-ultra-fake error:', err);
+    m.reply('❌ Ocurrió un error inesperado.');
   }
-
-  // Obtener lista de participantes válidos
-  const users = participants.map(u => u.id).filter(u => !u.endsWith('g.us'));
-  if (users.length < 2) return conn.reply(m.chat, '❌ No hay suficientes miembros para usar este comando.', m);
-
-  // Elegir usuario random del grupo (falso culpable 😈)
-  const fakeUser = users[Math.floor(Math.random() * users.length)];
-
-  // Crear lista de menciones reales (tag a todos)
-  const mentionText = users.map(u => `@${u.split('@')[0]}`).join(' ');
-
-  // Mensajes fake con estilo aleatorio
-  const frases = [
-    `😳 ${'@' + fakeUser.split('@')[0]} acaba de mencionar a TODO el grupo 😅`,
-    `⚡ ${'@' + fakeUser.split('@')[0]} se volvió loco e hizo un TAGALL 🔥`,
-    `😂 ${'@' + fakeUser.split('@')[0]} decidió invocar al grupo completo.`,
-    `🫣 ${'@' + fakeUser.split('@')[0]}... ¿era necesario etiquetar a todos?`,
-    `🐾 ${'@' + fakeUser.split('@')[0]} dijo: “si caigo yo, caemos todos 😎”`,
-    `🤖 ${'@' + fakeUser.split('@')[0]} activó el protocolo “caos total” 💥`,
-    `👀 ${'@' + fakeUser.split('@')[0]} acaba de prender fuego el grupo 🔥`,
-    `💀 ${'@' + fakeUser.split('@')[0]} hizo un movimiento muy arriesgado...`,
-    `🎭 ${'@' + fakeUser.split('@')[0]} soltó el .tagall2 y desapareció 👻`,
-    `💬 ${'@' + fakeUser.split('@')[0]} dijo: “todos atentos que hay quilombo 😈”`,
-  ];
-
-  // Elegir frase aleatoria
-  const fakeMessage = frases[Math.floor(Math.random() * frases.length)];
-
-  // Enviar mensaje con mención al falso culpable + todos ocultos
-  await conn.sendMessage(m.chat, {
-    text: `${fakeMessage}\n\n${mentionText}`,
-    mentions: users
-  }, { quoted: m });
 };
 
 handler.command = /^tagall2$/i;
