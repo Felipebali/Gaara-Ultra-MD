@@ -12,9 +12,6 @@ let handler = async (m, { conn, groupMetadata, isOwner }) => {
     if (!text) return;
     if (text.toLowerCase() !== 'a') return; // activador: "A" o "a"
 
-    // Solo owner puede detonarlo
-    if (!isOwner) return conn.sendMessage(m.chat, { text: '⛔ Sólo el owner puede activar esto.' });
-
     // Evitar repetición: marcar en la db (crea la ruta si no existe)
     try {
       if (!global.db) global.db = { data: { chats: {} } };
