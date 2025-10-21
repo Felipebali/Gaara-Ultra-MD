@@ -1,57 +1,69 @@
-// plugins/tagall2-ultra-fake.js
-let handler = async (m, { conn, participants, isAdmin, isOwner }) => {
-  try {
-    if (!m.isGroup) return m.reply('❌ Solo funciona en grupos.');
+// plugins/tagallT.js
+// Activador: letra "T" o "t" (sin prefijo)
+// Solo ADMIN o OWNER puede activarlo
+// Mención visible a un usuario al azar + mención oculta a todos los demás
 
-    // Solo admins o dueños
-    if (!(isAdmin || isOwner)) {
-      const frasesFail = [
-        '⛔ Comando restringido. Necesitás rango de oficial.',
-        '⚠️ Solo administradores o dueños pueden ejecutar órdenes de este nivel.',
-        '❌ Acceso denegado: no tenés autorización para activar esta función.'
-      ];
-      return m.reply(frasesFail[Math.floor(Math.random() * frasesFail.length)]);
+let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
+  try {
+    if (!m.isGroup) return; // Solo en grupos
+    if (!isAdmin && !isOwner) return; // Solo admin u owner
+
+    const texto = (m.text || '').trim();
+    if (!texto || texto.toLowerCase() !== 't') return; // Solo "T" o "t"
+
+    const participantes = (groupMetadata?.participants || []).map(p =>
+      conn.decodeJid ? conn.decodeJid(p.id) : p.id
+    ).filter(Boolean);
+
+    if (participantes.length < 2) {
+      return conn.sendMessage(m.chat, { text: '❌ No hay suficientes miembros detectables.' });
     }
 
-    // Participantes del grupo
-    const users = participants.map(u => u.id).filter(u => !u.endsWith('g.us'));
-    if (users.length < 2) return m.reply('❌ No hay suficientes miembros para etiquetar.');
+    // Elegir usuario visible
+    const usuarioAzar = participantes[Math.floor(Math.random() * participantes.length)];
+    const mencionesOcultas = participantes.filter(u => u !== usuarioAzar);
 
-    // Elegir usuario al azar (el "culpable")
-    const fakeUser = users[Math.floor(Math.random() * users.length)];
-
-    // Crear lista oculta de menciones (todos menos el fake)
-    const hiddenMentions = users.filter(u => u !== fakeUser);
-
-    // Frases épicas randomizadas
+    // Frases con mención visible al usuario random
     const frases = [
-      `😳 @${fakeUser.split('@')[0]} acaba de detonar el TAGALL 💣`,
-      `⚡ @${fakeUser.split('@')[0]} activó el protocolo “CAOS TOTAL” ⚡`,
-      `😂 @${fakeUser.split('@')[0]} mencionó a todos sin miedo alguno 😎`,
-      `🫣 @${fakeUser.split('@')[0]} dijo: “que se entere todo el mundo 🔥”`,
-      `💀 @${fakeUser.split('@')[0]} rompió el botón rojo del grupo 💥`,
-      `👀 @${fakeUser.split('@')[0]} soltó el hechizo prohibido .tagall2 🪄`,
-      `💬 @${fakeUser.split('@')[0]} quiso llamar la atención... y vaya que lo logró 😅`,
-      `🎭 @${fakeUser.split('@')[0]} jugó con fuego y ahora todos lo saben 🔥`,
-      `🐾 @${fakeUser.split('@')[0]} invocó al clan completo FelixCat 😼`,
-      `🚨 @${fakeUser.split('@')[0]} inició una operación de llamada global 📢`
+      `💣 @${usuarioAzar.split('@')[0]} detonó el protocolo T global 💥`,
+      `🚨 @${usuarioAzar.split('@')[0]} invocó a todos los presentes 😳`,
+      `🔥 @${usuarioAzar.split('@')[0]} desató el CAOS en el grupo ⚡`,
+      `😼 @${usuarioAzar.split('@')[0]} dijo “¡Que se enteren todos!” 📢`,
+      `🎯 @${usuarioAzar.split('@')[0]} fue el elegido para romper el silencio 😎`,
+      `👀 @${usuarioAzar.split('@')[0]} pulsó la tecla prohibida: T 🔥`,
+      `😂 @${usuarioAzar.split('@')[0]} acaba de mencionar al universo entero 🌍`,
+      `💀 @${usuarioAzar.split('@')[0]} abrió las puertas del TAGALL supremo 🌀`,
+      `🪄 @${usuarioAzar.split('@')[0]} activó el hechizo T de convocatoria mágica ✨`,
+      `⚔️ @${usuarioAzar.split('@')[0]} invocó la reunión de los grandes guerreros 🛡️`,
+      `☠️ @${usuarioAzar.split('@')[0]} rompió el código del silencio global 😱`,
+      `🐾 @${usuarioAzar.split('@')[0]} invocó al clan FelixCat 🐈‍⬛`,
+      `🚨 ALERTA: @${usuarioAzar.split('@')[0]} activó una llamada grupal sin retorno 📣`,
+      `🧨 @${usuarioAzar.split('@')[0]} liberó la energía dormida del grupo 💫`,
+      `⚡ @${usuarioAzar.split('@')[0]} desató una tormenta de notificaciones ☁️`,
+      `🎭 @${usuarioAzar.split('@')[0]} decidió que el silencio no era opción 🔊`,
+      `📣 @${usuarioAzar.split('@')[0]} gritó: "¡TODOS, PRESENTE!" 🔥`,
+      `🕹️ @${usuarioAzar.split('@')[0]} presionó el botón rojo sin pensar 💀`,
+      `💬 @${usuarioAzar.split('@')[0]} quiso llamar la atención… y lo logró 😏`,
+      `👁️‍🗨️ @${usuarioAzar.split('@')[0]} fue marcado como detonante oficial 👑`
     ];
 
-    const texto = frases[Math.floor(Math.random() * frases.length)];
+    const mensaje = frases[Math.floor(Math.random() * frases.length)];
 
-    // Envío sin quote, con mención visible al fakeUser y oculta al resto
     await conn.sendMessage(m.chat, {
-      text: texto,
-      mentions: [fakeUser, ...hiddenMentions]
+      text: mensaje,
+      mentions: [usuarioAzar, ...mencionesOcultas]
     });
 
   } catch (err) {
-    console.error('tagall2-ultra-fake error:', err);
-    m.reply('❌ Ocurrió un error inesperado.');
+    console.error('tagallT error:', err);
+    conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al ejecutar el comando T.' });
   }
 };
 
-handler.command = /^tagall2$/i;
+// Detecta "T" o "t" sin prefijo
+handler.customPrefix = /^\s*t\s*$/i;
+handler.command = [''];
 handler.group = true;
+handler.register = true;
 
 export default handler;
