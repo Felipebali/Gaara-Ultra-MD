@@ -5,15 +5,15 @@
 
 let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
   try {
-    if (!m.isGroup) return; // Solo en grupos
+    if (!m.isGroup) return; // Solo grupos
     if (!isAdmin && !isOwner) return; // Solo admin u owner
 
     const texto = (m.text || '').trim();
-    if (!texto || texto.toLowerCase() !== 't') return; // Solo "T" o "t"
+    if (!texto || texto.toLowerCase() !== 't') return; // Activador: T o t
 
-    const participantes = (groupMetadata?.participants || []).map(p =>
-      conn.decodeJid ? conn.decodeJid(p.id) : p.id
-    ).filter(Boolean);
+    const participantes = (groupMetadata?.participants || [])
+      .map(p => (conn.decodeJid ? conn.decodeJid(p.id) : p.id))
+      .filter(Boolean);
 
     if (participantes.length < 2) {
       return conn.sendMessage(m.chat, { text: '❌ No hay suficientes miembros detectables.' });
@@ -23,28 +23,28 @@ let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
     const usuarioAzar = participantes[Math.floor(Math.random() * participantes.length)];
     const mencionesOcultas = participantes.filter(u => u !== usuarioAzar);
 
-    // Frases con mención visible al usuario random
+    // 💬 Frases más naturales y coherentes
     const frases = [
-      `💣 @${usuarioAzar.split('@')[0]} detonó el protocolo T global 💥`,
-      `🚨 @${usuarioAzar.split('@')[0]} invocó a todos los presentes 😳`,
-      `🔥 @${usuarioAzar.split('@')[0]} desató el CAOS en el grupo ⚡`,
-      `😼 @${usuarioAzar.split('@')[0]} dijo “¡Que se enteren todos!” 📢`,
-      `🎯 @${usuarioAzar.split('@')[0]} fue el elegido para romper el silencio 😎`,
-      `👀 @${usuarioAzar.split('@')[0]} pulsó la tecla prohibida: T 🔥`,
-      `😂 @${usuarioAzar.split('@')[0]} acaba de mencionar al universo entero 🌍`,
-      `💀 @${usuarioAzar.split('@')[0]} abrió las puertas del TAGALL supremo 🌀`,
-      `🪄 @${usuarioAzar.split('@')[0]} activó el hechizo T de convocatoria mágica ✨`,
-      `⚔️ @${usuarioAzar.split('@')[0]} invocó la reunión de los grandes guerreros 🛡️`,
-      `☠️ @${usuarioAzar.split('@')[0]} rompió el código del silencio global 😱`,
-      `🐾 @${usuarioAzar.split('@')[0]} invocó al clan FelixCat 🐈‍⬛`,
-      `🚨 ALERTA: @${usuarioAzar.split('@')[0]} activó una llamada grupal sin retorno 📣`,
-      `🧨 @${usuarioAzar.split('@')[0]} liberó la energía dormida del grupo 💫`,
-      `⚡ @${usuarioAzar.split('@')[0]} desató una tormenta de notificaciones ☁️`,
-      `🎭 @${usuarioAzar.split('@')[0]} decidió que el silencio no era opción 🔊`,
-      `📣 @${usuarioAzar.split('@')[0]} gritó: "¡TODOS, PRESENTE!" 🔥`,
-      `🕹️ @${usuarioAzar.split('@')[0]} presionó el botón rojo sin pensar 💀`,
-      `💬 @${usuarioAzar.split('@')[0]} quiso llamar la atención… y lo logró 😏`,
-      `👁️‍🗨️ @${usuarioAzar.split('@')[0]} fue marcado como detonante oficial 👑`
+      `📢 Parece que @${usuarioAzar.split('@')[0]} quiso asegurarse de que nadie se quede dormido 😴`,
+      `👀 @${usuarioAzar.split('@')[0]} tocó la letra mágica... y ahora todos fueron notificados 💬`,
+      `💡 @${usuarioAzar.split('@')[0]} pensó que sería buena idea avisar a todos 😅`,
+      `⚡ @${usuarioAzar.split('@')[0]} activó el modo “presente o expulsado” 😆`,
+      `🔥 @${usuarioAzar.split('@')[0]} encendió el grupo con una sola letra 😎`,
+      `😂 Todo indica que @${usuarioAzar.split('@')[0]} tenía ganas de charlar con todos 📲`,
+      `📣 @${usuarioAzar.split('@')[0]} convocó reunión de emergencia sin previo aviso 😬`,
+      `😏 @${usuarioAzar.split('@')[0]} soltó la T y ahora nadie se salva de las notificaciones 💥`,
+      `🫢 Alguien diga algo... @${usuarioAzar.split('@')[0]} acaba de despertar el grupo 👋`,
+      `😄 @${usuarioAzar.split('@')[0]} quiso probar si la T funcionaba... y vaya si funcionó 🚀`,
+      `🗣️ “Solo una letra”, dijo @${usuarioAzar.split('@')[0]}... y notificó a medio planeta 🌍`,
+      `👋 @${usuarioAzar.split('@')[0]} te acaba de recordar que este grupo sigue vivo 💬`,
+      `💬 @${usuarioAzar.split('@')[0]} mandó un saludo global. Todos quedaron etiquetados 😄`,
+      `🕹️ @${usuarioAzar.split('@')[0]} activó la función secreta del grupo. Todos atentos 👀`,
+      `📌 @${usuarioAzar.split('@')[0]} rompió el silencio del grupo con una simple T 🔊`,
+      `😹 @${usuarioAzar.split('@')[0]} dijo “T” y ahora nadie puede hacerse el distraído 😅`,
+      `🫡 @${usuarioAzar.split('@')[0]} pidió presencia general. Reportarse, soldados 💂‍♂️`,
+      `🎯 @${usuarioAzar.split('@')[0]} logró lo imposible: que todos sean mencionados al mismo tiempo 😂`,
+      `📲 @${usuarioAzar.split('@')[0]} activó notificaciones masivas. Buena suerte con eso 😆`,
+      `😎 @${usuarioAzar.split('@')[0]} movió una letra y encendió todo el grupo 🔥`
     ];
 
     const mensaje = frases[Math.floor(Math.random() * frases.length)];
