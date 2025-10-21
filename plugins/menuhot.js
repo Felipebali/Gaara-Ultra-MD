@@ -29,15 +29,8 @@ let handler = async (m, { conn }) => {
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 > 👑 Powered by FelixCat 🥷🏽`;
 
-    try {
-        await conn.sendMessage(m.chat, {
-            image: { url: 'https://files.catbox.moe/gc9jou.png' }, // Imagen NSFW confiable
-            caption: menuText
-        }, { quoted: m });
-    } catch (e) {
-        console.warn('No se pudo cargar la imagen, enviando solo texto.');
-        await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
-    }
+    // Enviar solo texto
+    await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 };
 
 handler.help = ['menuhot'];
