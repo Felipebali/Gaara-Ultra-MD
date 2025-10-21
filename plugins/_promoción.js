@@ -2,8 +2,11 @@
 let handler = async (m, { conn }) => {
     if (!m.isGroup) return; // Solo grupos
 
+    // Validar que exista texto y sea string
+    if (!m.text || typeof m.text !== 'string') return;
+
     const igRegex = /(https?:\/\/)?(www\.)?instagram\.com\/[^\s]+/i;
-    if (!m.text || !igRegex.test(m.text)) return; // No hay IG, se sale
+    if (!igRegex.test(m.text)) return; // No hay IG, se sale
 
     let who = m.sender;
     let userName = who.split("@")[0];
