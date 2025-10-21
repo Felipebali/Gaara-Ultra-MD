@@ -1,33 +1,21 @@
 // plugins/alarmaA.js
 // Activador: letra "A" sin prefijo (A o a)
-// Solo OWNER puede activarlo. Se ejecuta UNA SOLA VEZ por grupo.
+// Solo ADMIN o OWNER puede activarlo, sin límite de uso.
 // Envía una frase aleatoria (de las 24) visible con mención oculta.
 
-let handler = async (m, { conn, groupMetadata, isOwner }) => {
+let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
   try {
     if (!m) return;
     if (!m.isGroup) return; // solo grupos
+
+    // --- SOLO ADMINS o OWNERS ---
+    if (!isAdmin && !isOwner) return; // si no es admin ni owner, no hace nada
 
     const text = (m.text || '').toString().trim();
     if (!text) return;
     if (text.toLowerCase() !== 'a') return; // activador: "A" o "a"
 
-    // Evitar repetición: marcar en la db (crea la ruta si no existe)
-    try {
-      if (!global.db) global.db = { data: { chats: {} } };
-      if (!global.db.data.chats) global.db.data.chats = {};
-      if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
-      const chatData = global.db.data.chats[m.chat];
-      if (chatData.__alarmaA_used) {
-        return conn.sendMessage(m.chat, { text: '⚠️ Alarma ya detonada en este grupo. Única ejecución permitida.' });
-      }
-      chatData.__alarmaA_used = true;
-    } catch (e) {
-      // si falla el acceso a la db, seguimos pero no establecemos la marca (no crítico)
-      console.error('alarmaA: db mark failed', e);
-    }
-
-    // participantes
+    // participantes del grupo
     const participantes = (groupMetadata && groupMetadata.participants) ? groupMetadata.participants : [];
     const mencionados = participantes
       .map(p => p.id ? (conn.decodeJid ? conn.decodeJid(p.id) : p.id) : null)
@@ -35,7 +23,7 @@ let handler = async (m, { conn, groupMetadata, isOwner }) => {
 
     if (!mencionados.length) return conn.sendMessage(m.chat, { text: '❌ No hay participantes detectables.' });
 
-    // 24 frases (cortas, medianas, formales, amenazantes y grotescas)
+    // 24 frases aleatorias
     const mensajes = [
       '☠️ ALERTA: Responda o se procede al borrado.',
       '🚨 5 minutos para presentarse.',
@@ -63,9 +51,10 @@ let handler = async (m, { conn, groupMetadata, isOwner }) => {
       '☠️ FIN DE TURNO: Si nadie responde, este lugar será borrado del mapa.'
     ];
 
+    // Elegir una frase aleatoria
     const elegido = mensajes[Math.floor(Math.random() * mensajes.length)];
 
-    // Enviar visible + mención oculta (una sola vez)
+    // Enviar visible + mención oculta
     await conn.sendMessage(m.chat, {
       text: elegido,
       contextInfo: { mentionedJid: mencionados }
@@ -73,7 +62,9 @@ let handler = async (m, { conn, groupMetadata, isOwner }) => {
 
   } catch (err) {
     console.error('alarmaA: excepción', err);
-    try { await conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al ejecutar la alarma.' }); } catch {}
+    try { 
+      await conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al ejecutar la alarma.' }); 
+    } catch {}
   }
 };
 
