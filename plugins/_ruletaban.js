@@ -1,7 +1,8 @@
 // plugins/ruletabanF.js
 // Activador: letra "F" o "f" (sin prefijo)
 // Solo admins o owners pueden usarlo
-// Expulsa un usuario aleatorio (no admin, bot ni owner) y no cita mensajes
+// Expulsa un usuario aleatorio (no admin, bot ni owner)
+// No menciona quién lo activó, no cita mensajes
 
 let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
   try {
@@ -33,11 +34,6 @@ let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
     if (!elegibles.length) return conn.sendMessage(m.chat, { text: '❌ No hay usuarios elegibles para expulsar.' });
 
     const elegido = elegibles[Math.floor(Math.random()*elegibles.length)];
-
-    await conn.sendMessage(m.chat, {
-      text: `🎯 Ruleta activada por @${m.sender.split('@')[0]}...\nGirando la suerte...`,
-      mentions: [m.sender]
-    });
 
     // Intentar expulsar y manejar error si falla
     try {
