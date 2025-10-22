@@ -61,20 +61,23 @@ const handler = async (m, { conn, command, text }) => {
     }
   }
 
-  // BANLIST
+  // BANLIST con menciones reales
   else if (command === 'banlist') {
     const bannedEntries = Object.entries(db).filter(([jid, data]) => data?.banned);
-    if (bannedEntries.length === 0) return await conn.sendMessage(m.chat, { text: `${done} No hay usuarios baneados.` });
+    if (bannedEntries.length === 0) 
+      return await conn.sendMessage(m.chat, { text: `${done} No hay usuarios baneados.` });
 
-    const bannedUsersText = await Promise.all(
-      bannedEntries.map(async ([jid, data]) => {
-        const userName = await conn.getName(jid);
-        const bannedByName = await conn.getName(data.bannedBy);
-        return `• ${userName} (${jid.split('@')[0]})\n  Baneado por: ${bannedByName}`;
-      })
-    );
+    let textList = '🚫 *Lista de baneados:*\n\n';
+    let mentions = [];
 
-    await conn.sendMessage(m.chat, { text: `🚫 *Lista de baneados:*\n\n${bannedUsersText.join('\n\n')}` });
+    for (const [jid, data] of bannedEntries) {
+      const userName = await conn.getName(jid) || jid.split('@')[0];
+      const bannedByName = await conn.getName(data.bannedBy) || jid.split('@')[0];
+      textList += `• ${userName} (${jid.split('@')[0]})\n  Baneado por: ${bannedByName}\n\n`;
+      mentions.push(jid);
+    }
+
+    await conn.sendMessage(m.chat, { text: textList.trim(), mentions });
   }
 
   if (global.db.write) await global.db.write();
