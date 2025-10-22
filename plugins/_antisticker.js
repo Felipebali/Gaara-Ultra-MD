@@ -8,37 +8,63 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
 
     const chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {});
 
-    // Comando para activar/desactivar
+    // --- Comando para activar/desactivar ---
     if (m.text && m.text.toLowerCase().startsWith('.antisticker')) {
       if (!isAdmin && !isOwner)
         return conn.reply(m.chat, '⚠️ Solo administradores o el dueño pueden usar este comando.', m);
+
       chat.antisticker = !chat.antisticker;
-      return conn.reply(m.chat, `${chat.antisticker ? '✅ AntiSticker activado.' : '❌ AntiSticker desactivado.'}`, m);
+      return conn.reply(
+        m.chat,
+        chat.antisticker
+          ? '✅ AntiSticker activado. Los stickers serán eliminados.'
+          : '❌ AntiSticker desactivado.',
+        m
+      );
     }
 
-    // Si está activado y es un sticker
-    if (chat.antisticker && (m.mtype === 'sticker' || m.message?.stickerMessage)) {
+    // --- Verificar si el sistema está activo y si es un sticker ---
+    const isSticker =
+      m.mtype === 'stickerMessage' ||
+      m.message?.stickerMessage ||
+      (m.msg && m.msg.mimetype === 'image/webp');
+
+    if (chat.antisticker && isSticker) {
       const sender = m.sender.split('@')[0];
 
-      // Intentar borrar el mensaje (requiere que el bot sea admin)
+      // Verificar si el bot es admin
+      const groupMetadata = await conn.groupMetadata(m.chat);
+      const botNumber = conn.user.id.split(':')[0] + '@s.whatsapp.net';
+      const botInfo = groupMetadata.participants.find((p) => p.id === botNumber);
+      const botIsAdmin = botInfo?.admin;
+
+      if (!botIsAdmin) {
+        return conn.reply(m.chat, '⚠️ No puedo borrar stickers porque no soy administrador.', m);
+      }
+
+      // --- Intentar borrar el sticker ---
       try {
         await conn.sendMessage(m.chat, {
           delete: {
             remoteJid: m.chat,
             fromMe: false,
             id: m.key.id,
-            participant: m.key.participant
+            participant: m.key.participant || m.participant || m.key.remoteJid
           }
         });
-      } catch (e) {
-        console.log('Error al eliminar sticker:', e);
-      }
 
-      // Avisar al usuario
-      await conn.sendMessage(m.chat, {
-        text: `🚫 @${sender}, los stickers no están permitidos en este grupo.`,
-        mentions: [m.sender]
-      });
+        // Avisar al usuario
+        await conn.sendMessage(m.chat, {
+          text: `🚫 @${sender}, los stickers no están permitidos en este grupo.`,
+          mentions: [m.sender]
+        });
+      } catch (e) {
+        console.log('❌ Error al eliminar sticker:', e);
+        await conn.sendMessage(m.chat, {
+          text: `⚠️ No pude eliminar el sticker (ver consola).`,
+          mentions: [m.sender]
+        });
+      }
     }
   } catch (err) {
     console.error('Error en antisticker:', err);
