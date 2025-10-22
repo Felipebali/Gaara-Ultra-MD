@@ -44,7 +44,7 @@ const handler = async (m, { conn, command, text }) => {
                     await conn.groupParticipantsUpdate(jid, [member.id], 'remove');
                     console.log(`[AUTO-KICK] Expulsado ${who.split("@")[0]} de ${group.subject} por: ${reason}`);
                 } catch (e) {
-                    console.log(`⚠️ No se pudo expulsar de ${group.subject}: ${e.message}`);
+                    console.log(`⚠️ No se pudo expulsar a ${who.split("@")[0]} de ${group.subject}: ${e.message}`);
                 }
             }
         }
