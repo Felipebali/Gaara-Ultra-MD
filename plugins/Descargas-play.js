@@ -1,13 +1,13 @@
-// plugins/playaudio_ytdl.js
+// plugins/playaudio_final.js
 import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 import yts from 'yt-search';
 import ytdl from 'ytdl-core';
+import { exec } from 'child_process';
 
 const handler = async (m, { conn, args }) => {
   if (!args[0]) return conn.reply(m.chat, '⚠️ Ingresa un título o enlace de YouTube.', m);
-  
   await m.react('🕓');
 
   try {
@@ -46,41 +46,48 @@ const handler = async (m, { conn, args }) => {
     // Enviar miniatura + info primero
     const thumbnailBuffer = await (await fetch(video.thumbnail)).buffer();
     const infoMessage = `🎬 *${video.title}*\n> 📺 *Canal:* ${video.author.name}\n> ⏱ *Duración:* ${video.duration.timestamp || 'No disponible'}\n> 👁 *Vistas:* ${video.views?.toLocaleString() || 'No disponible'}\n> 🔗 *Link:* ${video.url}`;
-    
     await conn.sendMessage(m.chat, { image: thumbnailBuffer, caption: infoMessage }, { quoted: m });
 
-    // Descargar audio en streaming
-    const stream = ytdl(video.url, { filter: 'audioonly', quality: 'highestaudio' });
-    const writeStream = fs.createWriteStream(tmpPath);
-    stream.pipe(writeStream);
+    // Intentar descargar con ytdl-core
+    let success = false;
+    try {
+      const stream = ytdl(video.url, { filter: 'audioonly', quality: 'highestaudio' });
+      const writeStream = fs.createWriteStream(tmpPath);
+      stream.pipe(writeStream);
 
-    writeStream.on('finish', async () => {
-      try {
-        const audioData = fs.readFileSync(tmpPath);
-        await conn.sendMessage(m.chat, {
-          audio: audioData,
-          mimetype: 'audio/mpeg',
-          fileName: `${titleSafe}.mp3`
-        }, { quoted: m });
-        fs.unlinkSync(tmpPath);
-        await m.react('✅');
-      } catch (err) {
-        console.error(err);
-        await m.react('✖️');
-        return conn.reply(m.chat, '⚠️ No se pudo enviar el audio.', m);
-      }
-    });
+      await new Promise((resolve, reject) => {
+        writeStream.on('finish', resolve);
+        stream.on('error', reject);
+      });
 
-    stream.on('error', async (err) => {
-      console.error(err);
-      await m.react('✖️');
-      return conn.reply(m.chat, '⚠️ Error descargando el audio.', m);
-    });
+      success = true;
+    } catch (err) {
+      console.warn('ytdl-core falló, intentando con yt-dlp...', err);
+    }
+
+    // Si ytdl-core falla, usar yt-dlp (opcionalmente con cookies)
+    if (!success) {
+      const cmd = `yt-dlp -x --audio-format mp3 -o "${tmpPath}" "${video.url}"`;
+      await new Promise((resolve, reject) => {
+        exec(cmd, (err, stdout, stderr) => err ? reject(err) : resolve(stdout));
+      });
+    }
+
+    // Enviar audio
+    const audioData = fs.readFileSync(tmpPath);
+    await conn.sendMessage(m.chat, {
+      audio: audioData,
+      mimetype: 'audio/mpeg',
+      fileName: `${titleSafe}.mp3`
+    }, { quoted: m });
+
+    fs.unlinkSync(tmpPath); // limpiar
+    await m.react('✅');
 
   } catch (e) {
     console.error(e);
     await m.react('✖️');
-    return conn.reply(m.chat, '⚠️ No se pudo obtener el audio o información del video.', m);
+    return conn.reply(m.chat, '⚠️ No se pudo obtener el audio del video.', m);
   }
 };
 
