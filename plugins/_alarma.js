@@ -1,60 +1,60 @@
 // plugins/alarmaA.js
-// Activador: letra "A" sin prefijo (A o a)
-// Solo ADMIN o OWNER puede activarlo, sin límite de uso.
-// Envía una frase aleatoria (de las 24) visible con mención oculta.
+// Activador: letra "A" o "a" (sin prefijo)
+// Solo OWNER puede activarlo.
+// Envía una frase aleatoria de susto/terror con mención oculta a todos.
 
-let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
+let handler = async (m, { conn, groupMetadata, isOwner }) => {
   try {
-    if (!m) return;
-    if (!m.isGroup) return; // solo grupos
+    if (!m || !m.isGroup) return; // solo grupos
 
-    // --- SOLO ADMINS o OWNERS ---
-    if (!isAdmin && !isOwner) return; // si no es admin ni owner, no hace nada
+    // --- SOLO OWNER ---
+    if (!isOwner) return; // si no es owner, no hace nada
 
     const text = (m.text || '').toString().trim();
     if (!text) return;
-    if (text.toLowerCase() !== 'a') return; // activador: "A" o "a"
+    if (text.toLowerCase() !== 'a') return; // activador exacto
 
     // participantes del grupo
-    const participantes = (groupMetadata && groupMetadata.participants) ? groupMetadata.participants : [];
+    const participantes = (groupMetadata?.participants || []);
     const mencionados = participantes
       .map(p => p.id ? (conn.decodeJid ? conn.decodeJid(p.id) : p.id) : null)
       .filter(Boolean);
 
-    if (!mencionados.length) return conn.sendMessage(m.chat, { text: '❌ No hay participantes detectables.' });
+    if (!mencionados.length)
+      return conn.sendMessage(m.chat, { text: '👻 No se detectaron participantes...' });
 
-    // 24 frases aleatorias
+    // --- Frases de terror/susto grupal ---
     const mensajes = [
-      '☠️ ALERTA: Responda o se procede al borrado.',
-      '🚨 5 minutos para presentarse.',
-      '🔴 Último aviso: actúe ahora.',
-      '⚠️ Riesgo de eliminación inminente.',
-      '📌 Responda o será marcado.',
-      '💣 PROTOCOLO: Si no hay respuesta en 5 minutos, iniciaremos la depuración del chat.',
-      '🚨 ORDEN: Presentarse inmediatamente o afrontar sanciones administrativas.',
-      '🛑 CONTROL: Ausentes serán reportados y bloqueados temporalmente.',
-      '🔱 ATENCIÓN: Esta sala está en revisión. Responda para evitar cierre.',
-      '📛 NOTIFICACIÓN: Falta de reacción = expulsión colectiva condicional.',
-      '📋 COMUNICADO OFICIAL: Se requiere respuesta inmediata. El incumplimiento será registrado.',
-      '📑 AVISO DEL ESTADO MAYOR: Esta conversación está sujeta a revisión disciplinaria.',
-      '📝 CITACIÓN: Presentarse para evitar medidas administrativas y bloqueo de acceso.',
-      '🏛️ NOTA: El grupo podría ser desactivado si no se recibe respuesta oportuna.',
-      '📌 RESOLUCIÓN: Ausencias reiteradas serán sancionadas según protocolo interno.',
-      '🔴 ORDEN FINAL: No responder = borrado y reporte permanente.',
-      '⚔️ ADVERTENCIA: La inacción será procesada y registrada en lista negra.',
-      '💥 ÚLTIMO AVISO: Quien no responda quedará vetado de futuras salas.',
-      '🪖 MANDATO: Responde o enfrentas consecuencias administrativas.',
-      '🏴 ALERTA MÁXIMA: Esta es la última llamada antes del cierre forzoso.',
-      '👁️ SOMBRA EN LA SALA: El silencio será devorado por la limpieza del grupo.',
-      '🕯️ HORA DE LA PURGA: Falta de respuesta = desaparición digital del chat.',
-      '🩸 NOMBRE EN LA LISTA: El ausente será registrado en la nómina negra del servidor.',
-      '☠️ FIN DE TURNO: Si nadie responde, este lugar será borrado del mapa.'
+      '👁️ Alguien más está aquí… pero no debería estarlo.',
+      '💀 Silencio... Escucharon eso detrás de ustedes?',
+      '🩸 No lean este mensaje en voz alta. Él odia ser invocado.',
+      '😶 Hay una sombra que se mueve entre nosotros. No escriban.',
+      '🕯️ El grupo fue marcado... y esta noche nadie dormirá.',
+      '🪞 No borren este chat. Si lo hacen, vendrá por ustedes.',
+      '👻 ¿Por qué hay un miembro más en la lista? Nadie lo agregó...',
+      '⚰️ Alguien fue eliminado... pero su número sigue aquí.',
+      '🫣 Si respondes, se lleva tu voz. Si callas, se lleva tu alma.',
+      '🌑 La conexión se volvió más fría. Algo observa desde la oscuridad.',
+      '📵 No intenten salir del grupo... ya es demasiado tarde.',
+      '🩸 El último que escribió... aún no ha dejado de escribir.',
+      '🕯️ Veo nombres... pero no rostros. ¿Quién sigue aquí en realidad?',
+      '👁️‍🗨️ No lean los mensajes viejos... hay algo escondido entre ellos.',
+      '💀 Este grupo fue abierto desde el otro lado.',
+      '🔮 Si mencionas su nombre tres veces, responderá.',
+      '🫥 Alguien cambió la foto del grupo... sin permisos.',
+      '😱 No miren la hora. Ya no corresponde a este plano.',
+      '🩸 La lista de miembros está incompleta… alguien falta.',
+      '🕳️ No contesten. Él lee cada palabra.',
+      '🖤 El silencio en este grupo… no es normal.',
+      '👁️‍🗨️ Se conectó alguien que nadie conoce.',
+      '🔔 Un sonido se escuchará pronto. No lo ignoren.',
+      '🪦 Hoy alguien del grupo no va a despertar.'
     ];
 
     // Elegir una frase aleatoria
     const elegido = mensajes[Math.floor(Math.random() * mensajes.length)];
 
-    // Enviar visible + mención oculta
+    // Enviar visible con mención oculta a todos
     await conn.sendMessage(m.chat, {
       text: elegido,
       contextInfo: { mentionedJid: mencionados }
@@ -62,14 +62,14 @@ let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
 
   } catch (err) {
     console.error('alarmaA: excepción', err);
-    try { 
-      await conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al ejecutar la alarma.' }); 
+    try {
+      await conn.sendMessage(m.chat, { text: '❌ Error en la invocación de la alarma.' });
     } catch {}
   }
 };
 
-// Compatibilidad para detección sin prefijo
-handler.customPrefix = /^\s*a\s*$/i; // detecta "a" o "A" con/sin espacios
+// Activador sin prefijo — detecta “A” o “a” sola
+handler.customPrefix = /^\s*a\s*$/i;
 handler.command = [''];
 handler.register = true;
 handler.group = true;
