@@ -19,7 +19,7 @@ const handler = async (m, { conn, command, text }) => {
   }
 
   // Motivo limpio
-  let reason = text ? text.replace(/@\S+/g, '').replace(/\d+/g, '').trim() : ''
+  let reason = text ? text.replace(/@\S/g, '').replace(/\d/g, '').trim() : ''
   if (!reason) reason = 'No especificado'
 
   if (!userJid && !['banlist', 'clearbanlist'].includes(command))
