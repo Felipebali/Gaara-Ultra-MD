@@ -1,15 +1,13 @@
-import ytdl from "ytdl-core"
+import fetch from "node-fetch"
 import yts from "yt-search"
-import fs from "fs"
 
 const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
 
-const handler = async (m, { conn, text, command }) => {
+const handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
     if (!text?.trim())
       return conn.reply(m.chat, `⚽ *Por favor, ingresa el nombre o enlace del video.*`, m)
 
-    // Buscar el video
     let videoIdMatch = text.match(youtubeRegexID)
     let search = await yts(videoIdMatch ? 'https://youtu.be/' + videoIdMatch[1] : text)
     let video = videoIdMatch
@@ -23,7 +21,7 @@ const handler = async (m, { conn, text, command }) => {
     const canal = author?.name || 'Desconocido'
 
     const infoMessage = `
-🕸️ *Título:* *${title}*
+🕸️ *Titulo:* *${title}*
 🌿 *Canal:* ${canal}
 🍋 *Vistas:* ${vistas}
 🍃 *Duración:* ${timestamp || 'Desconocido'}
@@ -35,8 +33,8 @@ const handler = async (m, { conn, text, command }) => {
       caption: infoMessage,
       contextInfo: {
         externalAdReply: {
-          title,
-          body: canal,
+          title: title,
+          body: "",
           thumbnailUrl: thumbnail,
           sourceUrl: url,
           mediaType: 1,
@@ -45,84 +43,96 @@ const handler = async (m, { conn, text, command }) => {
       }
     }, { quoted: m })
 
-    // 🔊 Audio (.play)
     if (command === 'play') {
       try {
-        const info = await ytdl.getInfo(url)
-        const format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' })
+        const apiUrl = `https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(url)}&quality=128`
+        const res = await fetch(apiUrl)
+        const json = await res.json()
 
-        const stream = ytdl(url, { filter: 'audioonly', quality: 'highestaudio' })
-        const filePath = `/tmp/${title.replace(/[^\w\s]/gi, '')}.mp3`
+        if (!json.status || !json.result?.download?.url)
+          throw '*⚠ No se obtuvo un enlace de audio válido.*'
 
-        const writeStream = fs.createWriteStream(filePath)
-        stream.pipe(writeStream)
+        const audioUrl = json.result.download.url
+        const titulo = json.result.metadata.title || title
+        const cover = json.result.metadata.thumbnail || thumbnail
 
-        writeStream.on('finish', async () => {
-          await conn.sendMessage(m.chat, {
-            audio: fs.readFileSync(filePath),
-            mimetype: 'audio/mpeg',
-            fileName: `${title}.mp3`,
-            contextInfo: {
-              externalAdReply: {
-                title,
-                body: canal,
-                thumbnailUrl: thumbnail,
-                sourceUrl: url,
-                mediaType: 1
-              }
+        await conn.sendMessage(m.chat, {
+          audio: { url: audioUrl },
+          mimetype: 'audio/mpeg',
+          fileName: `${titulo}.mp3`,
+          contextInfo: {
+            externalAdReply: {
+              title: titulo,
+              body: '',
+              mediaType: 1,
+              thumbnailUrl: cover,
+              sourceUrl: url,
+              renderLargerThumbnail: false
             }
-          }, { quoted: m })
-          fs.unlinkSync(filePath)
-          await m.react('🎶')
-        })
+          }
+        }, { quoted: m })
 
-      } catch (err) {
-        console.error(err)
-        conn.reply(m.chat, '⚠ Error descargando el audio. Puede ser muy largo o pesado.', m)
+        await m.react('🎶')
+      } catch (e) {
+        console.error(e)
+        return conn.reply(m.chat, '*⚠ No se pudo enviar el audio. Puede ser muy pesado o hubo un error en la API.*', m)
       }
     }
 
-    // 🎥 Video (.play2)
     else if (command === 'play2') {
       try {
-        const info = await ytdl.getInfo(url)
-        const format = ytdl.chooseFormat(info.formats, { quality: '18' }) // 360p MP4
+        const apiUrl = `https://api.stellarwa.xyz/dow/ytmp4?url=${encodeURIComponent(url)}&apikey=Shadow_Core`
+        const res = await fetch(apiUrl)
+        const json = await res.json()
 
-        const stream = ytdl.downloadFromInfo(info, { format })
-        const filePath = `/tmp/${title.replace(/[^\w\s]/gi, '')}.mp4`
+        if (!json.status || !json.data?.dl)
+          throw '⚠ No se obtuvo enlace de video válido.'
 
-        const writeStream = fs.createWriteStream(filePath)
-        stream.pipe(writeStream)
+        const videoUrl = json.data.dl
+        const titulo = json.data.title || title
 
-        writeStream.on('finish', async () => {
-          await conn.sendMessage(m.chat, {
-            video: fs.readFileSync(filePath),
-            caption: `🎬 *${title}*\n📆 *Duración:* ${timestamp || 'Desconocido'}`,
-            mimetype: 'video/mp4',
-            fileName: `${title}.mp4`
-          }, { quoted: m })
-          fs.unlinkSync(filePath)
-          await m.react('🎥')
-        })
+        const caption = `> ♻️ *Título:* ${titulo}
+> 🎋 *Duración:* ${timestamp || 'Desconocido'}`.trim()
 
-      } catch (err) {
-        console.error(err)
-        conn.reply(m.chat, '⚠ Error descargando el video. Puede ser muy largo o pesado.', m)
+        await conn.sendMessage(m.chat, {
+          video: { url: videoUrl },
+          caption,
+          mimetype: 'video/mp4',
+          fileName: `${titulo}.mp4`,
+          contextInfo: {
+            externalAdReply: {
+              title: titulo,
+              body: '',
+              thumbnailUrl: thumbnail,
+              sourceUrl: url,
+              mediaType: 1,
+              renderLargerThumbnail: false
+            }
+          }
+        }, { quoted: m })
+
+        await m.react('🎥')
+      } catch (e) {
+        console.error(e)
+        return conn.reply(m.chat, '⚠ No se pudo enviar el video. Puede ser muy pesado o hubo un error en la API.', m)
       }
+    }
+
+    else {
+      return conn.reply(m.chat, '✧ Comando no reconocido.', m)
     }
 
   } catch (err) {
     console.error(err)
-    conn.reply(m.chat, `⚠ Error inesperado:\n${err}`, m)
+    return m.reply(`⚠ Ocurrió un error:\n${err}`)
   }
 }
 
 handler.command = ['play', 'play2']
-handler.help = ['play', 'play2']
+handler.help = ['playaudio', 'playvideo']
 handler.tags = ['descargas']
 export default handler
 
-// 🧮 Formato de vistas (por estética)
 function formatViews(views) {
   if (views === undefined) return "No disponible"
   if (views >= 1e9) return `${(views / 1e9).toFixed(1)}B (${views.toLocaleString()})`
