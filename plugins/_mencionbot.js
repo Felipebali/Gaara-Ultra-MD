@@ -5,7 +5,7 @@ let handler = async (m, { conn }) => {
     const contenido = m.text || "";
 
     // Número del bot a detectar
-    const numeroBot = "+59892682421";
+    const numeroBot = "59892682421";
 
     // Si el mensaje no contiene el número, no hacemos nada
     if (!contenido.includes(numeroBot)) return;
