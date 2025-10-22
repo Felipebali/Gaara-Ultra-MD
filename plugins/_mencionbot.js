@@ -1,12 +1,14 @@
-// plugins/mentionBotTonoFix.js
+// plugins/mentionBotNumero.js
 let handler = async (m, { conn }) => {
-    if (!m.isGroup) return; // Solo en grupos
+    if (!m.isGroup) return; // Solo grupos
 
-    const botNumber = conn.user.jid.split('@')[0]; // número del bot
     const contenido = m.text || "";
 
-    // Revisamos si el mensaje menciona al bot (por número)
-    if (!contenido.includes(botNumber)) return;
+    // Número del bot a detectar
+    const numeroBot = "+59892682421";
+
+    // Si el mensaje no contiene el número, no hacemos nada
+    if (!contenido.includes(numeroBot)) return;
 
     // Detectar tono según contenido
     let tipoElegido;
@@ -52,9 +54,11 @@ let handler = async (m, { conn }) => {
         ]
     };
 
+    // Elegir respuesta aleatoria del tipo detectado
     let msg = respuestas[tipoElegido][Math.floor(Math.random() * respuestas[tipoElegido].length)];
     msg = msg.replace("@usuario", `@${m.sender.split("@")[0]}`);
 
+    // Enviar mensaje mencionando al usuario que escribió el número
     await conn.sendMessage(
         m.chat,
         {
