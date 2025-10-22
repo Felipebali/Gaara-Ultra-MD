@@ -1,17 +1,18 @@
+// plugins/banuser.js
 const handler = async (m, { conn, command }) => {
     const emoji = '🚫';
     const done = '✅';
     const db = global.db.data.users || (global.db.data.users = {});
 
+    // Requiere respuesta a mensaje
     if (['banuser', 'unbanuser', 'checkban'].includes(command)) {
         if (!m.quoted || !m.quoted.sender)
             return await conn.reply(m.chat, `${emoji} Responde a un mensaje del usuario.`, m);
     }
 
     const userJid = m.quoted?.sender;
-    const userName = userJid ? await conn.getName(userJid) : null;
+    const who = userJid || '';
     const senderName = await conn.getName(m.sender);
-    const who = userJid ? userJid : '';
 
     if (userJid && !db[userJid]) db[userJid] = {};
 
@@ -26,7 +27,7 @@ const handler = async (m, { conn, command }) => {
             mentions: [userJid]
         });
 
-        // Expulsar de todos los grupos
+        // Expulsar de todos los grupos donde esté
         const groups = Object.entries(await conn.groupFetchAllParticipating());
         for (const [jid, group] of groups) {
             const isMember = group.participants.some(p => p.id === userJid);
@@ -97,7 +98,7 @@ const handler = async (m, { conn, command }) => {
     if (global.db.write) await global.db.write();
 };
 
-// Expulsar si habla y está baneado
+// 🚷 Expulsar si un baneado habla en grupo
 handler.before = async function (m, { conn }) {
     if (!m.isGroup || !m.sender) return;
     const user = global.db.data.users[m.sender];
@@ -115,8 +116,10 @@ handler.before = async function (m, { conn }) {
     }
 };
 
-// Detectar si un baneado es agregado a un grupo
-handler.participantsUpdate = async function ({ id, participants, action }, { conn }) {
+// 🚨 Detectar si un baneado es agregado a un grupo
+handler.participantsUpdate = async function ({ id, participants, action }) {
+    const conn = this; // Corrección clave: contexto del bot
+
     if (action === 'add') {
         for (const user of participants) {
             const data = global.db.data.users[user];
@@ -124,12 +127,12 @@ handler.participantsUpdate = async function ({ id, participants, action }, { con
                 console.log(`[AUTO-KICK JOIN] Expulsando baneado ${user} de ${id}`);
                 try {
                     await conn.sendMessage(id, {
-                        text: `🚫 *@${user.split('@')[0]}* está en la lista negra y fue eliminado.`,
+                        text: `🚫 *@${user.split('@')[0]}* está en la lista negra y fue eliminado automáticamente.`,
                         mentions: [user]
                     });
                     await conn.groupParticipantsUpdate(id, [user], 'remove');
                 } catch (e) {
-                    console.log(`Error al expulsar ${user}:`, e.message);
+                    console.log(`⚠️ Error al expulsar ${user}: ${e.message}`);
                 }
             }
         }
