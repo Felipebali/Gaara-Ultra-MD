@@ -1,20 +1,15 @@
-// plugins/mentionBotNumeroFix.js
+// plugins/mentionBotReal.js
 let handler = async (m, { conn }) => {
     if (!m.isGroup) return; // Solo grupos
 
-    // Obtener texto del mensaje de manera segura
-    const contenido = (m.message?.conversation ||
-                      m.message?.extendedTextMessage?.text ||
-                      "").toString();
+    // Revisar si es un mensaje que tiene mención
+    const mentionedJids = m.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+    
+    // Si el bot no está mencionado, salir
+    if (!mentionedJids.includes(conn.user.jid)) return;
 
-    if (!contenido) return;
-
-    // Expresión regular flexible para +598 92 682 421
-    const numeroRegex = /\+598[\s\-]?92[\s\-]?682[\s\-]?421/;
-
-    if (!numeroRegex.test(contenido)) return;
-
-    // Detectar tono
+    // Detectar el tono según el contenido real del mensaje (opcional)
+    const contenido = m.message?.extendedTextMessage?.text || "";
     let tipoElegido;
     if (contenido === contenido.toUpperCase() && contenido.length > 3) {
         tipoElegido = "furioso";
@@ -61,7 +56,7 @@ let handler = async (m, { conn }) => {
     let msg = respuestas[tipoElegido][Math.floor(Math.random() * respuestas[tipoElegido].length)];
     msg = msg.replace("@usuario", `@${m.sender.split("@")[0]}`);
 
-    // Enviar mensaje mencionando al usuario
+    // Enviar mensaje mencionando al usuario que mencionó al bot
     await conn.sendMessage(
         m.chat,
         { text: msg, mentions: [m.sender] }
