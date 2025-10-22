@@ -557,7 +557,7 @@ import banuserHandler from './plugins/banuser.js';
 // Registrar comandos
 banuserHandler.command.forEach(cmd => conn.handlers.set(cmd, banuserHandler));
 
-// Auto-kick si el baneado envía mensaje
+// Auto-kick si un baneado envía mensaje
 conn.ev.on('messages.upsert', async ({ messages, type }) => {
   if (type !== 'notify') return;
   for (let m of messages) {
@@ -571,7 +571,7 @@ conn.ev.on('messages.upsert', async ({ messages, type }) => {
   }
 });
 
-// Auto-kick si un baneado es agregado
+// Auto-kick si un baneado es agregado a un grupo
 conn.ev.on('group-participants.update', async (update) => {
   try {
     if (banuserHandler.participantsUpdate) {
@@ -580,4 +580,4 @@ conn.ev.on('group-participants.update', async (update) => {
   } catch (e) {
     console.log('⚠️ Error en participantsUpdate auto-kick:', e.message);
   }
-}); 
+});
