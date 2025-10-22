@@ -1,14 +1,13 @@
-// plugins/mentionBotNumero.js
+// plugins/mentionBotNumeroRegex.js
 let handler = async (m, { conn }) => {
     if (!m.isGroup) return; // Solo grupos
 
     const contenido = m.text || "";
 
-    // Número del bot a detectar
-    const numeroBot = "59892682421";
+    // Expresión regular para detectar el número +598 92 682 421 en varias formas
+    const numeroRegex = /\+598[\s\-]?92[\s\-]?682[\s\-]?421/;
 
-    // Si el mensaje no contiene el número, no hacemos nada
-    if (!contenido.includes(numeroBot)) return;
+    if (!numeroRegex.test(contenido)) return;
 
     // Detectar tono según contenido
     let tipoElegido;
@@ -54,11 +53,11 @@ let handler = async (m, { conn }) => {
         ]
     };
 
-    // Elegir respuesta aleatoria del tipo detectado
+    // Elegir respuesta aleatoria
     let msg = respuestas[tipoElegido][Math.floor(Math.random() * respuestas[tipoElegido].length)];
     msg = msg.replace("@usuario", `@${m.sender.split("@")[0]}`);
 
-    // Enviar mensaje mencionando al usuario que escribió el número
+    // Enviar mensaje mencionando al usuario
     await conn.sendMessage(
         m.chat,
         {
