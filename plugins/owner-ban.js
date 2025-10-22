@@ -1,19 +1,16 @@
 // plugins/banuser.js
-const handler = async (m, { conn, command }) => {
+const handler = async (m, { conn, command, text }) => {
   const emoji = '🚫';
   const done = '✅';
   const db = global.db.data.users || (global.db.data.users = {});
 
-  // Requiere respuesta a un mensaje
-  if (['banuser', 'unbanuser', 'checkban'].includes(command)) {
-    if (!m.quoted || !m.quoted.sender)
-      return await conn.reply(m.chat, `${emoji} Responde a un mensaje del usuario.`, m);
-  }
+  // Determinar usuario a banear
+  const userJid = m.quoted?.sender || m.mentionedJid?.[0] || (text ? text.split(' ')[0].replace(/\D/g,'')+'@s.whatsapp.net' : null);
+  if (!userJid) return await conn.reply(m.chat, `${emoji} Debes responder, mencionar o escribir el número del usuario.`, m);
 
-  const userJid = m.quoted?.sender;
-  const who = userJid || '';
+  const who = userJid;
   const senderName = await conn.getName(m.sender);
-  if (userJid && !db[userJid]) db[userJid] = {};
+  if (!db[userJid]) db[userJid] = {};
 
   // BANUSER
   if (command === 'banuser') {
@@ -100,19 +97,11 @@ const handler = async (m, { conn, command }) => {
 // 🧨 Auto-expulsar si un baneado habla
 handler.before = async function (m, { conn }) {
   if (!m.isGroup || !m.sender) return;
-
   const db = global.db.data.users || {};
   const user = db[m.sender];
-
   if (user?.banned) {
-    console.log(`[DETECT] ${m.sender} está baneado y habló en ${m.chat}`);
-
     try {
-      await conn.sendMessage(m.chat, {
-        text: `🚫 *@${m.sender.split('@')[0]}* está baneado y será eliminado.`,
-        mentions: [m.sender]
-      });
-
+      await conn.sendMessage(m.chat, { text: `🚫 *@${m.sender.split('@')[0]}* está baneado y será eliminado.`, mentions: [m.sender] });
       await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove');
       console.log(`[AUTO-KICK] Eliminado baneado ${m.sender} del grupo ${m.chat}`);
     } catch (e) {
@@ -126,17 +115,12 @@ handler.participantsUpdate = async function (event) {
   const conn = this;
   const { id, participants, action } = event;
   const db = global.db.data.users || {};
-
   if (action === 'add') {
     for (const user of participants) {
       const data = db[user];
       if (data?.banned) {
-        console.log(`[JOIN-DETECT] ${user} baneado fue agregado en ${id}`);
         try {
-          await conn.sendMessage(id, {
-            text: `🚫 *@${user.split('@')[0]}* está baneado y fue eliminado automáticamente.`,
-            mentions: [user]
-          });
+          await conn.sendMessage(id, { text: `🚫 *@${user.split('@')[0]}* está baneado y fue eliminado automáticamente.`, mentions: [user] });
           await conn.groupParticipantsUpdate(id, [user], 'remove');
         } catch (e) {
           console.log(`⚠️ No se pudo expulsar a ${user}: ${e.message}`);
