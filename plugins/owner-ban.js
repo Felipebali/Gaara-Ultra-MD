@@ -21,8 +21,8 @@ const handler = async (m, { conn, command, text }) => {
 
     // ---------------- BANUSER ----------------
     if (command === 'banuser') {
-        let reason = text ? text.replace(/\s*\d+$/, '').trim() : 'No especificado';
-        if (!reason) reason = 'No especificado';
+        let reason = text ? text.replace(/\s*\d+$/, '').trim() || 'No especificado' : 'No especificado';
+        reason = reason.replace(/@/g, ''); // eliminamos @ del motivo
         db[userJid].banned = true;
         db[userJid].banReason = reason;
         db[userJid].bannedBy = m.sender;
@@ -55,7 +55,7 @@ const handler = async (m, { conn, command, text }) => {
     else if (command === 'unbanuser') {
         if (!db[userJid]?.banned)
             return await conn.sendMessage(m.chat, {
-                text: `✅ *@${userJid.split("@")[0]}* no está baneado.`,
+                text: `${emoji} *@${userJid.split("@")[0]}* no está baneado.`,
                 mentions: [userJid]
             });
 
@@ -77,11 +77,11 @@ const handler = async (m, { conn, command, text }) => {
                 mentions: [userJid]
             });
 
-        const bannedBy = db[userJid].bannedBy ? await conn.getName(db[userJid].bannedBy) || 'Desconocido' : 'Desconocido';
-        const reason = db[userJid].banReason || 'No especificado';
+        const bannedByName = db[userJid].bannedBy ? await conn.getName(db[userJid].bannedBy) || 'Desconocido' : 'Desconocido';
+        const reason = (db[userJid].banReason || 'No especificado').replace(/@/g, '');
 
         await conn.sendMessage(m.chat, {
-            text: `${emoji} *@${userJid.split("@")[0]}* está baneado.\nBaneado por: ${bannedBy}\nMotivo: ${reason}`,
+            text: `${emoji} *@${userJid.split("@")[0]}* está baneado.\nBaneado por: ${bannedByName}\nMotivo: ${reason}`,
             mentions: [userJid]
         });
     }
@@ -93,11 +93,11 @@ const handler = async (m, { conn, command, text }) => {
             return await conn.sendMessage(m.chat, { text: `${done} No hay usuarios baneados.` });
 
         let textList = '🚫 *Lista de baneados:*\n\n';
-        const mentions = [];
+        let mentions = [];
 
         for (const [jid, data] of bannedEntries) {
             const bannedByName = data.bannedBy ? await conn.getName(data.bannedBy) || 'Desconocido' : 'Desconocido';
-            const reason = data.banReason || 'No especificado';
+            const reason = (data.banReason || 'No especificado').replace(/@/g, '');
             textList += `• *@${jid.split("@")[0]}*\n  Baneado por: ${bannedByName}\n  Motivo: ${reason}\n\n`;
             mentions.push(jid);
         }
@@ -126,30 +126,33 @@ handler.before = async function (m, { conn }) {
     const db = global.db.data.users || {};
     const sender = normalizeJid(m.sender);
     if (db[sender]?.banned) {
+        const reason = (db[sender].banReason || 'No especificado').replace(/@/g, '');
         await conn.sendMessage(m.chat, {
-            text: `🚫 *@${sender.split("@")[0]}* está en la lista negra y será eliminado.\nMotivo: ${db[sender].banReason || 'No especificado'}`,
+            text: `🚫 *@${sender.split("@")[0]}* está en la lista negra y será eliminado.\nMotivo: ${reason}`,
             mentions: [sender]
         });
         await conn.groupParticipantsUpdate(m.chat, [sender], 'remove');
-        console.log(`[AUTO-KICK] Eliminado ${sender} por: ${db[sender].banReason || 'No especificado'}`);
+        console.log(`[AUTO-KICK] Eliminado ${sender} por: ${reason}`);
     }
 };
 
 // ---------------- AUTO-KICK AL UNIRSE ----------------
-handler.participantsUpdate = async function ({ id, participants, action }) {
+handler.participantsUpdate = async function (event) {
     const conn = this;
+    const { id, participants, action } = event;
     const db = global.db.data.users || {};
     if (action === 'add' || action === 'invite') {
         for (const user of participants) {
             const normalizedUser = normalizeJid(user);
             if (!db[normalizedUser]) db[normalizedUser] = {};
             if (db[normalizedUser].banned) {
+                const reason = (db[normalizedUser].banReason || 'No especificado').replace(/@/g, '');
                 await conn.sendMessage(id, {
-                    text: `🚫 *@${normalizedUser.split("@")[0]}* está en la lista negra y fue eliminado automáticamente.\nMotivo: ${db[normalizedUser].banReason || 'No especificado'}`,
+                    text: `🚫 *@${normalizedUser.split("@")[0]}* está en la lista negra y fue eliminado automáticamente.\nMotivo: ${reason}`,
                     mentions: [normalizedUser]
                 });
                 await conn.groupParticipantsUpdate(id, [normalizedUser], 'remove');
-                console.log(`[AUTO-KICK JOIN] ${normalizedUser} eliminado por: ${db[normalizedUser].banReason || 'No especificado'}`);
+                console.log(`[AUTO-KICK JOIN] ${normalizedUser} eliminado por: ${reason}`);
             }
         }
     }
