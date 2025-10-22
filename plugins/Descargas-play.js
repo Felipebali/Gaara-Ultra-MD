@@ -17,7 +17,12 @@ const handler = async (m, { conn, args }) => {
     
     const video = videos.videos[0];
     const titleSafe = video.title.replace(/[^a-zA-Z0-9 ]/g, "_").substring(0, 100);
-    const tmpPath = path.resolve(`./tmp/${titleSafe}.mp3`);
+    
+    // Asegurarse de que la carpeta tmp exista
+    const tmpDir = path.resolve('./tmp');
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
+
+    const tmpPath = path.join(tmpDir, `${titleSafe}.mp3`);
 
     // Obtener miniatura primero
     const thumbnailBuffer = await (await fetch(video.thumbnail)).buffer();
@@ -29,7 +34,7 @@ const handler = async (m, { conn, args }) => {
     // Descargar audio en segundo plano
     const downloadAudio = async () => {
       await new Promise((resolve, reject) => {
-        const cmd = `yt-dlp -x --audio-format mp3 -o "${tmpPath}" "${video.url}"`;
+        const cmd = `yt-dlp -x --audio-format mp3 --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -o "${tmpPath}" "${video.url}"`;
         exec(cmd, (err, stdout, stderr) => err ? reject(err) : resolve(stdout));
       });
 
