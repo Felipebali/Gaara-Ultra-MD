@@ -1,11 +1,18 @@
 // plugins/banuser.js
+function normalizeJid(jid) {
+  if (!jid) return null;
+  return jid.replace(/@s\.whatsapp\.net$/, '@c.us');
+}
+
 const handler = async (m, { conn, command, text }) => {
   const emoji = '🚫';
   const done = '✅';
   const db = global.db.data.users || (global.db.data.users = {});
 
   // Determinar usuario a banear/desbanear/consultar
-  const userJid = m.quoted?.sender || m.mentionedJid?.[0] || (text && command !== 'banlist' ? text.split(' ')[0].replace(/\D/g,'')+'@s.whatsapp.net' : null);
+  const userJid = normalizeJid(
+    m.quoted?.sender || m.mentionedJid?.[0] || (text && command !== 'banlist' ? text.split(' ')[0].replace(/\D/g,'')+'@s.whatsapp.net' : null)
+  );
   if (!userJid && command !== 'banlist')
     return await conn.reply(m.chat, `${emoji} Debes responder, mencionar o escribir el número del usuario.`, m);
 
@@ -25,7 +32,7 @@ const handler = async (m, { conn, command, text }) => {
     // Expulsar de todos los grupos donde esté
     const groups = Object.entries(await conn.groupFetchAllParticipating());
     for (const [jid, group] of groups) {
-      const member = group.participants.find(p => p.id === userJid);
+      const member = group.participants.find(p => normalizeJid(p.id) === userJid);
       if (member) {
         try {
           await conn.sendMessage(jid, {
@@ -87,12 +94,12 @@ const handler = async (m, { conn, command, text }) => {
 handler.before = async function (m, { conn }) {
   if (!m.isGroup || !m.sender) return;
   const db = global.db.data.users || {};
-  if (!db[m.sender]) db[m.sender] = {};
-  if (db[m.sender].banned) {
+  const sender = normalizeJid(m.sender);
+  if (db[sender]?.banned) {
     try {
-      await conn.sendMessage(m.chat, { text: `🚫 *@${m.sender.split('@')[0]}* está en la lista negra y será eliminado.`, mentions: [m.sender] });
-      await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove');
-      console.log(`[AUTO-KICK] Eliminado baneado ${m.sender} del grupo ${m.chat}`);
+      await conn.sendMessage(m.chat, { text: `🚫 *@${sender.split('@')[0]}* está en la lista negra y será eliminado.`, mentions: [sender] });
+      await conn.groupParticipantsUpdate(m.chat, [sender], 'remove');
+      console.log(`[AUTO-KICK] Eliminado baneado ${sender} del grupo ${m.chat}`);
     } catch (e) {
       console.log('⚠️ Error autoexpulsando baneado:', e.message);
     }
@@ -106,14 +113,15 @@ handler.participantsUpdate = async function (event) {
   const db = global.db.data.users || {};
   if (action === 'add' || action === 'invite') {
     for (const user of participants) {
-      if (!db[user]) db[user] = {};
-      if (db[user].banned) {
+      const normalizedUser = normalizeJid(user);
+      if (!db[normalizedUser]) db[normalizedUser] = {};
+      if (db[normalizedUser].banned) {
         try {
-          await conn.sendMessage(id, { text: `🚫 *@${user.split('@')[0]}* está en la lista negra y fue eliminado automáticamente.`, mentions: [user] });
-          await conn.groupParticipantsUpdate(id, [user], 'remove');
-          console.log(`[AUTO-KICK JOIN] ${user} eliminado del grupo ${id}`);
+          await conn.sendMessage(id, { text: `🚫 *@${normalizedUser.split('@')[0]}* está en la lista negra y fue eliminado automáticamente.`, mentions: [normalizedUser] });
+          await conn.groupParticipantsUpdate(id, [normalizedUser], 'remove');
+          console.log(`[AUTO-KICK JOIN] ${normalizedUser} eliminado del grupo ${id}`);
         } catch (e) {
-          console.log(`⚠️ No se pudo expulsar a ${user}: ${e.message}`);
+          console.log(`⚠️ No se pudo expulsar a ${normalizedUser}: ${e.message}`);
         }
       }
     }
