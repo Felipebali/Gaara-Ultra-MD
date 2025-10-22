@@ -1,34 +1,25 @@
-// plugins/mentionBotTono.js
+// plugins/mentionBotTonoFix.js
 let handler = async (m, { conn }) => {
     if (!m.isGroup) return; // Solo en grupos
-    const mentioned = m.mentionedJid || [];
 
-    // Revisamos si mencionaron al bot
-    if (!mentioned.includes(conn.user.jid)) return;
-
+    const botNumber = conn.user.jid.split('@')[0]; // número del bot
     const contenido = m.text || "";
-    
+
+    // Revisamos si el mensaje menciona al bot (por número)
+    if (!contenido.includes(botNumber)) return;
+
     // Detectar tono según contenido
     let tipoElegido;
 
-    // 1. Furioso si escribe todo en mayúsculas
     if (contenido === contenido.toUpperCase() && contenido.length > 3) {
         tipoElegido = "furioso";
-    } 
-    // 2. Joda si hay emojis de risa
-    else if (contenido.match(/😂|🤣|😹|😆/)) {
+    } else if (contenido.match(/😂|🤣|😹|😆/)) {
         tipoElegido = "joda";
-    }
-    // 3. Enojado si hay palabras ofensivas (puedes expandir la lista)
-    else if (contenido.match(/tonto|idiota|feo|burro/i)) {
+    } else if (contenido.match(/tonto|idiota|feo|burro/i)) {
         tipoElegido = "enojado";
-    }
-    // 4. Serio si hay palabras formales
-    else if (contenido.match(/por favor|ayuda|necesito|explica/i)) {
+    } else if (contenido.match(/por favor|ayuda|necesito|explica/i)) {
         tipoElegido = "serio";
-    }
-    // 5. Aleatorio si no cumple ninguna condición
-    else {
+    } else {
         const tipos = ["joda", "serio", "enojado", "furioso", "insulto"];
         tipoElegido = tipos[Math.floor(Math.random() * tipos.length)];
     }
@@ -61,13 +52,9 @@ let handler = async (m, { conn }) => {
         ]
     };
 
-    // Elegir respuesta aleatoria dentro del tipo detectado
     let msg = respuestas[tipoElegido][Math.floor(Math.random() * respuestas[tipoElegido].length)];
-
-    // Sustituir @usuario por la mención real
     msg = msg.replace("@usuario", `@${m.sender.split("@")[0]}`);
 
-    // Enviar mensaje mencionando al usuario
     await conn.sendMessage(
         m.chat,
         {
@@ -80,4 +67,4 @@ let handler = async (m, { conn }) => {
 handler.command = new RegExp('^$'); // Sin prefijo
 handler.group = true;
 
-export default handler; 
+export default handler;
