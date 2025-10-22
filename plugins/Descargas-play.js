@@ -1,9 +1,9 @@
-// plugins/playaudio_yt-dlp.js
-import { exec } from 'child_process';
+// plugins/playaudio_ytdl.js
 import fs from 'fs';
-import fetch from 'node-fetch';
 import path from 'path';
+import fetch from 'node-fetch';
 import yts from 'yt-search';
+import ytdl from 'ytdl-core';
 
 const handler = async (m, { conn, args }) => {
   if (!args[0]) return conn.reply(m.chat, '⚠️ Ingresa un título o enlace de YouTube.', m);
@@ -11,48 +11,70 @@ const handler = async (m, { conn, args }) => {
   await m.react('🕓');
 
   try {
-    // Buscar video en YouTube
-    const videos = await yts(args.join(" "));
-    if (!videos.videos.length) throw new Error('✖️ No se encontraron resultados.');
-    
-    const video = videos.videos[0];
+    let video;
+
+    // Verificar si es URL válida de YouTube
+    const urlRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/;
+    const urlMatch = args[0].match(urlRegex);
+
+    if (urlMatch) {
+      const url = urlMatch[0];
+      if (!ytdl.validateURL(url)) throw new Error('URL no válida.');
+      const info = await ytdl.getInfo(url);
+      video = {
+        title: info.videoDetails.title,
+        url: info.videoDetails.video_url,
+        author: { name: info.videoDetails.author.name },
+        duration: { timestamp: new Date(info.videoDetails.lengthSeconds * 1000).toISOString().substr(11, 8) },
+        views: parseInt(info.videoDetails.viewCount),
+        thumbnail: info.videoDetails.thumbnails.pop().url
+      };
+    } else {
+      // Buscar video por texto
+      const search = await yts(args.join(" "));
+      if (!search.videos.length) throw new Error('✖️ No se encontraron resultados.');
+      video = search.videos[0];
+    }
+
     const titleSafe = video.title.replace(/[^a-zA-Z0-9 ]/g, "_").substring(0, 100);
-    
+
     // Asegurarse de que la carpeta tmp exista
     const tmpDir = path.resolve('./tmp');
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
-
     const tmpPath = path.join(tmpDir, `${titleSafe}.mp3`);
 
-    // Obtener miniatura primero
+    // Enviar miniatura + info primero
     const thumbnailBuffer = await (await fetch(video.thumbnail)).buffer();
     const infoMessage = `🎬 *${video.title}*\n> 📺 *Canal:* ${video.author.name}\n> ⏱ *Duración:* ${video.duration.timestamp || 'No disponible'}\n> 👁 *Vistas:* ${video.views?.toLocaleString() || 'No disponible'}\n> 🔗 *Link:* ${video.url}`;
     
-    // Enviar miniatura + info de inmediato
     await conn.sendMessage(m.chat, { image: thumbnailBuffer, caption: infoMessage }, { quoted: m });
 
-    // Descargar audio en segundo plano
-    const downloadAudio = async () => {
-      await new Promise((resolve, reject) => {
-        const cmd = `yt-dlp -x --audio-format mp3 --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -o "${tmpPath}" "${video.url}"`;
-        exec(cmd, (err, stdout, stderr) => err ? reject(err) : resolve(stdout));
-      });
+    // Descargar audio en streaming
+    const stream = ytdl(video.url, { filter: 'audioonly', quality: 'highestaudio' });
+    const writeStream = fs.createWriteStream(tmpPath);
+    stream.pipe(writeStream);
 
-      const audioData = fs.readFileSync(tmpPath);
-      await conn.sendMessage(m.chat, {
-        audio: audioData,
-        mimetype: 'audio/mpeg',
-        fileName: `${titleSafe}.mp3`
-      }, { quoted: m });
+    writeStream.on('finish', async () => {
+      try {
+        const audioData = fs.readFileSync(tmpPath);
+        await conn.sendMessage(m.chat, {
+          audio: audioData,
+          mimetype: 'audio/mpeg',
+          fileName: `${titleSafe}.mp3`
+        }, { quoted: m });
+        fs.unlinkSync(tmpPath);
+        await m.react('✅');
+      } catch (err) {
+        console.error(err);
+        await m.react('✖️');
+        return conn.reply(m.chat, '⚠️ No se pudo enviar el audio.', m);
+      }
+    });
 
-      fs.unlinkSync(tmpPath); // Eliminar archivo temporal
-      await m.react('✅');
-    };
-
-    downloadAudio().catch(async err => {
+    stream.on('error', async (err) => {
       console.error(err);
       await m.react('✖️');
-      return conn.reply(m.chat, '⚠️ No se pudo obtener el audio.', m);
+      return conn.reply(m.chat, '⚠️ Error descargando el audio.', m);
     });
 
   } catch (e) {
