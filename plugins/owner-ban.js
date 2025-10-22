@@ -9,7 +9,7 @@ const handler = async (m, { conn, command, text }) => {
     const done = '✅';
     const db = global.db.data.users || (global.db.data.users = {});
 
-    // Determinar usuario a banear/desbanear/consultar
+    // Determinar usuario
     const userJid = normalizeJid(
         m.quoted?.sender || m.mentionedJid?.[0] || (text && !['banlist', 'clearbanlist'].includes(command) ? text.split(' ')[0].replace(/\D/g,'')+'@s.whatsapp.net' : null)
     );
@@ -29,7 +29,7 @@ const handler = async (m, { conn, command, text }) => {
         const userName = await conn.getName(userJid) || 'Usuario';
 
         await conn.sendMessage(m.chat, {
-            text: `${done} *@${userName}* fue baneado globalmente y será expulsado.\nMotivo: ${reason}`,
+            text: `${done} *@${userJid.split("@")[0]}* fue baneado globalmente y será expulsado.\nMotivo: ${reason}`,
             mentions: [userJid]
         });
 
@@ -40,11 +40,11 @@ const handler = async (m, { conn, command, text }) => {
             if (member) {
                 try {
                     await conn.sendMessage(jid, {
-                        text: `🚫 *@${userName}* estaba en la lista negra y fue eliminado automáticamente.\nMotivo: ${reason}`,
+                        text: `🚫 *@${userJid.split("@")[0]}* estaba en la lista negra y fue eliminado automáticamente.\nMotivo: ${reason}`,
                         mentions: [userJid]
                     });
                     await conn.groupParticipantsUpdate(jid, [member.id], 'remove');
-                    console.log(`[AUTO-KICK] Expulsado ${userName} de ${group.subject} por: ${reason}`);
+                    console.log(`[AUTO-KICK] Expulsado ${userJid} de ${group.subject} por: ${reason}`);
                 } catch (e) {
                     console.log(`⚠️ No se pudo expulsar de ${group.subject}: ${e.message}`);
                 }
@@ -55,38 +55,37 @@ const handler = async (m, { conn, command, text }) => {
     // ---------------- UNBANUSER ----------------
     else if (command === 'unbanuser') {
         const userName = await conn.getName(userJid) || 'Usuario';
-        if (!db[userJid]?.banned) {
-            return await conn.sendMessage(m.chat, { 
-                text: `${emoji} *@${userName}* no está baneado.`, 
-                mentions: [userJid] 
+        if (!db[userJid]?.banned)
+            return await conn.sendMessage(m.chat, {
+                text: `${emoji} *@${userJid.split("@")[0]}* no está baneado.`,
+                mentions: [userJid]
             });
-        }
+
         db[userJid].banned = false;
         db[userJid].banReason = '';
         db[userJid].bannedBy = null;
 
-        await conn.sendMessage(m.chat, { 
-            text: `${done} *@${userName}* ha sido desbaneado correctamente.`, 
-            mentions: [userJid] 
+        await conn.sendMessage(m.chat, {
+            text: `${done} *@${userJid.split("@")[0]}* ha sido desbaneado correctamente.`,
+            mentions: [userJid]
         });
     }
 
     // ---------------- CHECKBAN ----------------
     else if (command === 'checkban') {
-        const userName = await conn.getName(userJid) || 'Usuario';
-        if (db[userJid]?.banned) {
-            const bannedBy = db[userJid].bannedBy ? await conn.getName(db[userJid].bannedBy) || 'Desconocido' : 'Desconocido';
-            const reason = db[userJid].banReason || 'No especificado';
-            await conn.sendMessage(m.chat, { 
-                text: `${emoji} *@${userName}* está baneado.\nBaneado por: ${bannedBy}\nMotivo: ${reason}`, 
-                mentions: [userJid] 
+        if (!db[userJid]?.banned)
+            return await conn.sendMessage(m.chat, {
+                text: `✅ *@${userJid.split("@")[0]}* no está baneado.`,
+                mentions: [userJid]
             });
-        } else {
-            await conn.sendMessage(m.chat, { 
-                text: `${done} *@${userName}* no está baneado.`, 
-                mentions: [userJid] 
-            });
-        }
+
+        const bannedBy = db[userJid].bannedBy ? await conn.getName(db[userJid].bannedBy) || 'Desconocido' : 'Desconocido';
+        const reason = db[userJid].banReason || 'No especificado';
+
+        await conn.sendMessage(m.chat, {
+            text: `${emoji} *@${userJid.split("@")[0]}* está baneado.\nBaneado por: ${bannedBy}\nMotivo: ${reason}`,
+            mentions: [userJid]
+        });
     }
 
     // ---------------- BANLIST ----------------
@@ -99,10 +98,9 @@ const handler = async (m, { conn, command, text }) => {
         let mentions = [];
 
         for (const [jid, data] of bannedEntries) {
-            const userName = await conn.getName(jid) || 'Usuario';
             const bannedByName = data.bannedBy ? await conn.getName(data.bannedBy) || 'Desconocido' : 'Desconocido';
             const reason = data.banReason || 'No especificado';
-            textList += `• *@${userName}*\n  Baneado por: ${bannedByName}\n  Motivo: ${reason}\n\n`;
+            textList += `• *@${jid.split("@")[0]}*\n  Baneado por: ${bannedByName}\n  Motivo: ${reason}\n\n`;
             mentions.push(jid);
         }
 
@@ -129,15 +127,13 @@ handler.before = async function (m, { conn }) {
     if (!m.isGroup || !m.sender) return;
     const db = global.db.data.users || {};
     const sender = normalizeJid(m.sender);
-    const senderName = await conn.getName(sender) || 'Usuario';
     if (db[sender]?.banned) {
-        try {
-            await conn.sendMessage(m.chat, { text: `🚫 *@${senderName}* está en la lista negra y será eliminado.\nMotivo: ${db[sender].banReason || 'No especificado'}`, mentions: [sender] });
-            await conn.groupParticipantsUpdate(m.chat, [sender], 'remove');
-            console.log(`[AUTO-KICK] Eliminado *@${senderName}* del grupo ${m.chat} por: ${db[sender].banReason || 'No especificado'}`);
-        } catch (e) {
-            console.log('⚠️ Error autoexpulsando baneado:', e.message);
-        }
+        await conn.sendMessage(m.chat, {
+            text: `🚫 *@${sender.split("@")[0]}* está en la lista negra y será eliminado.\nMotivo: ${db[sender].banReason || 'No especificado'}`,
+            mentions: [sender]
+        });
+        await conn.groupParticipantsUpdate(m.chat, [sender], 'remove');
+        console.log(`[AUTO-KICK] Eliminado ${sender} por: ${db[sender].banReason || 'No especificado'}`);
     }
 };
 
@@ -149,16 +145,14 @@ handler.participantsUpdate = async function (event) {
     if (action === 'add' || action === 'invite') {
         for (const user of participants) {
             const normalizedUser = normalizeJid(user);
-            const userName = await conn.getName(normalizedUser) || 'Usuario';
             if (!db[normalizedUser]) db[normalizedUser] = {};
             if (db[normalizedUser].banned) {
-                try {
-                    await conn.sendMessage(id, { text: `🚫 *@${userName}* está en la lista negra y fue eliminado automáticamente.\nMotivo: ${db[normalizedUser].banReason || 'No especificado'}`, mentions: [normalizedUser] });
-                    await conn.groupParticipantsUpdate(id, [normalizedUser], 'remove');
-                    console.log(`[AUTO-KICK JOIN] *@${userName}* eliminado del grupo ${id} por: ${db[normalizedUser].banReason || 'No especificado'}`);
-                } catch (e) {
-                    console.log(`⚠️ No se pudo expulsar a *@${userName}*: ${e.message}`);
-                }
+                await conn.sendMessage(id, {
+                    text: `🚫 *@${normalizedUser.split("@")[0]}* está en la lista negra y fue eliminado automáticamente.\nMotivo: ${db[normalizedUser].banReason || 'No especificado'}`,
+                    mentions: [normalizedUser]
+                });
+                await conn.groupParticipantsUpdate(id, [normalizedUser], 'remove');
+                console.log(`[AUTO-KICK JOIN] ${normalizedUser} eliminado por: ${db[normalizedUser].banReason || 'No especificado'}`);
             }
         }
     }
