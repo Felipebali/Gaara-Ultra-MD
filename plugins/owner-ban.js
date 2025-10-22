@@ -21,12 +21,11 @@ const handler = async (m, { conn, command, text }) => {
 
     // ---------------- BANUSER ----------------
     if (command === 'banuser') {
-        const reason = text ? text.replace(/\s*\d+$/, '').trim() || 'No especificado' : 'No especificado';
+        let reason = text ? text.replace(/\s*\d+$/, '').trim() : 'No especificado';
+        if (!reason) reason = 'No especificado';
         db[userJid].banned = true;
         db[userJid].banReason = reason;
         db[userJid].bannedBy = m.sender;
-
-        const userName = await conn.getName(userJid) || 'Usuario';
 
         await conn.sendMessage(m.chat, {
             text: `${done} *@${userJid.split("@")[0]}* fue baneado globalmente y será expulsado.\nMotivo: ${reason}`,
@@ -54,10 +53,9 @@ const handler = async (m, { conn, command, text }) => {
 
     // ---------------- UNBANUSER ----------------
     else if (command === 'unbanuser') {
-        const userName = await conn.getName(userJid) || 'Usuario';
         if (!db[userJid]?.banned)
             return await conn.sendMessage(m.chat, {
-                text: `${emoji} *@${userJid.split("@")[0]}* no está baneado.`,
+                text: `✅ *@${userJid.split("@")[0]}* no está baneado.`,
                 mentions: [userJid]
             });
 
@@ -95,7 +93,7 @@ const handler = async (m, { conn, command, text }) => {
             return await conn.sendMessage(m.chat, { text: `${done} No hay usuarios baneados.` });
 
         let textList = '🚫 *Lista de baneados:*\n\n';
-        let mentions = [];
+        const mentions = [];
 
         for (const [jid, data] of bannedEntries) {
             const bannedByName = data.bannedBy ? await conn.getName(data.bannedBy) || 'Desconocido' : 'Desconocido';
@@ -138,9 +136,8 @@ handler.before = async function (m, { conn }) {
 };
 
 // ---------------- AUTO-KICK AL UNIRSE ----------------
-handler.participantsUpdate = async function (event) {
+handler.participantsUpdate = async function ({ id, participants, action }) {
     const conn = this;
-    const { id, participants, action } = event;
     const db = global.db.data.users || {};
     if (action === 'add' || action === 'invite') {
         for (const user of participants) {
