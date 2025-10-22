@@ -551,34 +551,3 @@ return phoneUtil.isValidNumber(parsedNumber)
 } catch (error) {
 return false
 }}
-
-// index.js (fragmento para propietario-ban)
-import banHandler from './plugins/propietario-ban.js';
-
-// Registrar comandos en el manejador del bot
-banHandler.command.forEach(cmd => conn.handlers.set(cmd, banHandler));
-
-// ---------------- AUTO-KICK SI UN BANEADO HABLA ----------------
-conn.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return;
-    for (let m of messages) {
-        if (!m.key.fromMe && banHandler.before) {
-            try {
-                await banHandler.before.call(conn, m, { conn });
-            } catch (e) {
-                console.log('⚠️ Error en before auto-kick:', e.message);
-            }
-        }
-    }
-});
-
-// ---------------- AUTO-KICK SI UN BANEADO ES AGREGADO ----------------
-conn.ev.on('group-participants.update', async (update) => {
-    try {
-        if (banHandler.participantsUpdate) {
-            await banHandler.participantsUpdate.call(conn, update);
-        }
-    } catch (e) {
-        console.log('⚠️ Error en participantsUpdate auto-kick:', e.message);
-    }
-});
