@@ -31,7 +31,6 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
           }
         });
       } catch (e) {
-        // Si falla, solo avisa
         console.log('Error al eliminar sticker:', e);
       }
 
@@ -49,4 +48,4 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
 handler.command = /^antisticker$/i;
 handler.group = true;
 
-module.exports = handler;
+export default handler;
