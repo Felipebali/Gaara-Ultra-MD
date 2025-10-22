@@ -45,9 +45,10 @@ const handler = async (m, { conn, command, text }) => {
       if (member) {
         try {
           await conn.sendMessage(jid, {
-            text: `🚫 @${userJid.split('@')[0]} estaba en la lista negra y fue eliminado automáticamente.\n🔹 Motivo: ${reason}`,
+            text: `🚫 @${userJid.split('@')[0]} estaba en la lista negra y será eliminado automáticamente.\n🔹 Motivo: ${reason}`,
             mentions: [userJid]
           })
+          await new Promise(r => setTimeout(r, 500)) // Espera medio segundo para procesar la mención
           await conn.groupParticipantsUpdate(jid, [member.id], 'remove')
           console.log(`[AUTO-KICK] Expulsado ${userJid} de ${group.subject}`)
         } catch (e) {
@@ -117,7 +118,7 @@ const handler = async (m, { conn, command, text }) => {
   if (global.db.write) await global.db.write()
 }
 
-// AUTO-KICK si habla
+// ---------- AUTO-KICK SI HABLA ----------
 handler.before = async function (m, { conn }) {
   if (!m.isGroup || !m.sender) return
   const db = global.db.data.users || {}
@@ -128,12 +129,17 @@ handler.before = async function (m, { conn }) {
       text: `🚫 @${m.pushName || sender.split('@')[0]} está en la lista negra y será eliminado.\n🔹 Motivo: ${reason}`,
       mentions: [sender]
     })
-    await conn.groupParticipantsUpdate(m.chat, [sender], 'remove')
-    console.log(`[AUTO-KICK] Eliminado ${sender}`)
+    await new Promise(r => setTimeout(r, 500))
+    try {
+      await conn.groupParticipantsUpdate(m.chat, [sender], 'remove')
+      console.log(`[AUTO-KICK] Eliminado ${sender}`)
+    } catch (e) {
+      console.log(`⚠️ No se pudo eliminar a ${sender}: ${e.message}`)
+    }
   }
 }
 
-// AUTO-KICK al unirse
+// ---------- AUTO-KICK AL UNIRSE ----------
 handler.participantsUpdate = async function (event) {
   const conn = this
   const { id, participants, action } = event
@@ -143,12 +149,17 @@ handler.participantsUpdate = async function (event) {
       const u = normalizeJid(user)
       if (db[u]?.banned) {
         const reason = db[u].banReason || 'No especificado'
-        await conn.sendMessage(id, {
-          text: `🚫 @${(await conn.getName(u)) || u.split('@')[0]} está en la lista negra y fue eliminado automáticamente.\n🔹 Motivo: ${reason}`,
-          mentions: [u]
-        })
-        await conn.groupParticipantsUpdate(id, [u], 'remove')
-        console.log(`[AUTO-KICK JOIN] ${u} eliminado`)
+        try {
+          await conn.sendMessage(id, {
+            text: `🚫 @${(await conn.getName(u)) || u.split('@')[0]} está en la lista negra y será eliminado automáticamente.\n🔹 Motivo: ${reason}`,
+            mentions: [u]
+          })
+          await new Promise(r => setTimeout(r, 500))
+          await conn.groupParticipantsUpdate(id, [u], 'remove')
+          console.log(`[AUTO-KICK JOIN] ${u} eliminado`)
+        } catch (e) {
+          console.log(`⚠️ No se pudo eliminar a ${u} al unirse: ${e.message}`)
+        }
       }
     }
   }
