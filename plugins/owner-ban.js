@@ -1,4 +1,4 @@
-// ---------------- propietario-ban.js ----------------
+// plugins/propietario-ban.js
 function normalizeJid(jid) {
     if (!jid) return null;
     return jid.replace(/@s\.whatsapp\.net$/, '@c.us');
@@ -14,9 +14,8 @@ const handler = async (m, { conn, command, text }) => {
         m.quoted?.sender || m.mentionedJid?.[0] || (text && !['banlist', 'clearbanlist'].includes(command) ? text.split(' ')[0].replace(/\D/g,'')+'@s.whatsapp.net' : null)
     );
 
-    if (!userJid && !['banlist', 'clearbanlist'].includes(command)) {
+    if (!userJid && !['banlist', 'clearbanlist'].includes(command))
         return await conn.reply(m.chat, `${emoji} Debes responder, mencionar o escribir el número del usuario.`, m);
-    }
 
     if (userJid && !db[userJid]) db[userJid] = {};
 
@@ -27,7 +26,7 @@ const handler = async (m, { conn, command, text }) => {
         db[userJid].banReason = reason;
         db[userJid].bannedBy = m.sender;
 
-        const userName = await conn.getName(userJid) || userJid.split("@")[0];
+        const userName = await conn.getName(userJid) || 'Usuario';
 
         await conn.sendMessage(m.chat, {
             text: `${done} *@${userName}* fue baneado globalmente y será expulsado.\nMotivo: ${reason}`,
@@ -55,7 +54,7 @@ const handler = async (m, { conn, command, text }) => {
 
     // ---------------- UNBANUSER ----------------
     else if (command === 'unbanuser') {
-        const userName = await conn.getName(userJid) || userJid.split("@")[0];
+        const userName = await conn.getName(userJid) || 'Usuario';
         if (!db[userJid]?.banned) {
             return await conn.sendMessage(m.chat, { 
                 text: `${emoji} *@${userName}* no está baneado.`, 
@@ -74,7 +73,7 @@ const handler = async (m, { conn, command, text }) => {
 
     // ---------------- CHECKBAN ----------------
     else if (command === 'checkban') {
-        const userName = await conn.getName(userJid) || userJid.split("@")[0];
+        const userName = await conn.getName(userJid) || 'Usuario';
         if (db[userJid]?.banned) {
             const bannedBy = db[userJid].bannedBy ? await conn.getName(db[userJid].bannedBy) || 'Desconocido' : 'Desconocido';
             const reason = db[userJid].banReason || 'No especificado';
@@ -100,7 +99,7 @@ const handler = async (m, { conn, command, text }) => {
         let mentions = [];
 
         for (const [jid, data] of bannedEntries) {
-            const userName = await conn.getName(jid) || jid.split("@")[0];
+            const userName = await conn.getName(jid) || 'Usuario';
             const bannedByName = data.bannedBy ? await conn.getName(data.bannedBy) || 'Desconocido' : 'Desconocido';
             const reason = data.banReason || 'No especificado';
             textList += `• *@${userName}*\n  Baneado por: ${bannedByName}\n  Motivo: ${reason}\n\n`;
@@ -130,7 +129,7 @@ handler.before = async function (m, { conn }) {
     if (!m.isGroup || !m.sender) return;
     const db = global.db.data.users || {};
     const sender = normalizeJid(m.sender);
-    const senderName = await conn.getName(sender) || sender.split("@")[0];
+    const senderName = await conn.getName(sender) || 'Usuario';
     if (db[sender]?.banned) {
         try {
             await conn.sendMessage(m.chat, { text: `🚫 *@${senderName}* está en la lista negra y será eliminado.\nMotivo: ${db[sender].banReason || 'No especificado'}`, mentions: [sender] });
@@ -150,7 +149,7 @@ handler.participantsUpdate = async function (event) {
     if (action === 'add' || action === 'invite') {
         for (const user of participants) {
             const normalizedUser = normalizeJid(user);
-            const userName = await conn.getName(normalizedUser) || normalizedUser.split("@")[0];
+            const userName = await conn.getName(normalizedUser) || 'Usuario';
             if (!db[normalizedUser]) db[normalizedUser] = {};
             if (db[normalizedUser].banned) {
                 try {
