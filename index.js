@@ -552,32 +552,33 @@ return phoneUtil.isValidNumber(parsedNumber)
 return false
 }}
 
-import banuserHandler from './plugins/banuser.js';
+// index.js (fragmento para propietario-ban)
+import banHandler from './plugins/propietario-ban.js';
 
-// Registrar comandos
-banuserHandler.command.forEach(cmd => conn.handlers.set(cmd, banuserHandler));
+// Registrar comandos en el manejador del bot
+banHandler.command.forEach(cmd => conn.handlers.set(cmd, banHandler));
 
-// Auto-kick si un baneado envía mensaje
+// ---------------- AUTO-KICK SI UN BANEADO HABLA ----------------
 conn.ev.on('messages.upsert', async ({ messages, type }) => {
-  if (type !== 'notify') return;
-  for (let m of messages) {
-    if (!m.key.fromMe && banuserHandler.before) {
-      try {
-        await banuserHandler.before.call(conn, m, { conn });
-      } catch (e) {
-        console.log('⚠️ Error en before auto-kick:', e.message);
-      }
+    if (type !== 'notify') return;
+    for (let m of messages) {
+        if (!m.key.fromMe && banHandler.before) {
+            try {
+                await banHandler.before.call(conn, m, { conn });
+            } catch (e) {
+                console.log('⚠️ Error en before auto-kick:', e.message);
+            }
+        }
     }
-  }
 });
 
-// Auto-kick si un baneado es agregado a un grupo
+// ---------------- AUTO-KICK SI UN BANEADO ES AGREGADO ----------------
 conn.ev.on('group-participants.update', async (update) => {
-  try {
-    if (banuserHandler.participantsUpdate) {
-      await banuserHandler.participantsUpdate.call(conn, update);
+    try {
+        if (banHandler.participantsUpdate) {
+            await banHandler.participantsUpdate.call(conn, update);
+        }
+    } catch (e) {
+        console.log('⚠️ Error en participantsUpdate auto-kick:', e.message);
     }
-  } catch (e) {
-    console.log('⚠️ Error en participantsUpdate auto-kick:', e.message);
-  }
 });
