@@ -1,28 +1,27 @@
-// plugins/ruletabanF.js
+// plugins/_ruletabanF.js
 // Activador: letra "F" o "f" (sin prefijo)
-// Solo admin u owner puede usarlo
-// Elimina a un usuario aleatorio (no admin, no owner, no bot)
+// Solo admins o owners pueden usarlo
 
-module.exports = {
+export default {
   name: 'ruletabanF',
   handler: async (m, { conn, participants, isAdmin, isOwner, groupMetadata }) => {
     try {
       if (!m.isGroup) return conn.reply(m.chat, '🔒 Este comando solo funciona en grupos.', m);
 
-      // Solo admins o owners del bot pueden usarlo
+      // Solo admins o owners
       if (!isAdmin && !isOwner)
         return conn.reply(m.chat, '⚠️ Solo administradores del grupo o owners del bot pueden usar este comando.', m);
 
       const text = (m.text || '').trim();
       if (!(text === 'F' || text === 'f')) return; // activador
 
-      // El bot debe ser admin para poder expulsar
+      // Bot debe ser admin
       const botIsAdmin = participants.some(p => p.id === conn.user.jid && (p.admin === 'admin' || p.admin === 'superadmin'));
       if (!botIsAdmin)
-        return conn.reply(m.chat, '❗ Necesito ser administrador del grupo para poder eliminar usuarios.', m);
+        return conn.reply(m.chat, '❗ Necesito ser administrador del grupo para eliminar usuarios.', m);
 
-      // Dueños del bot (añadí los tuyos acá)
-      const BOT_OWNERS = ['59896026646', '59898719147']; // números sin @
+      // Owners del bot
+      const BOT_OWNERS = ['59896026646', '59898719147'];
       const ownersJids = BOT_OWNERS.map(n => n + '@s.whatsapp.net');
 
       // Filtrar usuarios elegibles
@@ -41,7 +40,7 @@ module.exports = {
       // Elegir al azar
       const elegido = elegibles[Math.floor(Math.random() * elegibles.length)].id;
 
-      // Mensaje de inicio
+      // Mensaje inicial
       await conn.sendMessage(
         m.chat,
         { text: `🎯 Ruleta activada por @${m.sender.split('@')[0]}...\nGirando la suerte...`, mentions: [m.sender] },
@@ -55,6 +54,7 @@ module.exports = {
         { text: `💀 El destino decidió... @${elegido.split('@')[0]} fue eliminado del grupo.`, mentions: [elegido] },
         { quoted: m }
       );
+
     } catch (err) {
       console.error('Error en ruletabanF:', err);
       conn.reply(m.chat, `⚠️ Ocurrió un error: ${err.message}`, m);
