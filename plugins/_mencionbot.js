@@ -1,17 +1,21 @@
-// plugins/mentionBotNumeroRegex.js
+// plugins/mentionBotNumeroFix.js
 let handler = async (m, { conn }) => {
     if (!m.isGroup) return; // Solo grupos
 
-    const contenido = m.text || "";
+    // Obtener texto del mensaje de manera segura
+    const contenido = (m.message?.conversation ||
+                      m.message?.extendedTextMessage?.text ||
+                      "").toString();
 
-    // Expresión regular para detectar el número +598 92 682 421 en varias formas
+    if (!contenido) return;
+
+    // Expresión regular flexible para +598 92 682 421
     const numeroRegex = /\+598[\s\-]?92[\s\-]?682[\s\-]?421/;
 
     if (!numeroRegex.test(contenido)) return;
 
-    // Detectar tono según contenido
+    // Detectar tono
     let tipoElegido;
-
     if (contenido === contenido.toUpperCase() && contenido.length > 3) {
         tipoElegido = "furioso";
     } else if (contenido.match(/😂|🤣|😹|😆/)) {
@@ -60,10 +64,7 @@ let handler = async (m, { conn }) => {
     // Enviar mensaje mencionando al usuario
     await conn.sendMessage(
         m.chat,
-        {
-            text: msg,
-            mentions: [m.sender]
-        }
+        { text: msg, mentions: [m.sender] }
     );
 };
 
