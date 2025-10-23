@@ -4,6 +4,7 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
     if (!m.isGroup) return conn.reply(m.chat, '❗ Este comando solo puede usarse en grupos.', m)
     if (!isAdmin && !isOwner) return conn.reply(m.chat, '🚫 Solo administradores pueden usar estos comandos.', m)
 
+    // Inicializar DB del chat
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
     const chatDB = global.db.data.chats[m.chat]
     if (!chatDB.warns) chatDB.warns = {}
@@ -17,9 +18,9 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
       if (!advertidos.length) return conn.sendMessage(m.chat, { text: '✅ No hay usuarios advertidos.' })
 
       let mentions = []
-      let lista = '⚠️ *LISTA DE ADVERTIDOS*\n\n'
+      let lista = '⚠️ *LISTA NEGRA DE ADVERTENCIAS*\n\n'
       for (const [jid, data] of advertidos) {
-        lista += `• @${jid.split('@')[0]} — ${data.count}/3 ⚠️ (${data.date})\n`
+        lista += `• ${jid.split('@')[0]} — ${data.count}/3 ⚠️ (${data.date})\n`
         mentions.push(jid)
       }
 
@@ -32,10 +33,13 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
       if (!user) return conn.reply(m.chat, '📌 Etiqueta o responde a un usuario para advertirlo.', m)
 
       const motivo = text.split(' ').slice(1).join(' ').trim() || 'Sin motivo especificado'
+
+      // Obtener nombres
       let userName, senderName
       try { userName = await conn.getName(user) } catch { userName = user.split('@')[0] }
       try { senderName = await conn.getName(m.sender) } catch { senderName = m.sender.split('@')[0] }
 
+      // Actualizar advertencias
       warns[user] = warns[user] || { count: 0, date: null }
       warns[user].count += 1
       warns[user].date = new Date().toLocaleDateString('es-ES')
@@ -50,7 +54,7 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
           warns[user].count = 0
           await global.db.write()
           return conn.sendMessage(m.chat, { 
-            text: `🚫 *@${userName}* fue expulsado por acumular 3 advertencias.\n📝 Motivo: ${motivo}\n👮‍♂️ Moderador: @${senderName}`,
+            text: `🚫 *${userName}* fue expulsado por acumular 3 advertencias.\n📝 Motivo: ${motivo}\n👮‍♂️ Moderador: ${senderName}`,
             mentions: mentionsArray
           })
         } catch (e) {
@@ -60,7 +64,7 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
       } else {
         const extra = newCount === 2 ? '🔥 Última advertencia antes de expulsión.' : `🕒 Restan ${3 - newCount} antes de ser expulsado.`
         return conn.sendMessage(m.chat, { 
-          text: `⚠️ *@${userName}* recibió una advertencia.\n📊 Advertencias: ${newCount}/3\n📝 Motivo: ${motivo}\n👮‍♂️ Moderador: @${senderName}\n${extra}`,
+          text: `⚠️ *${userName}* recibió una advertencia.\n📊 Advertencias: ${newCount}/3\n📝 Motivo: ${motivo}\n👮‍♂️ Moderador: ${senderName}\n${extra}`,
           mentions: mentionsArray
         })
       }
@@ -72,12 +76,12 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
       if (!user) return conn.reply(m.chat, '📌 Etiqueta o responde a un usuario para quitarle advertencias.', m)
 
       if (!warns[user]?.count || warns[user].count === 0)
-        return conn.sendMessage(m.chat, { text: `✅ @${user.split('@')[0]} no tiene advertencias.`, mentions: [user] })
+        return conn.sendMessage(m.chat, { text: `✅ *${await conn.getName(user).catch(()=>user.split('@')[0])}* no tiene advertencias.`, mentions: [user] })
 
       warns[user].count = Math.max(0, warns[user].count - 1)
       await global.db.write()
       return conn.sendMessage(m.chat, { 
-        text: `🟢 @${user.split('@')[0]} ahora tiene ${warns[user].count}/3 advertencias.`, 
+        text: `🟢 *${await conn.getName(user).catch(()=>user.split('@')[0])}* ahora tiene ${warns[user].count}/3 advertencias.`, 
         mentions: [user] 
       })
     }
