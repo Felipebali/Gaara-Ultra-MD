@@ -1,37 +1,38 @@
 // plugins/menu-owner.js
 let handler = async (m, { conn }) => {
   try {
+    const fecha = new Date().toLocaleString('es-UY', {
+      timeZone: 'America/Montevideo',
+      hour12: false
+    })
+
     const menuText = `
-╭━━━━━━━━━━━━━━━━━━━━━━━╮
-│ 👑 *MENÚ OWNER - FELIXCAT* 👑
-│   Comandos exclusivos del dueño
-╰━━━━━━━━━━━━━━━━━━━━━━━╯
+💼 *MENÚ OWNER - FELIXCAT_BOT*
+📅 ${fecha}
 
-📂 *Gestión de Administradores*
-   🐾 .autoadmin — Otorga poderes de admin
-   🐾 .chetar — Concede habilidades especiales
-   🐾 .deschetar — Quita habilidades especiales
+*Administradores*
+• .autoadmin – Dar admin
+• .chetar – Activar modo pro
+• .deschetar – Desactivar modo pro
 
-📂 *Usuarios / Lista Negra*
-   🚫 .ln <@user> — Agregar usuario a la lista negra
-   ♻️ .unln <@user> — Quitar usuario de la lista negra
-   🔍 .cln <@user> — Ver estado en lista negra
-   📜 .verln — Ver todos los usuarios en lista negra
-   🧹 .usln — Vaciar lista negra
-   🗑️ .resetuser <@user> — Borrar todos los datos del usuario
+*Lista Negra*
+• .ln <@user> – Agregar
+• .unln <@user> – Quitar
+• .cln <@user> – Consultar
+• .verln – Ver lista
+• .usln – Vaciar lista
+• .resetuser <@user> – Reiniciar usuario
 
-📂 *Bot / Sistema*
-   🔄 .restart — Reiniciar el bot
-   📦 .update — Actualizar el bot
-   🧠 .exec <código> — Ejecutar comando simple
-   ⚙️ .exec2 <código> — Ejecutar comando avanzado
-   🧩 .setcmd — Configurar comando personalizado
-   🪄 .setprefix — Cambiar prefijo del bot
-   ❌ .dsowner — Eliminar dueño actual
-   🔗 .join <link> — Unirse a un grupo
+*Bot*
+• .restart – Reiniciar
+• .update – Actualizar
+• .exec / .exec2 – Ejecutar código
+• .setcmd – Configurar comando
+• .setprefix – Cambiar prefijo
+• .dsowner – Quitar dueño
+• .join <link> – Unirse a grupo
 
-━━━━━━━━━━━━━━━━━━━━━━━
-✨ *FelixCat - Owner Oficial* ✨
+👑 FelixCat – Propietario
 `.trim()
 
     await conn.sendMessage(m.chat, { text: menuText }, { quoted: m })
