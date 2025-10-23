@@ -5,7 +5,8 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
 
   // Detectar usuario correctamente
   const user = m.mentionedJid?.[0] || m.quoted?.sender
-  if (!user) return conn.reply(m.chat, '📌 Menciona o responde al mensaje del usuario.', m)
+  if (!user && ['warn','advertir','ad','advertencia','unwarn','quitarwarn','sacarwarn'].includes(command))
+    return conn.reply(m.chat, '📌 Menciona o responde al mensaje del usuario.', m)
 
   // Inicializar DB del chat
   if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
@@ -13,10 +14,9 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
   if (!chatDB.warns) chatDB.warns = {}
   const warns = chatDB.warns
 
-  // Obtener nombre real del usuario
-  let userName = ''
-  try { userName = await conn.getName(user) } catch { userName = user.split('@')[0] }
-
+  // Obtener nombre o fallback
+  const userName = await conn.getName(user).catch(() => user.split('@')[0])
+  
   // ===== DAR ADVERTENCIA =====
   if (['warn','advertir','ad','advertencia'].includes(command)) {
     warns[user] = warns[user] || { count: 0 }
@@ -25,7 +25,7 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
 
     await conn.sendMessage(m.chat, {
       text: `⚠️ ${userName} recibió una advertencia. (${warns[user].count}/3)`,
-      mentions: [user] // 🔹 Esto hace que sea clickeable
+      mentions: [user] // 🔹 clickeable
     })
   }
 
@@ -39,7 +39,7 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
 
     await conn.sendMessage(m.chat, {
       text: `🟢 ${userName} ahora tiene ${warns[user].count}/3 advertencias.`,
-      mentions: [user]
+      mentions: [user] // 🔹 clickeable
     })
   }
 
@@ -52,8 +52,7 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
     const mentions = []
 
     for (const [jid, data] of entries) {
-      let name = ''
-      try { name = await conn.getName(jid) } catch { name = jid.split('@')[0] }
+      const name = await conn.getName(jid).catch(() => jid.split('@')[0])
       txt += `• ${name}: ${data.count}/3\n`
       mentions.push(jid)
     }
