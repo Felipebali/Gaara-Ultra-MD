@@ -9,6 +9,10 @@ const handler = async (m, { conn, command, text }) => {
   const done = '✅'
   const db = global.db.data.users || (global.db.data.users = {})
 
+  // Reacciones por comando
+  const reactions = { ln: '✅', unln: '☢️', cln: '👀', verln: '📜', usln: '🧹' }
+  if (reactions[command]) await conn.sendMessage(m.chat, { react: { text: reactions[command], key: m.key } })
+
   // Detectar usuario
   let userJid = null
   if (m.quoted) userJid = m.quoted.sender
@@ -27,7 +31,7 @@ const handler = async (m, { conn, command, text }) => {
 
   if (userJid && !db[userJid]) db[userJid] = {}
 
-  // ---------- LN (banuser) ----------
+  // ---------- LN (agregar a lista negra) ----------
   if (command === 'ln') {
     db[userJid].banned = true
     db[userJid].banReason = reason
@@ -58,7 +62,7 @@ const handler = async (m, { conn, command, text }) => {
     }
   }
 
-  // ---------- UNLN (unbanuser) ----------
+  // ---------- UNLN (quitar de lista negra) ----------
   else if (command === 'unln') {
     if (!db[userJid]?.banned)
       return conn.sendMessage(m.chat, { text: `${emoji} @${userJid.split('@')[0]} no está en la lista negra.`, mentions: [userJid] })
@@ -73,7 +77,7 @@ const handler = async (m, { conn, command, text }) => {
     })
   }
 
-  // ---------- CLN (checkban) ----------
+  // ---------- CLN (verificar si está en lista negra) ----------
   else if (command === 'cln') {
     if (!db[userJid]?.banned)
       return conn.sendMessage(m.chat, { text: `✅ @${userJid.split('@')[0]} no está en la lista negra.`, mentions: [userJid] })
@@ -84,7 +88,7 @@ const handler = async (m, { conn, command, text }) => {
     })
   }
 
-  // ---------- VERLN (banlist) ----------
+  // ---------- VERLN (mostrar lista negra) ----------
   else if (command === 'verln') {
     const bannedEntries = Object.entries(db).filter(([_, data]) => data?.banned)
     if (bannedEntries.length === 0)
@@ -101,7 +105,7 @@ const handler = async (m, { conn, command, text }) => {
     await conn.sendMessage(m.chat, { text: textList.trim(), mentions })
   }
 
-  // ---------- USLN (clearbanlist) ----------
+  // ---------- USLN (vaciar lista negra) ----------
   else if (command === 'usln') {
     for (const jid in db) {
       if (db[jid]?.banned) {
