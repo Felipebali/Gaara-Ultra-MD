@@ -12,10 +12,11 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
   if (!chatDB.warns) chatDB.warns = {}
   const warns = chatDB.warns
 
-  // Obtener nombres
-  let userName, senderName
-  try { if(user) userName = await conn.getName(user) } catch { if(user) userName = user.split('@')[0] }
-  try { senderName = await conn.getName(m.sender) } catch { senderName = m.sender.split('@')[0] }
+  // Obtener nombres de manera segura
+  let userName = user ? user.split('@')[0] : ''
+  let senderName = m.sender.split('@')[0]
+  try { if(user) userName = await conn.getName(user) } catch {}
+  try { senderName = await conn.getName(m.sender) } catch {}
 
   const mentionsArray = user ? [user, m.sender] : []
 
