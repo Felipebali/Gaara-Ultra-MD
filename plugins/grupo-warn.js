@@ -13,8 +13,9 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
   if (!chatDB.warns) chatDB.warns = {}
   const warns = chatDB.warns
 
-  // Obtener nombre real seguro
-  let name = who ? await conn.getName(who).catch(() => who.split("@")[0]) : "Desconocido"
+  // Obtener nombre seguro sin usar .catch()
+  let name
+  try { name = who ? await conn.getName(who) : "Desconocido" } catch { name = who ? who.split("@")[0] : "Desconocido" }
 
   // ===== DAR ADVERTENCIA =====
   if (['warn','advertir','ad','advertencia'].includes(command)) {
@@ -55,7 +56,8 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
     const mentions = []
 
     for (const [jid, data] of entries) {
-      const n = await conn.getName(jid).catch(() => jid.split("@")[0])
+      let n
+      try { n = await conn.getName(jid) } catch { n = jid.split("@")[0] }
       txt += `• ${n}: ${data.count}/3\n`
       mentions.push(jid)
     }
