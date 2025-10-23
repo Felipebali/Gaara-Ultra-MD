@@ -20,7 +20,9 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
       let mentions = []
       let lista = '⚠️ *LISTA NEGRA DE ADVERTENCIAS*\n\n'
       for (const [jid, data] of advertidos) {
-        lista += `• ${jid.split('@')[0]} — ${data.count}/3 ⚠️ (${data.date})\n`
+        let name = jid.split('@')[0]
+        try { name = await conn.getName(jid) } catch {}
+        lista += `• ${name} — ${data.count}/3 ⚠️ (${data.date})\n`
         mentions.push(jid)
       }
 
@@ -34,10 +36,14 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
 
       const motivo = text.split(' ').slice(1).join(' ').trim() || 'Sin motivo especificado'
 
-      // Obtener nombres
+      // Nombres visibles
       let userName, senderName
       try { userName = await conn.getName(user) } catch { userName = user.split('@')[0] }
       try { senderName = await conn.getName(m.sender) } catch { senderName = m.sender.split('@')[0] }
+
+      // Nombre limpio para mención clickeable
+      const userClean = user.split('@')[0]
+      const senderClean = m.sender.split('@')[0]
 
       // Actualizar advertencias
       warns[user] = warns[user] || { count: 0, date: null }
