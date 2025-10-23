@@ -14,9 +14,12 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
   if (!chatDB.warns) chatDB.warns = {}
   const warns = chatDB.warns
 
-  // Obtener nombre o fallback
-  const userName = await conn.getName(user).catch(() => user.split('@')[0])
-  
+  // Obtener nombre con fallback
+  let userName = user ? user.split('@')[0] : 'Usuario'
+  if (user) {
+    try { userName = await conn.getName(user) } catch {}
+  }
+
   // ===== DAR ADVERTENCIA =====
   if (['warn','advertir','ad','advertencia'].includes(command)) {
     warns[user] = warns[user] || { count: 0 }
@@ -25,21 +28,21 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
 
     await conn.sendMessage(m.chat, {
       text: `⚠️ ${userName} recibió una advertencia. (${warns[user].count}/3)`,
-      mentions: [user] // 🔹 clickeable
+      mentions: user ? [user] : []
     })
   }
 
   // ===== QUITAR ADVERTENCIA =====
   else if (['unwarn','quitarwarn','sacarwarn'].includes(command)) {
     if (!warns[user]?.count || warns[user].count === 0)
-      return conn.sendMessage(m.chat, { text: `✅ ${userName} no tiene advertencias.`, mentions: [user] })
+      return conn.sendMessage(m.chat, { text: `✅ ${userName} no tiene advertencias.`, mentions: user ? [user] : [] })
 
     warns[user].count = Math.max(0, warns[user].count - 1)
     await global.db.write()
 
     await conn.sendMessage(m.chat, {
       text: `🟢 ${userName} ahora tiene ${warns[user].count}/3 advertencias.`,
-      mentions: [user] // 🔹 clickeable
+      mentions: user ? [user] : []
     })
   }
 
@@ -52,7 +55,8 @@ let handler = async (m, { conn, command, isAdmin, isOwner }) => {
     const mentions = []
 
     for (const [jid, data] of entries) {
-      const name = await conn.getName(jid).catch(() => jid.split('@')[0])
+      let name = jid.split('@')[0]
+      try { name = await conn.getName(jid) } catch {}
       txt += `• ${name}: ${data.count}/3\n`
       mentions.push(jid)
     }
