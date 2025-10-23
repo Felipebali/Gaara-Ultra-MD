@@ -1,58 +1,38 @@
-import axios from 'axios';
+// plugins/hentaisearch.js
+const handler = async (m, { conn, text }) => {
+  try {
+    if (!text) return m.reply('Por favor, ingresa el nombre de algún hentai para buscar.');
 
-const handler = async (m, { conn, text, usedPrefix, command }) => {
-    let chat = global.db.data.chats[m.chat];
+    // Asegurarse que la DB existe
+    const dbUsers = global.db?.data?.users || {};
 
-    // ⚠️ NSFW desactivado
-    if (!chat?.nsfw && m.isGroup) {
-        return m.reply(`🐉 El contenido *NSFW* está desactivado en este grupo.\n> Un owner puede activarlo con el comando » *.nsfw*`);
-    }
+    // Aquí podrías usar la DB si necesitás filtrar por usuarios, ejemplo:
+    const usersList = Object.values(dbUsers); // nunca será undefined
 
-    if (!text) throw `☁️ Por favor, ingresa el nombre de algún hentai para buscar.`;
+    // Simulación de búsqueda
+    // Reemplazá esto con tu API real o scraping
+    const results = [
+      { title: 'Hentai 1', link: 'https://example.com/1' },
+      { title: 'Hentai 2', link: 'https://example.com/2' },
+    ].filter(item => item.title.toLowerCase().includes(text.toLowerCase()));
 
-    const searchResults = await searchHentai(text);
-    let teks = searchResults.result.map((v, i) => `
-${i + 1}. *_${v.title}_*
-↳ 👀 *_Vistas:_* ${v.views}
-↳ 🔗 *_Link:_* ${v.url}`).join('\n\n');
+    if (!results.length) return m.reply('No se encontraron resultados.');
 
-    let randomThumbnail;
-    if (searchResults.result.length > 0) {
-        const randomIndex = Math.floor(Math.random() * searchResults.result.length);
-        randomThumbnail = searchResults.result[randomIndex].thumbnail;
-    } else {
-        randomThumbnail = 'https://pictures.hentai-foundry.com/e/Error-Dot/577798/Error-Dot-577798-Zero_Two.png';
-        teks = `❌ No se encontraron resultados.`;
-    }
+    // Armar mensaje de resultados
+    let message = '🔍 Resultados de búsqueda:\n\n';
+    results.forEach((item, index) => {
+      message += `${index + 1}. ${item.title}\nLink: ${item.link}\n\n`;
+    });
 
-    conn.sendFile(m.chat, randomThumbnail, 'hentai.jpg', teks, m);
+    await conn.sendMessage(m.chat, { text: message.trim() }, { quoted: m });
+
+  } catch (e) {
+    console.error(e);
+    m.reply('❌ Ocurrió un error al buscar hentai.');
+  }
 };
 
-handler.help = ['searchhentai','hentaisearch'];
-handler.tags = ['nsfw'];
-handler.command = ['searchhentai', 'hentaisearch'];
-
+handler.command = ['hentaisearch', 'hs'];
+handler.tags = ['internet'];
+handler.group = false;
 export default handler;
-
-async function searchHentai(search) {
-    try {
-        const { data } = await axios.get('https://hentai.tv/?s=' + encodeURIComponent(search));
-        const result = { coder: 'rem-comp', result: [], warning: 'It is strictly forbidden to reupload this code, copyright © 2022 by rem-comp' };
-
-        const regex = /<div class="crsl-slde">([\s\S]*?)<\/div>/g;
-        let match;
-        while ((match = regex.exec(data)) !== null) {
-            const block = match[1];
-            const thumbnail = /<img[^>]+src="([^"]+)"/.exec(block)?.[1] || '';
-            const title = /<a[^>]*>(.*?)<\/a>/.exec(block)?.[1]?.trim() || '';
-            const views = /<p[^>]*>(.*?)<\/p>/.exec(block)?.[1]?.trim() || '';
-            const url = /<a[^>]+href="([^"]+)"/.exec(block)?.[1] || '';
-
-            if (title && url) result.result.push({ thumbnail, title, views, url });
-        }
-        return result;
-    } catch (e) {
-        console.error(e);
-        return { coder: 'rem-comp', result: [], warning: 'Error en la búsqueda' };
-    }
-}
