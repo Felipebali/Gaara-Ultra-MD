@@ -4,7 +4,6 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
     if (!m.isGroup) return conn.reply(m.chat, '❗ Este comando solo puede usarse en grupos.', m)
     if (!isAdmin && !isOwner) return conn.reply(m.chat, '🚫 Solo administradores pueden usar estos comandos.', m)
 
-    // Inicializar base de datos
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
     const chatDB = global.db.data.chats[m.chat]
     if (!chatDB.warns) chatDB.warns = {}
@@ -43,6 +42,8 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
       await global.db.write()
 
       const newCount = warns[user].count
+      const mentionsArray = [user, m.sender]
+
       if (newCount >= 3) {
         try {
           await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
@@ -50,20 +51,17 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
           await global.db.write()
           return conn.sendMessage(m.chat, { 
             text: `🚫 *@${userName}* fue expulsado por acumular 3 advertencias.\n📝 Motivo: ${motivo}\n👮‍♂️ Moderador: @${senderName}`,
-            mentions: [user, m.sender] 
+            mentions: mentionsArray
           })
         } catch (e) {
           console.error(e)
           return conn.reply(m.chat, '❌ No se pudo expulsar al usuario. Verifica permisos.', m)
         }
       } else {
-        let extra = ''
-        if (newCount === 2) extra = '🔥 Última advertencia antes de expulsión.'
-        else extra = `🕒 Restan ${3 - newCount} antes de ser expulsado.`
-
+        const extra = newCount === 2 ? '🔥 Última advertencia antes de expulsión.' : `🕒 Restan ${3 - newCount} antes de ser expulsado.`
         return conn.sendMessage(m.chat, { 
           text: `⚠️ *@${userName}* recibió una advertencia.\n📊 Advertencias: ${newCount}/3\n📝 Motivo: ${motivo}\n👮‍♂️ Moderador: @${senderName}\n${extra}`,
-          mentions: [user, m.sender] 
+          mentions: mentionsArray
         })
       }
     }
