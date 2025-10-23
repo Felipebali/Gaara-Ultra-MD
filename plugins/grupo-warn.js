@@ -1,7 +1,5 @@
 // plugins/grupo-warn.js
-// Comando: .warn / .unwarn / .warnlist
-// Solo admins y owners pueden usarlo
-const handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
+let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
   try {
     if (!m.isGroup) return conn.reply(m.chat, '❗ Este comando solo puede usarse en grupos.', m)
     if (!isAdmin && !isOwner) return conn.reply(m.chat, '🚫 Solo administradores pueden usar estos comandos.', m)
@@ -35,8 +33,9 @@ const handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
       if (!user) return conn.reply(m.chat, '📌 Etiqueta o responde a un usuario para advertirlo.', m)
 
       const motivo = text.split(' ').slice(1).join(' ').trim() || 'Sin motivo especificado'
-      const userName = await conn.getName(user).catch(() => user.split('@')[0])
-      const senderName = await conn.getName(m.sender).catch(() => m.sender.split('@')[0])
+      let userName, senderName
+      try { userName = conn.getName(user) } catch { userName = user.split('@')[0] }
+      try { senderName = conn.getName(m.sender) } catch { senderName = m.sender.split('@')[0] }
 
       warns[user] = warns[user] || { count: 0, date: null }
       warns[user].count += 1
