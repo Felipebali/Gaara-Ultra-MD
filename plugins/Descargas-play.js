@@ -43,7 +43,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       }
     }, { quoted: m })
 
-    if (command === 'play') {
+    if (command === 'playaudio') {
       try {
         const apiUrl = `https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(url)}&quality=128`
         const res = await fetch(apiUrl)
@@ -79,7 +79,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       }
     }
 
-    else if (command === 'play2') {
+    else if (command === 'playvideo') {
       try {
         const apiUrl = `https://api.stellarwa.xyz/dow/ytmp4?url=${encodeURIComponent(url)}&apikey=Shadow_Core`
         const res = await fetch(apiUrl)
@@ -128,9 +128,9 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 }
 
-handler.command = ['play', 'play2']
+handler.command = ['playaudio', 'playvideo']
 handler.help = ['playaudio', 'playvideo']
-handler.tags = ['descargas']
+handler.tags = ['download']
 export default handler
 
 function formatViews(views) {
