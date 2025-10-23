@@ -34,8 +34,8 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
 
       const motivo = text.split(' ').slice(1).join(' ').trim() || 'Sin motivo especificado'
       let userName, senderName
-      try { userName = conn.getName(user) } catch { userName = user.split('@')[0] }
-      try { senderName = conn.getName(m.sender) } catch { senderName = m.sender.split('@')[0] }
+      try { userName = await conn.getName(user) } catch { userName = user.split('@')[0] }
+      try { senderName = await conn.getName(m.sender) } catch { senderName = m.sender.split('@')[0] }
 
       warns[user] = warns[user] || { count: 0, date: null }
       warns[user].count += 1
@@ -49,8 +49,8 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
           warns[user].count = 0
           await global.db.write()
           return conn.sendMessage(m.chat, { 
-            text: `🚫 *@${userName}* fue expulsado por acumular 3 advertencias.\n📝 Motivo: ${motivo}`,
-            mentions: [user] 
+            text: `🚫 *@${userName}* fue expulsado por acumular 3 advertencias.\n📝 Motivo: ${motivo}\n👮‍♂️ Moderador: @${senderName}`,
+            mentions: [user, m.sender] 
           })
         } catch (e) {
           console.error(e)
@@ -62,8 +62,8 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
         else extra = `🕒 Restan ${3 - newCount} antes de ser expulsado.`
 
         return conn.sendMessage(m.chat, { 
-          text: `⚠️ *@${userName}* recibió una advertencia.\n📊 Advertencias: ${newCount}/3\n📝 Motivo: ${motivo}\n${extra}`,
-          mentions: [user] 
+          text: `⚠️ *@${userName}* recibió una advertencia.\n📊 Advertencias: ${newCount}/3\n📝 Motivo: ${motivo}\n👮‍♂️ Moderador: @${senderName}\n${extra}`,
+          mentions: [user, m.sender] 
         })
       }
     }
@@ -78,7 +78,10 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
 
       warns[user].count = Math.max(0, warns[user].count - 1)
       await global.db.write()
-      return conn.sendMessage(m.chat, { text: `🟢 @${user.split('@')[0]} ahora tiene ${warns[user].count}/3 advertencias.`, mentions: [user] })
+      return conn.sendMessage(m.chat, { 
+        text: `🟢 @${user.split('@')[0]} ahora tiene ${warns[user].count}/3 advertencias.`, 
+        mentions: [user] 
+      })
     }
 
   } catch (e) {
