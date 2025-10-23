@@ -4,7 +4,7 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
     if (!m.isGroup) return conn.reply(m.chat, '❗ Este comando solo puede usarse en grupos.', m)
     if (!isAdmin && !isOwner) return conn.reply(m.chat, '🚫 Solo administradores pueden usar estos comandos.', m)
 
-    const usersDB = global.db.data.users || {}
+    // Inicializar base de datos
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
     const chatDB = global.db.data.chats[m.chat]
     if (!chatDB.warns) chatDB.warns = {}
@@ -13,7 +13,7 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
     const action = command.toLowerCase()
 
     // ===== LISTA DE ADVERTIDOS =====
-    if (action.includes('list')) {
+    if (['warnlist','listaadvertidos','listwarn'].includes(action)) {
       const advertidos = Object.entries(warns).filter(([jid, data]) => data?.count > 0)
       if (!advertidos.length) return conn.sendMessage(m.chat, { text: '✅ No hay usuarios advertidos.' })
 
@@ -28,7 +28,7 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
     }
 
     // ===== DAR ADVERTENCIA =====
-    if (action.includes('warn')) {
+    else if (['warn','advertir','ad','advertencia'].includes(action)) {
       const user = m.mentionedJid?.[0] || m.quoted?.sender
       if (!user) return conn.reply(m.chat, '📌 Etiqueta o responde a un usuario para advertirlo.', m)
 
@@ -44,13 +44,12 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
 
       const newCount = warns[user].count
       if (newCount >= 3) {
-        // Expulsar usuario
         try {
           await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
           warns[user].count = 0
           await global.db.write()
           return conn.sendMessage(m.chat, { 
-            text: `🚫 *${userName}* fue expulsado por acumular 3 advertencias.\n📝 Motivo: ${motivo}`,
+            text: `🚫 *@${userName}* fue expulsado por acumular 3 advertencias.\n📝 Motivo: ${motivo}`,
             mentions: [user] 
           })
         } catch (e) {
@@ -58,15 +57,19 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
           return conn.reply(m.chat, '❌ No se pudo expulsar al usuario. Verifica permisos.', m)
         }
       } else {
+        let extra = ''
+        if (newCount === 2) extra = '🔥 Última advertencia antes de expulsión.'
+        else extra = `🕒 Restan ${3 - newCount} antes de ser expulsado.`
+
         return conn.sendMessage(m.chat, { 
-          text: `⚠️ *${userName}* recibió una advertencia.\n📊 Advertencias: ${newCount}/3\n📝 Motivo: ${motivo}\n🕒 Restan ${3 - newCount} antes de ser expulsado.`,
+          text: `⚠️ *@${userName}* recibió una advertencia.\n📊 Advertencias: ${newCount}/3\n📝 Motivo: ${motivo}\n${extra}`,
           mentions: [user] 
         })
       }
     }
 
     // ===== QUITAR ADVERTENCIA =====
-    if (action.includes('unwarn')) {
+    else if (['unwarn','quitarwarn','sacarwarn'].includes(action)) {
       const user = m.mentionedJid?.[0] || m.quoted?.sender
       if (!user) return conn.reply(m.chat, '📌 Etiqueta o responde a un usuario para quitarle advertencias.', m)
 
