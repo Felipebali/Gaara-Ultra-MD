@@ -5,6 +5,8 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
 
   // Detectar usuario
   const user = m.mentionedJid?.[0] || m.quoted?.sender
+  if (!user && ['warn','advertir','ad','advertencia','unwarn','quitarwarn','sacarwarn'].includes(command))
+    return conn.reply(m.chat, '📌 Menciona o responde al mensaje del usuario.', m)
 
   // Inicializar DB del chat
   if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
@@ -12,35 +14,36 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
   if (!chatDB.warns) chatDB.warns = {}
   const warns = chatDB.warns
 
+  // ===== Obtener nombre real y menciones =====
+  let userName = ''
+  try { userName = await conn.getName(user) } catch { userName = user.split('@')[0] }
+  const mentionsArray = user ? [user] : []
+
   // ===== DAR ADVERTENCIA =====
   if (['warn','advertir','ad','advertencia'].includes(command)) {
-    if (!user) return conn.reply(m.chat, '📌 Menciona o responde al mensaje del usuario.', m)
-
     warns[user] = warns[user] || { count: 0 }
     warns[user].count += 1
     await global.db.write()
 
     const newCount = warns[user].count
 
-    // Mensaje simplificado y clickeable
     await conn.sendMessage(m.chat, {
-      text: `⚠️ ${user} recibió una advertencia. (${newCount}/3)`,
-      mentions: [user]
+      text: `⚠️ ${userName} recibió una advertencia. (${newCount}/3)`,
+      mentions: mentionsArray
     })
   }
 
   // ===== QUITAR ADVERTENCIA =====
   else if (['unwarn','quitarwarn','sacarwarn'].includes(command)) {
-    if (!user) return conn.reply(m.chat, '📌 Menciona o responde al mensaje del usuario.', m)
     if (!warns[user]?.count || warns[user].count === 0)
-      return conn.sendMessage(m.chat, { text: `✅ ${user} no tiene advertencias.`, mentions: [user] })
+      return conn.sendMessage(m.chat, { text: `✅ ${userName} no tiene advertencias.`, mentions: mentionsArray })
 
     warns[user].count = Math.max(0, warns[user].count - 1)
     await global.db.write()
 
     await conn.sendMessage(m.chat, {
-      text: `🟢 ${user} ahora tiene ${warns[user].count}/3 advertencias.`,
-      mentions: [user]
+      text: `🟢 ${userName} ahora tiene ${warns[user].count}/3 advertencias.`,
+      mentions: mentionsArray
     })
   }
 
@@ -53,7 +56,9 @@ let handler = async (m, { conn, command, text, isAdmin, isOwner }) => {
     const mentions = []
 
     for (const [jid, data] of entries) {
-      txt += `• ${jid}: ${data.count}/3\n`
+      let name = ''
+      try { name = await conn.getName(jid) } catch { name = jid.split('@')[0] }
+      txt += `• ${name}: ${data.count}/3\n`
       mentions.push(jid)
     }
 
