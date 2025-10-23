@@ -1,4 +1,4 @@
-// plugins/warn.js
+// plugins/grupo-warn.js
 const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin, isROwner }) => {
   if (!m.isGroup) return m.reply('✦ Este comando solo se puede usar en grupos.')
   if (!isAdmin && !isROwner) return m.reply('✦ Solo los administradores pueden usar este comando.')
@@ -10,8 +10,9 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
   const motivo = args.slice(1).join(' ').trim()
   const date = new Date().toLocaleDateString('es-ES')
 
-  const chat = global.db.data.chats[m.chat] ||= {}
-  chat.warns ||= {}
+  if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
+  const chat = global.db.data.chats[m.chat]
+  if (!chat.warns) chat.warns = {}
   const warns = chat.warns
 
   // 🧾 Listar advertidos
