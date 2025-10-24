@@ -13,7 +13,7 @@ const handler = async (m, { conn, command, text }) => {
   const reactions = { ln: '✅', unln: '☢️', cln: '👀', verln: '📜', usln: '🧹' }
   if (reactions[command]) await conn.sendMessage(m.chat, { react: { text: reactions[command], key: m.key } })
 
-  // Detectar usuario
+  // --- DETECTAR USUARIO ---
   let userJid = null
   if (m.quoted) userJid = normalizeJid(m.quoted.sender)
   else if (m.mentionedJid?.length) userJid = normalizeJid(m.mentionedJid[0])
@@ -22,16 +22,23 @@ const handler = async (m, { conn, command, text }) => {
     if (num) userJid = `${num}@s.whatsapp.net`
   }
 
-  // Motivo (elimina el número del usuario para que no aparezca como motivo)
-  let reason = text ? text.replace(userJid?.split('@')[0] || '', '').trim() : ''
-  if (!reason) reason = 'No especificado'
-
+  // Validar usuario
   if (!userJid && !['verln', 'usln'].includes(command))
     return conn.reply(m.chat, `${emoji} Debes responder, mencionar o escribir el número del usuario.`, m)
 
+  // Crear objeto en DB si no existe
   if (userJid && !db[userJid]) db[userJid] = {}
 
+  // Nombre real para menciones
   const name = userJid ? await conn.getName(userJid) : null
+
+  // --- DETECTAR MOTIVO ---
+  let reason = ''
+  if (text && userJid) {
+    // Elimina solo el número del usuario para no usarlo como motivo
+    reason = text.replace(userJid.split('@')[0], '').trim()
+  }
+  if (!reason) reason = 'No especificado'
 
   // --- AGREGAR A LISTA NEGRA ---
   if (command === 'ln') {
