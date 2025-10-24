@@ -25,35 +25,39 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
         userData.messageCount += 1;
 
         if (userData.messageCount >= messageLimit) {
-            let warningMessage = '';
             const mention = `@${who.split('@')[0]}`;
+            let warningMessage = '';
 
             if (isOwner) {
                 warningMessage = `👑 *Owner alerta*\n${mention}, estás enviando demasiados mensajes, pero no puedo kickearte.`;
+                await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
             } else if (isAdmin) {
                 warningMessage = `⚡️ *Admin alerta*\n${mention}, estás enviando mensajes demasiado rápido.`;
+                await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
             } else {
                 userData.warnings += 1;
 
                 if (userData.warnings >= warningLimit) {
-                    warningMessage = `❌ *Límite de spam alcanzado*\n${mention} será expulsado automáticamente por spam.`;
-
                     try {
                         const groupMetadata = await conn.groupMetadata(m.chat);
                         const botNumber = conn.user?.id || conn.user?.jid;
                         const botData = groupMetadata.participants.find(p => p.id === botNumber);
-                        const isBotAdmin = botData?.admin;
+
+                        const isBotAdmin = botData?.admin === 'admin' || botData?.admin === 'superadmin';
 
                         if (isBotAdmin) {
-                            // 🦶 Kick inmediato
-                            await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
                             await conn.sendMessage(m.chat, {
-                                text: `🚫 ${mention} fue *expulsado automáticamente* por hacer spam.`,
+                                text: `❌ *Límite de spam alcanzado*\n${mention} será *expulsado automáticamente* por spam.`,
                                 mentions: [who]
                             });
+
+                            // 🦶 Kick inmediato
+                            await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
                         } else {
-                            warningMessage += `\n⚠️ No puedo kickear, no soy admin.`;
-                            await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
+                            await conn.sendMessage(m.chat, {
+                                text: `⚠️ No puedo expulsar a ${mention} porque *no soy admin*.`,
+                                mentions: [who]
+                            });
                         }
                     } catch (err) {
                         await conn.sendMessage(m.chat, {
