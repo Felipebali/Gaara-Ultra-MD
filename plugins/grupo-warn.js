@@ -8,14 +8,23 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
   if (!m.isGroup) return m.reply('🚫 Este comando solo se puede usar en grupos.')
 
   // ---------- ⚠️ DAR ADVERTENCIA ----------
-  if (['advertencia','ad','daradvertencia','advertir','warn'].includes(command)) {
+  if (['advertencia', 'ad', 'daradvertencia', 'advertir', 'warn'].includes(command)) {
     if (!isAdmin) return m.reply('❌ Solo los administradores pueden advertir.')
     if (!isBotAdmin) return m.reply('🤖 Necesito ser administrador para poder eliminar usuarios.')
 
     const user = m.mentionedJid?.[0] || m.quoted?.sender
-    if (!user) return m.reply(`⚠️ Debes mencionar o responder a alguien.\n📌 Ejemplo: ${usedPrefix}${command} @usuario [motivo]`)
+    if (!user)
+      return m.reply(`⚠️ Debes mencionar o responder a alguien.\n📌 Ejemplo: ${usedPrefix}${command} @usuario [motivo]`)
 
-    const motivo = text?.split(' ').slice(1).join(' ') || 'Sin especificar 💤'
+    // --- Limpiar el texto para obtener el motivo correctamente ---
+    let motivo = text?.trim()
+      .replace(new RegExp(`^@${user.split('@')[0]}`, 'gi'), '') // Quita la mención al inicio
+      .replace(new RegExp(`^${usedPrefix}${command}`, 'gi'), '') // Quita el comando si está incluido
+      .trim()
+
+    // Si no hay motivo, dejar uno por defecto
+    if (!motivo) motivo = 'Sin especificar 💤'
+
     const fecha = new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' })
 
     const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
@@ -28,10 +37,9 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     const count = warns[user].count
     await global.db.write()
 
-    // Reacción
     await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
 
-    // Si llega a 3 advertencias, eliminar
+    // Si llega a 3 advertencias → eliminar
     if (count >= 3) {
       const msg = `🚫 *El usuario @${user.split('@')[0]} fue eliminado por acumular 3 advertencias.*\n🧹 Adiós 👋`
       try {
@@ -53,11 +61,12 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
   }
 
   // ---------- 🟢 QUITAR ADVERTENCIA ----------
-  else if (['unwarn','quitarwarn','sacarwarn'].includes(command)) {
+  else if (['unwarn', 'quitarwarn', 'sacarwarn'].includes(command)) {
     if (!isAdmin && !isROwner) return m.reply('⚠️ Solo los administradores o el dueño pueden quitar advertencias.')
 
     const target = m.quoted?.sender || m.mentionedJid?.[0]
-    if (!target) return m.reply('❌ Debes mencionar o responder al mensaje del usuario para quitarle una advertencia.')
+    if (!target)
+      return m.reply('❌ Debes mencionar o responder al mensaje del usuario para quitarle una advertencia.')
 
     const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
     if (!chatDB.warns) chatDB.warns = {}
@@ -67,11 +76,10 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
       return conn.sendMessage(m.chat, { text: `✅ @${target.split('@')[0]} no tiene advertencias.`, mentions: [target] })
 
     warns[target].count = Math.max(0, warns[target].count - 1)
-    warns[target].motivos?.pop() // elimina el último motivo
+    warns[target].motivos?.pop()
     await global.db.write()
 
     await conn.sendMessage(m.chat, { react: { text: '🟢', key: m.key } })
-
     await conn.sendMessage(m.chat, {
       text: `🟢 *Advertencia retirada a:* @${target.split('@')[0]}\n📋 Ahora tiene *${warns[target].count}/3* advertencias.`,
       mentions: [target]
@@ -79,7 +87,7 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
   }
 
   // ---------- 📜 LISTA DE ADVERTENCIAS ----------
-  else if (['warnlist','advertencias','listaad'].includes(command)) {
+  else if (['warnlist', 'advertencias', 'listaad'].includes(command)) {
     const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
     if (!chatDB.warns) chatDB.warns = {}
     const warns = chatDB.warns
