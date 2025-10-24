@@ -18,11 +18,10 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
 
     // --- Limpiar el texto para obtener el motivo correctamente ---
     let motivo = text?.trim()
-      .replace(new RegExp(`^@${user.split('@')[0]}`, 'gi'), '') // Quita la mención al inicio
-      .replace(new RegExp(`^${usedPrefix}${command}`, 'gi'), '') // Quita el comando si está incluido
+      .replace(new RegExp(`^@${user.split('@')[0]}`, 'gi'), '')
+      .replace(new RegExp(`^${usedPrefix}${command}`, 'gi'), '')
       .trim()
 
-    // Si no hay motivo, dejar uno por defecto
     if (!motivo) motivo = 'Sin especificar 💤'
 
     const fecha = new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' })
@@ -31,7 +30,10 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     if (!chatDB.warns) chatDB.warns = {}
     const warns = chatDB.warns
 
-    warns[user] = warns[user] || { count: 0, motivos: [] }
+    // 🔒 Asegurar estructura antes del push
+    if (!warns[user]) warns[user] = { count: 0, motivos: [] }
+    if (!Array.isArray(warns[user].motivos)) warns[user].motivos = []
+
     warns[user].count += 1
     warns[user].motivos.push({ motivo, fecha })
     const count = warns[user].count
