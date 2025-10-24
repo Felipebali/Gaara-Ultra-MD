@@ -22,8 +22,8 @@ const handler = async (m, { conn, command, text }) => {
     if (num) userJid = `${num}@s.whatsapp.net`
   }
 
-  // Motivo (no borra números ni símbolos)
-  let reason = text ? text.replace(/@\d+/g, '').trim() : ''
+  // Motivo (elimina el número del usuario para que no aparezca como motivo)
+  let reason = text ? text.replace(userJid?.split('@')[0] || '', '').trim() : ''
   if (!reason) reason = 'No especificado'
 
   if (!userJid && !['verln', 'usln'].includes(command))
