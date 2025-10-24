@@ -1,88 +1,67 @@
 // plugins/antispam.js
-const userSpamData = {};
+const MAX_SPAM = 5        // Mensajes permitidos seguidos
+const TIME_WINDOW = 7000  // Tiempo (ms) para contar los mensajes (7 segundos)
+const COOLDOWN = 15000    // Tiempo (ms) de reinicio tras acción (15 seg)
 
-let handler = m => m;
+let spamTracker = {}      // Registro temporal
 
-handler.before = async function (m, { conn, isAdmin, isOwner }) {
-    const chat = global.db.data.chats[m.chat];
-    if (!chat || !chat.antiSpam) return; // Solo si el antiSpam está activado
+const handler = async (m, { conn }) => {
+  if (!m.isGroup || !m.sender || m.key.fromMe) return
+  const sender = m.sender
+  const chatId = m.chat
 
-    const who = m.sender;
-    const currentTime = Date.now();
-    const timeWindow = 4000; // 4 segundos
-    const messageLimit = 3;  // máximo 3 mensajes en ese tiempo
-    const warningLimit = 2;  // 2 advertencias antes del kick
+  // Crear registro si no existe
+  if (!spamTracker[chatId]) spamTracker[chatId] = {}
+  if (!spamTracker[chatId][sender]) {
+    spamTracker[chatId][sender] = { count: 0, last: Date.now(), timeout: null }
+  }
 
-    if (!(who in userSpamData)) {
-        userSpamData[who] = { lastMessageTime: currentTime, messageCount: 1, warnings: 0 };
-        return;
+  const userData = spamTracker[chatId][sender]
+  const now = Date.now()
+
+  // Si el usuario vuelve a escribir dentro del tiempo de ventana
+  if (now - userData.last < TIME_WINDOW) {
+    userData.count++
+  } else {
+    userData.count = 1
+  }
+
+  userData.last = now
+
+  // Si supera el límite
+  if (userData.count >= MAX_SPAM) {
+    await conn.sendMessage(chatId, { react: { text: '⚡', key: m.key } })
+
+    await conn.sendMessage(chatId, {
+      text: `❌ _*Límite de spam alcanzado*_ ⚡️\n@${sender.split('@')[0]} será expulsado por spam.`,
+      mentions: [sender]
+    })
+
+    await new Promise(r => setTimeout(r, 800))
+
+    try {
+      await conn.groupParticipantsUpdate(chatId, [sender], 'remove')
+      console.log(`[ANTISPAM] ${sender} expulsado por spam en ${chatId}`)
+    } catch (e) {
+      if (e.message.includes('not-admin')) {
+        await conn.sendMessage(chatId, {
+          text: `⚠️ No puedo expulsar a @${sender.split('@')[0]} porque *no soy admin*.`,
+          mentions: [sender]
+        })
+      } else {
+        console.log(`⚠️ No se pudo eliminar a ${sender}: ${e.message}`)
+      }
     }
 
-    const userData = userSpamData[who];
-    const timeDifference = currentTime - userData.lastMessageTime;
+    // Reiniciar contador
+    userData.count = 0
+    clearTimeout(userData.timeout)
+    userData.timeout = setTimeout(() => delete spamTracker[chatId][sender], COOLDOWN)
+  }
+}
 
-    if (timeDifference <= timeWindow) {
-        userData.messageCount++;
+handler.help = ['antispam']
+handler.tags = ['group']
+handler.group = true
 
-        if (userData.messageCount >= messageLimit) {
-            const mention = `@${who.split('@')[0]}`;
-            let warningMessage = '';
-
-            if (isOwner) {
-                warningMessage = `👑 *Owner alerta*\n${mention}, estás enviando demasiados mensajes, pero no puedo kickearte.`;
-                await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
-            } else if (isAdmin) {
-                warningMessage = `⚡️ *Admin alerta*\n${mention}, estás enviando mensajes demasiado rápido.`;
-                await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
-            } else {
-                userData.warnings++;
-
-                if (userData.warnings >= warningLimit) {
-                    try {
-                        const groupMetadata = await conn.groupMetadata(m.chat);
-                        const botNumber = conn.user?.id || conn.user?.jid;
-
-                        // ✅ Detecta si el bot es admin de verdad
-                        const isBotAdmin = groupMetadata.participants.some(
-                            p => (p.id === botNumber || p.jid === botNumber) &&
-                                 (p.admin === 'admin' || p.admin === 'superadmin')
-                        );
-
-                        if (isBotAdmin) {
-                            await conn.sendMessage(m.chat, {
-                                text: `❌ *Límite de spam alcanzado*\n${mention} será *expulsado automáticamente* por spam.`,
-                                mentions: [who]
-                            });
-
-                            // 🦶 Expulsión inmediata
-                            await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
-                        } else {
-                            await conn.sendMessage(m.chat, {
-                                text: `⚠️ No puedo expulsar a ${mention} porque *no soy admin*.`,
-                                mentions: [who]
-                            });
-                        }
-                    } catch (err) {
-                        await conn.sendMessage(m.chat, {
-                            text: `⚠️ Error al intentar expulsar a ${mention}: ${err.message}`,
-                            mentions: [who]
-                        });
-                    }
-
-                    userData.warnings = 0; // reinicia después del kick
-                } else {
-                    warningMessage = `🚨 *Advertencia por spam*\n${mention}, evita enviar tantos mensajes.\n⚠️ Advertencia ${userData.warnings}/${warningLimit}`;
-                    await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
-                }
-            }
-
-            userData.messageCount = 0;
-            userData.lastMessageTime = currentTime;
-        }
-    } else {
-        userData.messageCount = 1;
-        userData.lastMessageTime = currentTime;
-    }
-};
-
-export default handler;
+export default handler
