@@ -1,21 +1,31 @@
 let handler = async function (m, { conn, groupMetadata }) {
-  // Si hay menciones, mostrar ID del usuario mencionado
+  let userJid = null
+
+  // 🟢 1️⃣ Si hay menciones
   if (m.mentionedJid && m.mentionedJid.length > 0) {
-    const userJid = m.mentionedJid[0]
+    userJid = m.mentionedJid[0]
+  } 
+  // 🟢 2️⃣ Si cita un mensaje de otro usuario
+  else if (m.quoted && m.quoted.sender) {
+    userJid = m.quoted.sender
+  }
+
+  // 🔵 Si hay usuario (por mención o cita)
+  if (userJid) {
     const userName = await conn.getName(userJid) || 'Usuario'
     const number = userJid.split('@')[0]
-    
+
     const mensaje = `
 ╭─✿ *ID de Usuario* ✿─╮
 │  *Nombre:* ${userName}
 │  *Número:* ${number}
 │  *JID/ID:* ${userJid}
 ╰─────────────────────╯`.trim()
-    
+
     return conn.reply(m.chat, mensaje, m, { mentions: [userJid] })
   }
 
-  // Si no hay menciones y es un grupo, mostrar ID del grupo
+  // 🟣 3️⃣ Si no hay mención ni cita y está en grupo → mostrar ID del grupo
   if (m.isGroup) {
     const mensaje = `
 ╭─✿ *ID del Grupo* ✿─╮
@@ -23,27 +33,29 @@ let handler = async function (m, { conn, groupMetadata }) {
 │  *JID/ID:* ${m.chat}
 │  *Participantes:* ${groupMetadata.participants.length}
 ╰─────────────────────╯`.trim()
-    
+
     return conn.reply(m.chat, mensaje, m)
   }
 
-  // Si no es grupo y no hay menciones, mostrar ayuda
+  // ⚪ 4️⃣ Si no hay nada → mostrar ayuda
   const ayuda = `
 📋 *Uso del comando ID/LID:*
 
-🏷️ *.id @usuario* - Ver ID de usuario
-🏢 *.id* (en grupo) - Ver ID del grupo
-📱 *.lid* - Ver lista completa de participantes
+🏷️ *.id @usuario* — Ver ID del usuario
+💬 *.id (citando mensaje)* — Ver ID del autor del mensaje
+🏢 *.id* (en grupo) — Ver ID del grupo
+📱 *.lid* — Ver lista completa de participantes
 
 💡 *Ejemplos:*
 • .id @juan
-• .id (en un grupo)
+• .id (en grupo)
+• .id (citando mensaje)
 • .lid (lista completa)`.trim()
-  
+
   return conn.reply(m.chat, ayuda, m)
 }
 
-// Handler para lista completa de participantes
+// 🧩 Handler para lista completa de participantes (.lid)
 let handlerLid = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
 
@@ -80,7 +92,7 @@ ${contenido}`
 
 // Configuración para .id
 handler.command = ['id']
-handler.help = ['id', 'id @user']
+handler.help = ['id', 'id @user', 'id (citar mensaje)']
 handler.tags = ['info']
 
 // Configuración para .lid 
