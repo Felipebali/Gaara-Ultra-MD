@@ -5,32 +5,35 @@ function normalizeJid(jid) {
 }
 
 const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin, isROwner }) => {
-  if (!m.isGroup) return m.reply('❌ Este comando solo se puede usar en grupos.')
+  if (!m.isGroup) return m.reply('🚫 Este comando solo se puede usar en grupos.')
 
-  // ---------- WARN ----------
+  // ---------- ⚠️ DAR ADVERTENCIA ----------
   if (['advertencia','ad','daradvertencia','advertir','warn'].includes(command)) {
-    if (!isAdmin) return m.reply('❌ Solo administradores pueden advertir.')
-    if (!isBotAdmin) return m.reply('❌ Necesito ser administrador para eliminar usuarios.')
+    if (!isAdmin) return m.reply('❌ Solo los administradores pueden advertir.')
+    if (!isBotAdmin) return m.reply('🤖 Necesito ser administrador para poder eliminar usuarios.')
 
     const user = m.mentionedJid?.[0] || m.quoted?.sender
-    if (!user) return m.reply(`❌ Debes mencionar o responder a alguien.\nEjemplo: ${usedPrefix}${command} @usuario`)
+    if (!user) return m.reply(`⚠️ Debes mencionar o responder a alguien.\n📌 Ejemplo: ${usedPrefix}${command} @usuario [motivo]`)
+
+    const motivo = text?.split(' ').slice(1).join(' ') || 'Sin especificar 💤'
+    const fecha = new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' })
 
     const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
     if (!chatDB.warns) chatDB.warns = {}
     const warns = chatDB.warns
 
-    warns[user] = warns[user] || { count: 0 }
+    warns[user] = warns[user] || { count: 0, motivos: [] }
     warns[user].count += 1
+    warns[user].motivos.push({ motivo, fecha })
     const count = warns[user].count
     await global.db.write()
 
-    // Nombres
-    let userName, senderName
-    try { userName = await conn.getName(user) } catch { userName = user.split("@")[0] }
-    try { senderName = await conn.getName(m.sender) } catch { senderName = m.sender.split("@")[0] }
+    // Reacción
+    await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
 
+    // Si llega a 3 advertencias, eliminar
     if (count >= 3) {
-      const msg = `🚫 @${userName} fue eliminado por acumular 3 advertencias.`
+      const msg = `🚫 *El usuario @${user.split('@')[0]} fue eliminado por acumular 3 advertencias.*\n🧹 Adiós 👋`
       try {
         await conn.sendMessage(m.chat, { text: msg, mentions: [user] })
         await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
@@ -38,64 +41,78 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
         await global.db.write()
       } catch (e) {
         console.error(e)
-        return m.reply('❌ No se pudo eliminar al usuario. Verifica permisos del bot.')
+        return m.reply('❌ No se pudo eliminar al usuario. Verifica los permisos del bot.')
       }
     } else {
       const restantes = 3 - count
       await conn.sendMessage(m.chat, {
-        text: `⚠️ @${userName} recibió una advertencia. (${count}/3)\n🕒 Restan ${restantes} antes de ser expulsado.`,
+        text: `⚠️ *Advertencia para:* @${user.split('@')[0]}\n🧾 *Motivo:* ${motivo}\n📅 *Fecha:* ${fecha}\n\n📋 *Advertencias:* ${count}/3\n🕒 Restan *${restantes}* antes de ser expulsado.`,
         mentions: [user]
       })
     }
   }
 
-  // ---------- UNWARN ----------
+  // ---------- 🟢 QUITAR ADVERTENCIA ----------
   else if (['unwarn','quitarwarn','sacarwarn'].includes(command)) {
-    if (!isAdmin && !isROwner) return m.reply('⚠️ Solo los administradores pueden quitar advertencias.')
+    if (!isAdmin && !isROwner) return m.reply('⚠️ Solo los administradores o el dueño pueden quitar advertencias.')
+
     const target = m.quoted?.sender || m.mentionedJid?.[0]
-    if (!target) return m.reply('❌ Menciona o responde al mensaje del usuario para quitarle advertencias.')
+    if (!target) return m.reply('❌ Debes mencionar o responder al mensaje del usuario para quitarle una advertencia.')
 
     const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
     if (!chatDB.warns) chatDB.warns = {}
     const warns = chatDB.warns
 
     if (!warns[target] || !warns[target].count)
-      return conn.sendMessage(m.chat, { text: `✅ @${target.split("@")[0]} no tiene advertencias.`, mentions: [target] })
+      return conn.sendMessage(m.chat, { text: `✅ @${target.split('@')[0]} no tiene advertencias.`, mentions: [target] })
 
     warns[target].count = Math.max(0, warns[target].count - 1)
+    warns[target].motivos?.pop() // elimina el último motivo
     await global.db.write()
 
-    let name
-    try { name = await conn.getName(target) } catch { name = target.split("@")[0] }
+    await conn.sendMessage(m.chat, { react: { text: '🟢', key: m.key } })
 
     await conn.sendMessage(m.chat, {
-      text: `🟢 @${name} ahora tiene ${warns[target].count}/3 advertencias.`,
+      text: `🟢 *Advertencia retirada a:* @${target.split('@')[0]}\n📋 Ahora tiene *${warns[target].count}/3* advertencias.`,
       mentions: [target]
     })
   }
 
-  // ---------- WARNLIST ----------
+  // ---------- 📜 LISTA DE ADVERTENCIAS ----------
   else if (['warnlist','advertencias','listaad'].includes(command)) {
     const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
     if (!chatDB.warns) chatDB.warns = {}
     const warns = chatDB.warns
 
     const entries = Object.entries(warns).filter(([_, w]) => w.count && w.count > 0)
-    if (entries.length === 0) return m.reply('✅ No hay usuarios con advertencias.')
+    if (entries.length === 0) return m.reply('✅ No hay usuarios con advertencias en este grupo.')
 
     let textList = '⚠️ *Usuarios con advertencias:*\n\n'
     let mentions = []
 
     for (const [jid, w] of entries) {
-      textList += `• @${jid.split('@')[0]} → ${w.count}/3\n`
+      textList += `👤 @${jid.split('@')[0]} → ${w.count}/3\n`
+      if (w.motivos?.length) {
+        w.motivos.slice(-3).forEach((m, i) => {
+          textList += `   ${i + 1}. ${m.motivo} — 🗓️ ${m.fecha}\n`
+        })
+      }
+      textList += '\n'
       mentions.push(jid)
     }
 
-    await conn.sendMessage(m.chat, { text: textList.trim(), mentions })
+    await conn.sendMessage(m.chat, {
+      text: textList.trim(),
+      mentions
+    })
   }
 }
 
-handler.command = ['advertencia','ad','daradvertencia','advertir','warn','unwarn','quitarwarn','sacarwarn','warnlist','advertencias','listaad']
+handler.command = [
+  'advertencia','ad','daradvertencia','advertir','warn',
+  'unwarn','quitarwarn','sacarwarn',
+  'warnlist','advertencias','listaad'
+]
 handler.tags = ['grupo']
 handler.group = true
 handler.admin = true
