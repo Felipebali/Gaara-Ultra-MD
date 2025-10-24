@@ -1,72 +1,93 @@
-// plugins/info-id.js
-let handler = async (m, { conn, groupMetadata }) => {
-  const u = m.mentionedJid?.[0] || m.quoted?.sender
-  if (u && u.endsWith('@s.whatsapp.net')) {
-    const name = await conn.getName(u) || 'Usuario'
-    const num = u.split('@')[0]
-    return conn.reply(m.chat, 
-`╭─✿ *ID de Usuario* ✿─╮
-│ 👤 *Nombre:* ${name}
-│ 📱 *Número:* ${num}
-│ 🪪 *JID:* ${u}
-╰─────────────────────╯`, m, { mentions: [u] })
+let handler = async function (m, { conn, groupMetadata }) {
+  // Si hay menciones, mostrar ID del usuario mencionado
+  if (m.mentionedJid && m.mentionedJid.length > 0) {
+    const userJid = m.mentionedJid[0]
+    const userName = await conn.getName(userJid) || 'Usuario'
+    const number = userJid.split('@')[0]
+    
+    const mensaje = `
+╭─✿ *ID de Usuario* ✿─╮
+│  *Nombre:* ${userName}
+│  *Número:* ${number}
+│  *JID/ID:* ${userJid}
+╰─────────────────────╯`.trim()
+    
+    return conn.reply(m.chat, mensaje, m, { mentions: [userJid] })
   }
 
-  if (m.isGroup && groupMetadata) {
-    const { subject, participants } = groupMetadata
-    return conn.reply(m.chat, 
-`╭─✿ *ID del Grupo* ✿─╮
-│ 🏷️ *Nombre:* ${subject}
-│ 🪪 *JID:* ${m.chat}
-│ 👥 *Participantes:* ${participants.length}
-╰─────────────────────╯`, m)
+  // Si no hay menciones y es un grupo, mostrar ID del grupo
+  if (m.isGroup) {
+    const mensaje = `
+╭─✿ *ID del Grupo* ✿─╮
+│  *Nombre:* ${groupMetadata.subject}
+│  *JID/ID:* ${m.chat}
+│  *Participantes:* ${groupMetadata.participants.length}
+╰─────────────────────╯`.trim()
+    
+    return conn.reply(m.chat, mensaje, m)
   }
 
-  return conn.reply(m.chat, 
-`📋 *Uso del comando ID/LID:*
+  // Si no es grupo y no hay menciones, mostrar ayuda
+  const ayuda = `
+📋 *Uso del comando ID/LID:*
 
-🏷️ *.id @usuario* → Ver ID de usuario
-🏢 *.id* (en grupo) → Ver ID del grupo
-📱 *.lid* → Ver lista completa de participantes
+🏷️ *.id @usuario* - Ver ID de usuario
+🏢 *.id* (en grupo) - Ver ID del grupo
+📱 *.lid* - Ver lista completa de participantes
 
-💡 Ejemplos:
+💡 *Ejemplos:*
 • .id @juan
-• .id
-• .lid`, m)
+• .id (en un grupo)
+• .lid (lista completa)`.trim()
+  
+  return conn.reply(m.chat, ayuda, m)
 }
 
-let handlerLid = async (m, { conn, groupMetadata }) => {
-  if (!m.isGroup || !groupMetadata) return m.reply('❌ Este comando solo funciona en grupos.')
+// Handler para lista completa de participantes
+let handlerLid = async function (m, { conn, groupMetadata }) {
+  if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
 
-  const participantes = groupMetadata.participants || []
-  const contenido = participantes.map((p, i) => {
-    const jid = p.id
-    const num = jid.split('@')[0]
-    const rol = p.admin === 'superadmin' ? '👑 Propietario' :
-                p.admin === 'admin' ? '🛡️ Administrador' : '👤 Miembro'
-    return `╭─✿ *Usuario ${i+1}* ✿
-│ 📱 Número: ${num}
-│ 🪪 JID: ${jid}
-│ 🛡️ Rol: ${rol}
-╰───────────────✿`
-  }).join('\n\n')
+  const participantes = groupMetadata?.participants || []
 
-  const menciones = participantes.map(p => p.id)
-  return conn.reply(m.chat, `╭━━━❖『 Lista de Participantes 』❖━━━╮
-👥 Grupo: ${groupMetadata.subject}
-🔢 Total: ${participantes.length} miembros
+  const tarjetas = participantes.map((p, index) => {
+    const jid = p.id || 'N/A'
+    const username = '@' + jid.split('@')[0]
+    const estado = p.admin === 'superadmin' ? '👑 *Propietario*' :
+                   p.admin === 'admin' ? '🛡️ *Administrador*' :
+                   '👤 *Miembro*'
+
+    return [
+      '╭─✿ *Usuario ' + (index + 1) + '* ✿',
+      `│  *Nombre:* ${username}`,
+      `│  *JID:* ${jid}`,
+      `│  *Rol:* ${estado}`,
+      '╰───────────────✿'
+    ].join('\n')
+  })
+
+  const contenido = tarjetas.join('\n\n')
+  const mencionados = participantes.map(p => p.id).filter(Boolean)
+
+  const mensajeFinal = `╭━━━❖『 *Lista de Participantes* 』❖━━━╮
+👥 *Grupo:* ${groupMetadata.subject}
+🔢 *Total:* ${participantes.length} miembros
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 
-${contenido}`, m, { mentions: menciones })
+${contenido}`
+
+  return conn.reply(m.chat, mensajeFinal, m, { mentions: mencionados })
 }
 
+// Configuración para .id
 handler.command = ['id']
-handler.help = ['id', 'id @usuario']
+handler.help = ['id', 'id @user']
 handler.tags = ['info']
 
+// Configuración para .lid 
 handlerLid.command = ['lid']
 handlerLid.help = ['lid']
 handlerLid.tags = ['group']
 handlerLid.group = true
 
+// Exportar ambos handlers
 export { handler as default, handlerLid }
