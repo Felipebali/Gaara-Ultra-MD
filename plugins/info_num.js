@@ -1,4 +1,4 @@
-// 📂 plugins/infonum-doxeo2.js
+// 📂 plugins/infonum-doxeo3.js
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import axios from 'axios'
 
@@ -34,6 +34,15 @@ async function queryNumValidate(number) {
 
 const handler = async (m, { conn, text }) => {
   try {
+    // 🚨 Solo admins o dueños
+    const botNumbers = ['59898301727'] // número del bot
+    const ownerNumbers = ['59896026646','59898719147'] // dueños
+    const isOwner = ownerNumbers.includes(m.sender)
+    if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
+    const participant = m.isGroup ? m.sender : null
+    const isAdmin = m.isGroup && (m.isGroup ? (await conn.groupMetadata(m.chat)).participants.find(p => p.id === participant)?.admin : false)
+    if (!isAdmin && !isOwner) return m.reply('❌ Solo administradores o dueños pueden usar este comando.')
+
     if (!text) return m.reply('❌ Usa: .infonum +59898719147')
 
     const numeroInput = text.trim().replace(/[^+\d]/g, '')
@@ -67,13 +76,15 @@ const handler = async (m, { conn, text }) => {
       line_type: 'Desconocido'
     } : null
 
-    // Detecta si el número está registrado en WhatsApp (legal)
-    let waStatus = 'Desconocido'
+    // Info perfil público WhatsApp (legal)
+    let waProfile = { name: 'Desconocido', picture: 'No disponible' }
     try {
-      const isOnWA = await conn.onWhatsApp(e164)
-      if (Array.isArray(isOnWA) && isOnWA.length > 0) waStatus = 'Activo en WhatsApp'
-      else waStatus = 'No registrado en WhatsApp'
-    } catch { waStatus = 'Desconocido' }
+      const vcard = await conn.onWhatsApp(e164)
+      if (Array.isArray(vcard) && vcard.length > 0) {
+        waProfile.name = vcard[0].name || 'Desconocido'
+        waProfile.picture = vcard[0].profilePic || 'No disponible'
+      }
+    } catch {}
 
     // Botones interactivos
     const buttons = [
@@ -91,7 +102,8 @@ const handler = async (m, { conn, text }) => {
 🏷️ Formato internacional: ${intl}
 🏷️ Formato nacional: ${natFormat}
 📌 Tipo: ${type}
-💬 Estado WhatsApp: ${waStatus}`
+💬 Estado WhatsApp: ${waProfile.name}
+🖼 Foto de perfil: ${waProfile.picture}`
 
     if (approx) reply += `
 📍 Aproximación: ${approx.country} — capital: ${approx.capital}
