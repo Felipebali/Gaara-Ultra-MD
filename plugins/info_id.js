@@ -1,7 +1,7 @@
 let handler = async function (m, { conn, groupMetadata }) {
   let userJid = null
 
-  // 🟢 1️⃣ Si hay menciones
+  // 🟢 1️⃣ Si hay mención
   if (m.mentionedJid && m.mentionedJid.length > 0) {
     userJid = m.mentionedJid[0]
   } 
@@ -12,13 +12,13 @@ let handler = async function (m, { conn, groupMetadata }) {
 
   // 🔵 Si hay usuario (por mención o cita)
   if (userJid) {
-    const userName = await conn.getName(userJid) || 'Usuario'
+    const userName = await conn.getName(userJid).catch(() => null) || 'Usuario'
     const number = userJid.split('@')[0]
 
     const mensaje = `
 ╭─✿ *ID de Usuario* ✿─╮
-│  *Nombre:* ${userName}
-│  *Número:* ${number}
+│  *Nombre:* ${userName !== number ? userName : 'Sin nombre registrado'}
+│  *Número:* +${number}
 │  *JID/ID:* ${userJid}
 ╰─────────────────────╯`.trim()
 
@@ -61,8 +61,9 @@ let handlerLid = async function (m, { conn, groupMetadata }) {
 
   const participantes = groupMetadata?.participants || []
 
-  const tarjetas = participantes.map((p, index) => {
+  const tarjetas = await Promise.all(participantes.map(async (p, index) => {
     const jid = p.id || 'N/A'
+    const name = await conn.getName(jid).catch(() => null) || 'Sin nombre registrado'
     const username = '@' + jid.split('@')[0]
     const estado = p.admin === 'superadmin' ? '👑 *Propietario*' :
                    p.admin === 'admin' ? '🛡️ *Administrador*' :
@@ -70,12 +71,13 @@ let handlerLid = async function (m, { conn, groupMetadata }) {
 
     return [
       '╭─✿ *Usuario ' + (index + 1) + '* ✿',
-      `│  *Nombre:* ${username}`,
+      `│  *Nombre:* ${name}`,
+      `│  *Número:* ${username}`,
       `│  *JID:* ${jid}`,
       `│  *Rol:* ${estado}`,
       '╰───────────────✿'
     ].join('\n')
-  })
+  }))
 
   const contenido = tarjetas.join('\n\n')
   const mencionados = participantes.map(p => p.id).filter(Boolean)
