@@ -12,12 +12,17 @@ let handler = async function (m, { conn, groupMetadata }) {
 
   // 🔵 Si hay usuario (por mención o cita)
   if (userJid) {
-    const userName = await conn.getName(userJid).catch(() => null) || 'Usuario'
+    let userName
+    try {
+      userName = await conn.getName(userJid)
+    } catch {
+      userName = null
+    }
     const number = userJid.split('@')[0]
 
     const mensaje = `
 ╭─✿ *ID de Usuario* ✿─╮
-│  *Nombre:* ${userName !== number ? userName : 'Sin nombre registrado'}
+│  *Nombre:* ${userName && userName !== number ? userName : 'Sin nombre registrado'}
 │  *Número:* +${number}
 │  *JID/ID:* ${userJid}
 ╰─────────────────────╯`.trim()
@@ -63,16 +68,21 @@ let handlerLid = async function (m, { conn, groupMetadata }) {
 
   const tarjetas = await Promise.all(participantes.map(async (p, index) => {
     const jid = p.id || 'N/A'
-    const name = await conn.getName(jid).catch(() => null) || 'Sin nombre registrado'
-    const username = '@' + jid.split('@')[0]
+    let name
+    try {
+      name = await conn.getName(jid)
+    } catch {
+      name = null
+    }
+    const number = jid.split('@')[0]
     const estado = p.admin === 'superadmin' ? '👑 *Propietario*' :
                    p.admin === 'admin' ? '🛡️ *Administrador*' :
                    '👤 *Miembro*'
 
     return [
       '╭─✿ *Usuario ' + (index + 1) + '* ✿',
-      `│  *Nombre:* ${name}`,
-      `│  *Número:* ${username}`,
+      `│  *Nombre:* ${name && name !== number ? name : 'Sin nombre registrado'}`,
+      `│  *Número:* +${number}`,
       `│  *JID:* ${jid}`,
       `│  *Rol:* ${estado}`,
       '╰───────────────✿'
