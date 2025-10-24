@@ -1,32 +1,52 @@
 // plugins/_qc.js
-import { generateWAMessageFromContent, prepareWAMessageMedia } from '@whiskeysockets/baileys'
+import { writeFileSync } from 'fs';
+import { Sticker } from 'wa-sticker-formatter';
 
-let handler = async (m, { conn, quoted }) => {
-  if (!quoted) return m.reply('❌ Debes citar un mensaje que contenga imagen o video.')
-
+let handler = async (m, { conn, text }) => {
   try {
-    // Preparar media del mensaje citado
-    const media = await prepareWAMessageMedia(
-      { image: quoted?.mediaType === 'image' ? await quoted.download() : null,
-        video: quoted?.mediaType === 'video' ? await quoted.download() : null
-      },
-      { upload: conn.waUploadToServer }
-    )
+    let mediaMsg = m.quoted || m; // Tomar mensaje citado o el mismo
+    let buffer;
+
+    // Si tiene imagen o video, usarlo
+    if (mediaMsg.image || mediaMsg.video) {
+      buffer = await mediaMsg.download?.(); 
+    } else {
+      // Si es texto, crear imagen con el texto
+      const Canvas = require('canvas');
+      const canvas = Canvas.createCanvas(512, 512);
+      const ctx = canvas.getContext('2d');
+
+      // Fondo blanco
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Texto negro
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 30px Sans';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text || mediaMsg.text || 'Sticker', 256, 256);
+
+      buffer = canvas.toBuffer();
+    }
 
     // Crear sticker
-    const stickerMessage = generateWAMessageFromContent(m.chat, {
-      stickerMessage: media
-    }, { quoted: m })
+    let sticker = new Sticker(buffer, {
+      pack: 'GaaraBot',
+      author: 'FélixCat',
+      type: 'full'
+    });
 
-    await conn.relayMessage(m.chat, stickerMessage.message, { messageId: stickerMessage.key.id })
+    const stickerBuffer = await sticker.toBuffer();
+    await conn.sendMessage(m.chat, { sticker: stickerBuffer }, { quoted: m });
+
   } catch (e) {
-    console.error(e)
-    m.reply('❌ No se pudo crear el sticker. Asegúrate de citar una imagen o video.')
+    console.error(e);
+    m.reply('❌ No se pudo crear el sticker.');
   }
-}
+};
 
-handler.command = ['qc']
-handler.tags = ['sticker']
-handler.group = false
-
-export default handler
+handler.command = ['qc'];
+handler.tags = ['sticker'];
+handler.help = ['.qc'];
+export default handler;
