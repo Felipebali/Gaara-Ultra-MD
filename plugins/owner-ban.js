@@ -23,7 +23,7 @@ const handler = async (m, { conn, command, text }) => {
   }
 
   // Motivo limpio
-  let reason = text ? text.replace(/@\S/g, '').replace(/\d/g, '').trim() : ''
+  let reason = text ? text.replace(/@\S+/g, '').replace(/\d/g, '').trim() : ''
   if (!reason) reason = 'No especificado'
 
   if (!userJid && !['verln', 'usln'].includes(command))
@@ -129,7 +129,7 @@ handler.before = async function (m, { conn }) {
     const reason = db[sender].banReason || 'No especificado'
     await conn.sendMessage(m.chat, {
       text: `🚫 @${m.pushName || sender.split('@')[0]} está en la lista negra y será eliminado.\nMotivo: ${reason}`,
-      mentions: [sender]
+      mentions: [sender] // <-- menciona clickeable
     })
     await new Promise(r => setTimeout(r, 500))
     try {
@@ -154,7 +154,7 @@ handler.participantsUpdate = async function (event) {
         try {
           await conn.sendMessage(id, {
             text: `🚫 @${(await conn.getName(u)) || u.split('@')[0]} está en la lista negra y será eliminado automáticamente.\nMotivo: ${reason}`,
-            mentions: [u]
+            mentions: [u] // <-- menciona clickeable
           })
           await new Promise(r => setTimeout(r, 500))
           await conn.groupParticipantsUpdate(id, [u], 'remove')
