@@ -8,11 +8,11 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
     if (!chat || !chat.antiSpam) return; // Solo si antiSpam está activado
 
     const who = m.sender;
-    const username = who.split("@")[0]; // solo el nombre antes de @
+    const username = who.split("@")[0];
     const currentTime = Date.now();
-    const timeWindow = 5000; // 5 segundos
-    const messageLimit = 5;  // mensajes permitidos en ese tiempo
-    const warningLimit = 4;  // límite de advertencias antes del kick
+    const timeWindow = 4000; // 4 segundos
+    const messageLimit = 3;  // máximo 3 mensajes en ese tiempo
+    const warningLimit = 2;  // 2 advertencias antes de kickear
 
     if (!(who in userSpamData)) {
         userSpamData[who] = { lastMessageTime: currentTime, messageCount: 1, warnings: 0 };
@@ -29,37 +29,41 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
             let warningMessage = '';
 
             if (isOwner) {
-                warningMessage = `👑 _*Owner alerta*_ ⚡️\nUsuario: @${username}\n¡Estás enviando muchos mensajes pero no puedo kickearte!`;
+                warningMessage = `👑 _*Owner alerta*_ ⚡️\n@${username}, estás enviando demasiados mensajes, pero no puedo kickearte.`;
             } else if (isAdmin) {
-                warningMessage = `⚡️ _*Admin alerta*_ ⚡️\nUsuario: @${username}\nDemasiados mensajes seguidos, controla el ritmo.`;
+                warningMessage = `⚡️ _*Admin alerta*_ ⚡️\n@${username}, reduce el ritmo de tus mensajes.`;
             } else {
                 // Usuario común
                 userData.warnings += 1;
 
                 if (userData.warnings >= warningLimit) {
-                    warningMessage = `❌ _*Límite de spam alcanzado*_ ⚡️\nUsuario: @${username}\nSerás expulsado del grupo.`;
+                    warningMessage = `❌ _*Límite de spam alcanzado*_ ⚡️\n@${username} será expulsado por spam.`;
 
                     try {
                         const groupMetadata = await conn.groupMetadata(m.chat);
-                        const isBotAdmin = groupMetadata.participants.find(p => p.jid === conn.user.jid)?.admin;
+                        const botJid = conn.user?.jid || conn.user?.id || '';
+                        const botData = groupMetadata.participants.find(p => p.id === botJid);
+                        const isBotAdmin = botData?.admin;
+
                         if (isBotAdmin) {
                             await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
                         } else {
                             warningMessage += '\n⚠️ No puedo kickear, no soy admin.';
                         }
                     } catch (err) {
-                        warningMessage += `\n⚠️ Error al kickear: ${err.message}`;
+                        warningMessage += `\n⚠️ Error al intentar expulsar: ${err.message}`;
                     }
 
-                    userData.warnings = 0; // reset
+                    userData.warnings = 0; // reinicia después de expulsar
                 } else {
-                    warningMessage = `🔥 _*Mucho Spam*_ ⚡️\nUsuario: @${username}\nAdvertencia ${userData.warnings}/${warningLimit}`;
+                    warningMessage = `🚨 _*Advertencia por spam*_ ⚡️\n@${username}, evita enviar tantos mensajes.\nAdvertencia ${userData.warnings}/${warningLimit}`;
                 }
             }
 
-            // Enviar advertencia con mención real
+            // Enviar advertencia con mención clickeable
             await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
 
+            // Reiniciar contador de mensajes
             userData.messageCount = 0;
             userData.lastMessageTime = currentTime;
         }
@@ -67,6 +71,6 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
         userData.messageCount = 1;
         userData.lastMessageTime = currentTime;
     }
-}
+};
 
 export default handler;
