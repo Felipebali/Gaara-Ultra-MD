@@ -35,12 +35,16 @@ async function queryNumValidate(number) {
 const handler = async (m, { conn, text }) => {
   try {
     // 🚨 Solo admins o dueños
-    const botNumbers = ['59898301727'] // número del bot
-    const ownerNumbers = ['59896026646','59898719147'] // dueños
-    const isOwner = ownerNumbers.includes(m.sender)
+    const ownerNumbers = ['59896026646@s.whatsapp.net','59898719147@s.whatsapp.net'] // dueños
+    const sender = m.sender
+    const isOwner = ownerNumbers.includes(sender)
+
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
-    const participant = m.isGroup ? m.sender : null
-    const isAdmin = m.isGroup && (m.isGroup ? (await conn.groupMetadata(m.chat)).participants.find(p => p.id === participant)?.admin : false)
+
+    const groupMeta = await conn.groupMetadata(m.chat)
+    const participant = groupMeta.participants.find(p => p.id === sender)
+    const isAdmin = participant ? (participant.admin === 'admin' || participant.admin === 'superadmin') : false
+
     if (!isAdmin && !isOwner) return m.reply('❌ Solo administradores o dueños pueden usar este comando.')
 
     if (!text) return m.reply('❌ Usa: .infonum +59898719147')
