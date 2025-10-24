@@ -31,6 +31,8 @@ const handler = async (m, { conn, command, text }) => {
 
   if (userJid && !db[userJid]) db[userJid] = {}
 
+  const name = userJid ? await conn.getName(userJid) : null
+
   // --- AGREGAR A LISTA NEGRA ---
   if (command === 'ln') {
     db[userJid].banned = true
@@ -38,7 +40,7 @@ const handler = async (m, { conn, command, text }) => {
     db[userJid].bannedBy = m.sender
 
     await conn.sendMessage(m.chat, {
-      text: `${done} @${userJid.split('@')[0]} fue agregado a la lista negra.\n📝 Motivo: ${reason}`,
+      text: `${done} ${name} fue agregado a la lista negra.\n📝 Motivo: ${reason}`,
       mentions: [userJid]
     })
 
@@ -49,7 +51,7 @@ const handler = async (m, { conn, command, text }) => {
       if (member) {
         try {
           await conn.sendMessage(jid, {
-            text: `🚫 @${userJid.split('@')[0]} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
+            text: `🚫 ${name} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
             mentions: [userJid]
           })
           await new Promise(r => setTimeout(r, 500))
@@ -66,7 +68,7 @@ const handler = async (m, { conn, command, text }) => {
   else if (command === 'unln') {
     if (!db[userJid]?.banned)
       return conn.sendMessage(m.chat, {
-        text: `${emoji} @${userJid.split('@')[0]} no está en la lista negra.`,
+        text: `${emoji} ${name} no está en la lista negra.`,
         mentions: [userJid]
       })
 
@@ -75,7 +77,7 @@ const handler = async (m, { conn, command, text }) => {
     db[userJid].bannedBy = null
 
     await conn.sendMessage(m.chat, {
-      text: `${done} @${userJid.split('@')[0]} fue eliminado de la lista negra.`,
+      text: `${done} ${name} fue eliminado de la lista negra.`,
       mentions: [userJid]
     })
   }
@@ -84,12 +86,12 @@ const handler = async (m, { conn, command, text }) => {
   else if (command === 'cln') {
     if (!db[userJid]?.banned)
       return conn.sendMessage(m.chat, {
-        text: `✅ @${userJid.split('@')[0]} no está en la lista negra.`,
+        text: `✅ ${name} no está en la lista negra.`,
         mentions: [userJid]
       })
 
     await conn.sendMessage(m.chat, {
-      text: `${emoji} @${userJid.split('@')[0]} está en la lista negra.\n📝 Motivo: ${db[userJid].banReason || 'No especificado'}`,
+      text: `${emoji} ${name} está en la lista negra.\n📝 Motivo: ${db[userJid].banReason || 'No especificado'}`,
       mentions: [userJid]
     })
   }
@@ -104,7 +106,8 @@ const handler = async (m, { conn, command, text }) => {
     const mentions = []
 
     for (const [jid, data] of bannedUsers) {
-      list += `• @${jid.split('@')[0]}\n  Motivo: ${data.banReason || 'No especificado'}\n\n`
+      const n = await conn.getName(jid)
+      list += `• ${n}\n  Motivo: ${data.banReason || 'No especificado'}\n\n`
       mentions.push(jid)
     }
 
@@ -133,8 +136,9 @@ handler.before = async function (m, { conn }) {
   const sender = normalizeJid(m.sender)
   if (db[sender]?.banned) {
     const reason = db[sender].banReason || 'No especificado'
+    const name = await conn.getName(sender)
     await conn.sendMessage(m.chat, {
-      text: `🚫 @${m.pushName || sender.split('@')[0]} está en la lista negra y será eliminado.\n📝 Motivo: ${reason}`,
+      text: `🚫 ${name} está en la lista negra y será eliminado.\n📝 Motivo: ${reason}`,
       mentions: [sender]
     })
     await new Promise(r => setTimeout(r, 500))
@@ -157,9 +161,10 @@ handler.participantsUpdate = async function (event) {
       const u = normalizeJid(user)
       if (db[u]?.banned) {
         const reason = db[u].banReason || 'No especificado'
+        const name = await conn.getName(u)
         try {
           await conn.sendMessage(id, {
-            text: `🚫 @${(await conn.getName(u)) || u.split('@')[0]} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
+            text: `🚫 ${name} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
             mentions: [u]
           })
           await new Promise(r => setTimeout(r, 500))
