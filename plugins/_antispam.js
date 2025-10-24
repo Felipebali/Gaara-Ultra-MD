@@ -22,7 +22,7 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
     const timeDifference = currentTime - userData.lastMessageTime;
 
     if (timeDifference <= timeWindow) {
-        userData.messageCount += 1;
+        userData.messageCount++;
 
         if (userData.messageCount >= messageLimit) {
             const mention = `@${who.split('@')[0]}`;
@@ -35,15 +35,18 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
                 warningMessage = `⚡️ *Admin alerta*\n${mention}, estás enviando mensajes demasiado rápido.`;
                 await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
             } else {
-                userData.warnings += 1;
+                userData.warnings++;
 
                 if (userData.warnings >= warningLimit) {
                     try {
                         const groupMetadata = await conn.groupMetadata(m.chat);
                         const botNumber = conn.user?.id || conn.user?.jid;
-                        const botData = groupMetadata.participants.find(p => p.id === botNumber);
 
-                        const isBotAdmin = botData?.admin === 'admin' || botData?.admin === 'superadmin';
+                        // ✅ Detecta si el bot es admin de verdad
+                        const isBotAdmin = groupMetadata.participants.some(
+                            p => (p.id === botNumber || p.jid === botNumber) &&
+                                 (p.admin === 'admin' || p.admin === 'superadmin')
+                        );
 
                         if (isBotAdmin) {
                             await conn.sendMessage(m.chat, {
@@ -51,7 +54,7 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
                                 mentions: [who]
                             });
 
-                            // 🦶 Kick inmediato
+                            // 🦶 Expulsión inmediata
                             await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
                         } else {
                             await conn.sendMessage(m.chat, {
@@ -73,7 +76,6 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
                 }
             }
 
-            // Reiniciar contador de mensajes
             userData.messageCount = 0;
             userData.lastMessageTime = currentTime;
         }
