@@ -51,15 +51,12 @@ ${Object.entries(comandos).map(([cmd, emoji]) => `│ ${emoji} ${cmd}`).join('\n
 
     menuText += `\n✨ Powered by FelixCat 🥷🏽`;
 
-    // Enviamos con imagen de portada
-    await conn.sendMessage(m.chat, {
-      image: { url: 'https://files.catbox.moe/in2ou9.jpg' }, 
-      caption: menuText
-    }, { quoted: m });
+    // Envío solo texto (sin imagen)
+    await conn.reply(m.chat, menuText, m);
 
   } catch (e) { 
     console.error(e); 
-    await conn.sendMessage(m.chat, { text: `✖️ Error mostrando el menú\n\n${e}` }, { quoted: m }); 
+    await conn.reply(m.chat, `✖️ Error mostrando el menú\n\n${e}`, m); 
   } 
 };
 
