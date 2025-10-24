@@ -1,4 +1,4 @@
-// 📂 plugins/infonum-doxeo.js
+// 📂 plugins/infonum-doxeo2.js
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import axios from 'axios'
 
@@ -12,19 +12,29 @@ const approxTimezonesByCountry = {
   "1":   { country: "EE. UU. / Canadá", capital: "Washington / Ottawa", timezone: "America/New_York" },
 }
 
+// Heurística de tipo de línea
+function guessLineType(countryCode, nationalNumber) {
+  if (!countryCode || !nationalNumber) return 'Desconocido'
+  switch (countryCode) {
+    case '598': if (nationalNumber.startsWith('09')) return 'Móvil'; if (nationalNumber.startsWith('2')) return 'Fijo'; return 'Desconocido'
+    case '54': if (nationalNumber.startsWith('15')) return 'Móvil'; return 'Fijo'
+    case '52': if (nationalNumber.startsWith('55') || nationalNumber.startsWith('56')) return 'Móvil'; return 'Fijo'
+    default: return 'Desconocido'
+  }
+}
+
+// Consulta gratuita alternativa
 async function queryNumValidate(number) {
   try {
     const url = `https://numvalidate.com/api/validate?number=${encodeURIComponent(number)}`
     const res = await axios.get(url, { timeout: 8000 })
     return res.data || null
-  } catch (e) {
-    return null
-  }
+  } catch { return null }
 }
 
 const handler = async (m, { conn, text }) => {
   try {
-    if (!text) return m.reply('❌ Usa: .infonum +59898719147  (debe incluir prefijo internacional)')
+    if (!text) return m.reply('❌ Usa: .infonum +59898719147')
 
     const numeroInput = text.trim().replace(/[^+\d]/g, '')
     const phoneNumber = parsePhoneNumberFromString(numeroInput)
@@ -35,8 +45,14 @@ const handler = async (m, { conn, text }) => {
     const countryCallingCode = phoneNumber.countryCallingCode || '??'
     const intl = phoneNumber.formatInternational()
     const natFormat = phoneNumber.formatNational ? phoneNumber.formatNational() : phoneNumber.nationalNumber || ''
+
     let type = 'Desconocido'
-    try { type = phoneNumber.getType ? String(phoneNumber.getType()) : 'Desconocido' } catch {}
+    try {
+      type = phoneNumber.getType ? phoneNumber.getType() : null
+      if (!type) type = guessLineType(countryCallingCode, phoneNumber.nationalNumber)
+    } catch {
+      type = guessLineType(countryCallingCode, phoneNumber.nationalNumber)
+    }
 
     const approx = approxTimezonesByCountry[countryCallingCode] || null
     const apiResult = await queryNumValidate(e164)
@@ -51,34 +67,52 @@ const handler = async (m, { conn, text }) => {
       line_type: 'Desconocido'
     } : null
 
-    let reply = []
-    reply.push(`🕵️‍♂️ • INFO DEL NÚMERO (doxeo responsable) • 🕵️‍♀️`)
-    reply.push('──────────────────────────────')
-    reply.push(`📞 Número: wa.me/${e164.replace('+','')} (clic para abrir chat)`)
-    reply.push(`🔢 Prefijo: +${countryCallingCode}`)
-    reply.push(`🌍 País (ISO): ${country}`)
-    reply.push(`🏷️ Formato internacional: ${intl}`)
-    reply.push(`🏷️ Formato nacional: ${natFormat}`)
-    reply.push(`📌 Tipo: ${type}`)
-    if (approx) {
-      reply.push(`📍 Aproximación: ${approx.country} — capital: ${approx.capital}`)
-      reply.push(`⏰ Huso horario estimado: ${approx.timezone}`)
-    }
-    if (external) {
-      reply.push('──────────────────────────────')
-      reply.push('🔎 Datos desde API externa:')
-      reply.push(`• Valid: ${external.valid}`)
-      reply.push(`• Carrier / Operador: ${external.carrier}`)
-      reply.push(`• Tipo de línea: ${external.line_type}`)
-      reply.push(`• Ubicación aproximada: ${external.location}`)
-    } else {
-      reply.push('──────────────────────────────')
-      reply.push('🔎 Datos extra: API externa no configurada.')
-    }
-    reply.push('──────────────────────────────')
-    reply.push('⚠️ Nota: Solo información pública/estimada. Usa legalmente.')
+    // Detecta si el número está registrado en WhatsApp (legal)
+    let waStatus = 'Desconocido'
+    try {
+      const isOnWA = await conn.onWhatsApp(e164)
+      if (Array.isArray(isOnWA) && isOnWA.length > 0) waStatus = 'Activo en WhatsApp'
+      else waStatus = 'No registrado en WhatsApp'
+    } catch { waStatus = 'Desconocido' }
 
-    await m.reply(reply.join('\n'))
+    // Botones interactivos
+    const buttons = [
+      { buttonId: `copyintl ${intl}`, buttonText: { displayText: '📋 Copiar Intl' }, type: 1 },
+      { buttonId: `copynat ${natFormat}`, buttonText: { displayText: '📋 Copiar Nacional' }, type: 1 },
+      { buttonId: `openwa ${e164}`, buttonText: { displayText: '💬 Abrir WhatsApp' }, type: 1 },
+      { buttonId: `fwdinfo ${e164}`, buttonText: { displayText: '📤 Reenviar Info' }, type: 1 }
+    ]
+
+    let reply = `🕵️‍♂️ • INFO AVANZADA DEL NÚMERO • 🕵️‍♀️
+──────────────────────────────
+📞 Número: wa.me/${e164.replace('+','')} (clic para abrir chat)
+🔢 Prefijo: +${countryCallingCode}
+🌍 País (ISO): ${country}
+🏷️ Formato internacional: ${intl}
+🏷️ Formato nacional: ${natFormat}
+📌 Tipo: ${type}
+💬 Estado WhatsApp: ${waStatus}`
+
+    if (approx) reply += `
+📍 Aproximación: ${approx.country} — capital: ${approx.capital}
+⏰ Huso horario estimado: ${approx.timezone}`
+
+    if (external) reply += `
+──────────────────────────────
+🔎 Datos desde API externa:
+• Valid: ${external.valid}
+• Carrier / Operador: ${external.carrier}
+• Tipo de línea: ${external.line_type}
+• Ubicación aproximada: ${external.location}`
+    else reply += `
+──────────────────────────────
+🔎 Datos extra: API externa no configurada.`
+
+    reply += `
+──────────────────────────────
+⚠️ Nota: Solo información pública/estimada. Usa legalmente.`
+
+    await conn.sendMessage(m.chat, { text: reply, buttons, headerType: 1 }, { quoted: m })
 
   } catch (err) {
     console.error(err)
