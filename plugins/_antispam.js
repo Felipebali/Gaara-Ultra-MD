@@ -5,14 +5,13 @@ let handler = m => m;
 
 handler.before = async function (m, { conn, isAdmin, isOwner }) {
     const chat = global.db.data.chats[m.chat];
-    if (!chat || !chat.antiSpam) return; // Solo si antiSpam está activado
+    if (!chat || !chat.antiSpam) return; // Solo si el antiSpam está activado
 
     const who = m.sender;
-    const username = who.split("@")[0];
     const currentTime = Date.now();
     const timeWindow = 4000; // 4 segundos
     const messageLimit = 3;  // máximo 3 mensajes en ese tiempo
-    const warningLimit = 2;  // 2 advertencias antes de kickear
+    const warningLimit = 2;  // 2 advertencias antes del kick
 
     if (!(who in userSpamData)) {
         userSpamData[who] = { lastMessageTime: currentTime, messageCount: 1, warnings: 0 };
@@ -27,41 +26,48 @@ handler.before = async function (m, { conn, isAdmin, isOwner }) {
 
         if (userData.messageCount >= messageLimit) {
             let warningMessage = '';
+            const mention = `@${who.split('@')[0]}`;
 
             if (isOwner) {
-                warningMessage = `👑 _*Owner alerta*_ ⚡️\n@${username}, estás enviando demasiados mensajes, pero no puedo kickearte.`;
+                warningMessage = `👑 *Owner alerta*\n${mention}, estás enviando demasiados mensajes, pero no puedo kickearte.`;
             } else if (isAdmin) {
-                warningMessage = `⚡️ _*Admin alerta*_ ⚡️\n@${username}, reduce el ritmo de tus mensajes.`;
+                warningMessage = `⚡️ *Admin alerta*\n${mention}, estás enviando mensajes demasiado rápido.`;
             } else {
-                // Usuario común
                 userData.warnings += 1;
 
                 if (userData.warnings >= warningLimit) {
-                    warningMessage = `❌ _*Límite de spam alcanzado*_ ⚡️\n@${username} será expulsado por spam.`;
+                    warningMessage = `❌ *Límite de spam alcanzado*\n${mention} será expulsado automáticamente por spam.`;
 
                     try {
                         const groupMetadata = await conn.groupMetadata(m.chat);
-                        const botJid = conn.user?.jid || conn.user?.id || '';
-                        const botData = groupMetadata.participants.find(p => p.id === botJid);
+                        const botNumber = conn.user?.id || conn.user?.jid;
+                        const botData = groupMetadata.participants.find(p => p.id === botNumber);
                         const isBotAdmin = botData?.admin;
 
                         if (isBotAdmin) {
+                            // 🦶 Kick inmediato
                             await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
+                            await conn.sendMessage(m.chat, {
+                                text: `🚫 ${mention} fue *expulsado automáticamente* por hacer spam.`,
+                                mentions: [who]
+                            });
                         } else {
-                            warningMessage += '\n⚠️ No puedo kickear, no soy admin.';
+                            warningMessage += `\n⚠️ No puedo kickear, no soy admin.`;
+                            await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
                         }
                     } catch (err) {
-                        warningMessage += `\n⚠️ Error al intentar expulsar: ${err.message}`;
+                        await conn.sendMessage(m.chat, {
+                            text: `⚠️ Error al intentar expulsar a ${mention}: ${err.message}`,
+                            mentions: [who]
+                        });
                     }
 
-                    userData.warnings = 0; // reinicia después de expulsar
+                    userData.warnings = 0; // reinicia después del kick
                 } else {
-                    warningMessage = `🚨 _*Advertencia por spam*_ ⚡️\n@${username}, evita enviar tantos mensajes.\nAdvertencia ${userData.warnings}/${warningLimit}`;
+                    warningMessage = `🚨 *Advertencia por spam*\n${mention}, evita enviar tantos mensajes.\n⚠️ Advertencia ${userData.warnings}/${warningLimit}`;
+                    await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
                 }
             }
-
-            // Enviar advertencia con mención clickeable
-            await conn.sendMessage(m.chat, { text: warningMessage, mentions: [who] });
 
             // Reiniciar contador de mensajes
             userData.messageCount = 0;
