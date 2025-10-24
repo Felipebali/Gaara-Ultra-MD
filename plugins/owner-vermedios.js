@@ -1,27 +1,38 @@
-import fs from 'fs';
-import path from 'path';
+let { downloadContentFromMessage } = (await import('@whiskeysockets/baileys'))
 
-let handler = async (m, { conn, isOwner }) => {
-  if (!isOwner) return m.reply('🚫 Solo los dueños del bot pueden usar este comando.');
+let handler = async (m, { conn }) => {
+    let quoted = m.quoted
+    if (!quoted) return conn.reply(m.chat, `*Responde a un mensaje ViewOnce para ver su contenido.*`, m)
 
-  const media = global.db.data.media[m.sender];
-  if (!media) return m.reply('No tienes medios guardados.');
+    try {
+        let viewOnceMessage = quoted.viewOnce ? quoted : quoted.mediaMessage?.imageMessage || quoted.mediaMessage?.videoMessage || quoted.mediaMessage?.audioMessage
+        let messageType = viewOnceMessage.mimetype || quoted.mtype
+        let stream = await downloadContentFromMessage(viewOnceMessage, messageType.split('/')[0])
 
-  let text = '📂 Tus medios guardados:\n\n';
-  for (let type in media) {
-    text += `• ${type}: ${media[type].filename} (fecha: ${media[type].date})\n`;
-  }
-  await m.reply(text);
+        if (!stream) return conn.reply(m.chat, `*❌ No se pudo descargar el contenido.*`, m)
 
-  // Ejemplo: enviar un archivo al chat (último guardado)
-  for (let type in media) {
-    const filepath = path.join('./media', media[type].filename);
-    if (fs.existsSync(filepath)) {
-      await conn.sendMessage(m.chat, { document: { url: filepath }, mimetype: 'application/octet-stream' }, { quoted: m });
+        let buffer = Buffer.from([])
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk])
+        }
+
+        if (messageType.includes('video')) {
+            await conn.sendMessage(m.chat, { video: buffer, caption: viewOnceMessage.caption || '', mimetype: 'video/mp4' }, { quoted: m })
+
+        } else if (messageType.includes('image')) {
+            await conn.sendMessage(m.chat, { image: buffer, caption: viewOnceMessage.caption || '' }, { quoted: m })
+
+        } else if (messageType.includes('audio')) {
+            await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: viewOnceMessage.ptt || false }, { quoted: m })
+        }
+
+    } catch {
+        conn.reply(m.chat, `*❌ No es un mensaje de imagen, video o audio ViewOnce.*`, m)
     }
-  }
-};
+}
 
-handler.command = ['vermedios', 'mismedios'];
-handler.owner = true; // <-- esto restringe solo al owner
-export default handler;
+handler.command = /^(readviewonce|read|viewonce|ver)$/i
+handler.owner = true // 🔹 Solo dueños
+handler.register = true
+
+export default handler
