@@ -1,3 +1,4 @@
+// plugins/trivia.js
 let activeTrivia = {}
 
 const preguntasTrivia = [
@@ -24,41 +25,48 @@ const preguntasTrivia = [
 ]
 
 let handler = async (m, { conn }) => {
-  if (activeTrivia[m.chat]) return conn.reply(m.chat, "❗ Ya hay una trivia en curso. Espera a que termine.", m)
+  const chat = global.db.data.chats[m.chat] || {};
 
-  const pregunta = preguntasTrivia[Math.floor(Math.random() * preguntasTrivia.length)]
-  const texto = `🎯 *Trivia de Conocimiento* 🎯\n\n${pregunta.pregunta}\n\n${pregunta.opciones.join('\n')}\n\nResponde con la letra correcta (A, B, C o D).`
+  // 🟡 Si los juegos están desactivados, no permite usar trivia
+  if (!chat.games) {
+    return conn.reply(m.chat, "🚫 Los mini-juegos están desactivados en este grupo.\nUsa *.juegos* para activarlos.", m);
+  }
 
-  await conn.reply(m.chat, texto, m)
-  activeTrivia[m.chat] = { ...pregunta }
+  if (activeTrivia[m.chat]) return conn.reply(m.chat, "❗ Ya hay una trivia en curso. Espera a que termine.", m);
 
-  // Timeout
+  const pregunta = preguntasTrivia[Math.floor(Math.random() * preguntasTrivia.length)];
+  const texto = `🎯 *Trivia de Conocimiento* 🎯\n\n${pregunta.pregunta}\n\n${pregunta.opciones.join('\n')}\n\nResponde con la letra correcta (A, B, C o D).`;
+
+  await conn.reply(m.chat, texto, m);
+  activeTrivia[m.chat] = { ...pregunta };
+
+  // Tiempo límite
   activeTrivia[m.chat].timeout = setTimeout(() => {
     if (activeTrivia[m.chat]) {
-      conn.reply(m.chat, `⏰ Tiempo agotado. La respuesta correcta era: *${pregunta.respuesta}*.`)
-      delete activeTrivia[m.chat]
+      conn.reply(m.chat, `⏰ Tiempo agotado. La respuesta correcta era: *${pregunta.respuesta}*.`);
+      delete activeTrivia[m.chat];
     }
-  }, 30000)
-}
+  }, 30000);
+};
 
-handler.command = /^trivia$/i
-handler.group = true
-export default handler
+handler.command = /^trivia$/i;
+handler.group = true;
+export default handler;
 
-// Captura todas las respuestas
+// 📩 Captura las respuestas de los usuarios
 handler.all = async function (m) {
-  const conn = global.conn
-  if (!m.text || !activeTrivia[m.chat]) return
-  const juego = activeTrivia[m.chat]
+  const conn = global.conn;
+  if (!m.text || !activeTrivia[m.chat]) return;
+  const juego = activeTrivia[m.chat];
 
-  const respuestaUsuario = m.text.trim().toUpperCase()
-  if (!["A", "B", "C", "D"].includes(respuestaUsuario)) return
+  const respuestaUsuario = m.text.trim().toUpperCase();
+  if (!["A", "B", "C", "D"].includes(respuestaUsuario)) return;
 
   if (respuestaUsuario === juego.respuesta) {
-    clearTimeout(juego.timeout)
-    await conn.reply(m.chat, `✅ ¡Correcto, ${m.pushName || "usuario"}! La respuesta era *${juego.respuesta}*.`)
-    delete activeTrivia[m.chat]
+    clearTimeout(juego.timeout);
+    await conn.reply(m.chat, `✅ ¡Correcto, ${m.pushName || "usuario"}! La respuesta era *${juego.respuesta}*.`);
+    delete activeTrivia[m.chat];
   } else {
-    await conn.reply(m.chat, `❌ Incorrecto, ${m.pushName || "usuario"}. Intenta de nuevo.`)
+    await conn.reply(m.chat, `❌ Incorrecto, ${m.pushName || "usuario"}. Intenta de nuevo.`);
   }
-}
+};
