@@ -17,7 +17,6 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
   const chat = global.db.data.chats[m.chat];
   if (!chat?.antiLink) return true;
 
-  const who = m.sender;
   const text = m.text;
 
   const isGroupLink = groupLinkRegex.test(text);
@@ -28,103 +27,48 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
   const isIG = igLinkRegex.test(text);
   const isClash = clashLinkRegex.test(text);
 
-  // 🔹 Si no hay links relevantes
-  if (!isAnyLink && !isGroupLink && !isChannelLink && !isTagall && !isIG && !isClash) return true;
+  // 🔹 Links permitidos totalmente: IG, canales, Clash, allowedLinks
+  if (isIG || isChannelLink || isClash || isAllowedLink) return true;
 
-  try {
-    const currentInvite = await conn.groupInviteCode(m.chat);
-    const currentGroupLink = `https://chat.whatsapp.com/${currentInvite}`;
+  // 🔹 Tagall no permitido
+  if (isTagall) {
+    const who = m.sender;
+    await conn.sendMessage(m.chat, {
+      text: `😮‍💨 Qué compartís el tagall inútil @${who.split('@')[0]}...`,
+      mentions: [who],
+    });
+    return true;
+  }
 
-    // 🔹 Links permitidos
-    if (isAllowedLink) {
-      if (isClash) {
-        // Clash Royale: reaccionar y enviar mensaje
-        await conn.sendMessage(m.chat, { react: { text: '🃏', key: m.key } });
-        await conn.sendMessage(m.chat, {
-          text: `🎮 @${who.split('@')[0]} compartió su link de *Clash Royale* ⚔️\n¡Unite a su clan o desafialo en batalla! 💥`,
-          mentions: [who],
-        });
-      }
-      return true; // no borrar mensaje
-    }
+  // 🔹 Link del mismo grupo permitido
+  const currentInvite = await conn.groupInviteCode(m.chat);
+  if (isGroupLink && text.includes(currentInvite)) return true;
 
-    // 🔹 Link del mismo grupo
-    if (isGroupLink && text.includes(currentInvite)) {
-      await conn.sendMessage(m.chat, { react: { text: '💫', key: m.key } });
+  // 🔹 Link de otro grupo
+  if (isGroupLink && !text.includes(currentInvite)) {
+    const who = m.sender;
+    if (!isAdmin) {
+      await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
       await conn.sendMessage(m.chat, {
-        text: `💫 @${who.split('@')[0]} compartió el link de *este mismo grupo*.\n¡Gracias por invitar más miembros! 🙌`,
+        text: `🚫 @${who.split('@')[0]} fue *expulsado* por compartir un link de *otro grupo*.`,
         mentions: [who],
       });
-      return true;
-    }
-
-    // 🔹 No borrar mensaje si es canal, IG o Clash
-    if (!isChannelLink && !isIG && !isClash && !text.includes(currentInvite)) {
-      await conn.sendMessage(m.chat, { delete: m.key });
-    }
-
-    // 🔹 Tagall no permitido
-    if (isTagall) {
+    } else {
       await conn.sendMessage(m.chat, {
-        text: `😮‍💨 Qué compartís el tagall inútil @${who.split('@')[0]}...`,
+        text: `⚠️ @${who.split('@')[0]}, no compartas links de otros grupos.`,
         mentions: [who],
       });
-      return true;
     }
+    return true;
+  }
 
-    // 🔹 Canal de WhatsApp
-    if (isChannelLink) {
-      const groupMetadata = await conn.groupMetadata(m.chat);
-      const allParticipants = groupMetadata.participants.map(p => p.id);
-      const hiddenMentions = allParticipants.filter(id => id !== who);
-
-      await conn.sendMessage(m.chat, { react: { text: '📢', key: m.key } });
-      await conn.sendMessage(m.chat, {
-        text: `📢 Atención equipo: @${who.split('@')[0]} compartió su canal 🔥\n¡Pasen a apoyarlo! 🙌`,
-        mentions: [who, ...hiddenMentions],
-      });
-      return true;
-    }
-
-    // 🔹 Instagram
-    if (isIG) {
-      const groupMetadata = await conn.groupMetadata(m.chat);
-      const allParticipants = groupMetadata.participants.map(p => p.id);
-      const hiddenMentions = allParticipants.filter(id => id !== who);
-
-      await conn.sendMessage(m.chat, { react: { text: '📸', key: m.key } });
-      await conn.sendMessage(m.chat, {
-        text: `✨ @${who.split('@')[0]} compartió su Instagram.\n¡Dale follow y apoyá su perfil! ❤️`,
-        mentions: [who, ...hiddenMentions],
-      });
-      return true;
-    }
-
-    // 🔹 Link de otro grupo
-    if (isGroupLink && !text.includes(currentInvite)) {
-      if (!isAdmin) {
-        await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
-        await conn.sendMessage(m.chat, {
-          text: `🚫 @${who.split('@')[0]} fue *expulsado* por compartir un link de *otro grupo*.`,
-          mentions: [who],
-        });
-      } else {
-        await conn.sendMessage(m.chat, {
-          text: `⚠️ @${who.split('@')[0]}, no compartas links de otros grupos.`,
-          mentions: [who],
-        });
-      }
-      return true;
-    }
-
-    // 🔹 Otros links no permitidos
+  // 🔹 Otros links no permitidos
+  if (isAnyLink) {
+    const who = m.sender;
     await conn.sendMessage(m.chat, {
       text: `⚠️ @${who.split('@')[0]}, tu link fue eliminado (no permitido).`,
       mentions: [who],
     });
-
-  } catch (e) {
-    console.error('Error en Anti-Link:', e);
   }
 
   return true;
