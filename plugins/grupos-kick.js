@@ -52,10 +52,9 @@ const handler = async (m, { conn, isAdmin }) => {
 
     // ---------- MENSAJE CLICKEABLE ----------
     const userName = '@' + (participant.jid || user).split('@')[0];
-    const senderName = '@' + sender;
     await conn.sendMessage(m.chat, {
-      text: `🚫 ${userName} fue expulsado por ${senderName}`,
-      mentions: [participant.jid || user, m.sender]
+      text: `🚫 ${userName} fue expulsado.`,
+      mentions: [participant.jid || user]
     });
 
   } catch (err) {
