@@ -28,9 +28,6 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
   const who = m.sender;
   const number = who.replace(/\D/g, '');
 
-  // 🧩 Excepción: los dueños pueden mandar cualquier link
-  if (owners.includes(number)) return true;
-
   const isGroupLink = groupLinkRegex.test(text);
   const isChannelLink = channelLinkRegex.test(text);
   const isAnyLink = anyLinkRegex.test(text);
@@ -39,10 +36,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
   const isIG = igLinkRegex.test(text);
   const isClash = clashLinkRegex.test(text);
 
-  // 🔹 Links permitidos totalmente: IG, canales, Clash, allowedLinks
-  if (isIG || isChannelLink || isClash || isAllowedLink) return true;
-
-  // 🔹 Tagall no permitido → eliminar + aviso
+  // 🔹 Tagall no permitido → eliminar + aviso (también si lo manda un owner)
   if (isTagall) {
     try {
       await conn.sendMessage(m.chat, {
@@ -55,6 +49,12 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     }
     return false;
   }
+
+  // 🧩 Excepción: los dueños pueden mandar cualquier link (menos tagall)
+  if (owners.includes(number)) return true;
+
+  // 🔹 Links permitidos: IG, canales, Clash, allowedLinks
+  if (isIG || isChannelLink || isClash || isAllowedLink) return true;
 
   // 🔹 Link del mismo grupo permitido (con caching)
   let currentInvite = global.groupInviteCodes[m.chat];
@@ -83,7 +83,6 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
           text: `⚠️ @${who.split('@')[0]}, no compartas links de otros grupos.`,
           mentions: [who],
         });
-        // 🔹 También elimina el mensaje del admin
         await conn.sendMessage(m.chat, { delete: m.key });
       }
     } catch (e) {
