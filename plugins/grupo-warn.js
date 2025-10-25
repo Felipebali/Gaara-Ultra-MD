@@ -1,7 +1,7 @@
 // plugins/grupo-warn.js
 function normalizeJid(jid) {
   if (!jid) return null
-  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp.net$/, '@s.whatsapp.net')
 }
 
 const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin, isROwner }) => {
@@ -12,11 +12,10 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     if (!isAdmin) return m.reply('❌ Solo los administradores pueden advertir.')
     if (!isBotAdmin) return m.reply('🤖 Necesito ser administrador para poder eliminar usuarios.')
 
-    const user = m.mentionedJid?.[0] || m.quoted?.sender
+    const user = normalizeJid(m.mentionedJid?.[0] || m.quoted?.sender)
     if (!user)
       return m.reply(`⚠️ Debes mencionar o responder a alguien.\n📌 Ejemplo: ${usedPrefix}${command} @usuario [motivo]`)
 
-    // --- Limpiar el texto para obtener el motivo correctamente ---
     let motivo = text?.trim()
       .replace(new RegExp(`^@${user.split('@')[0]}`, 'gi'), '')
       .replace(new RegExp(`^${usedPrefix}${command}`, 'gi'), '')
@@ -30,7 +29,6 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     if (!chatDB.warns) chatDB.warns = {}
     const warns = chatDB.warns
 
-    // 🔒 Asegurar estructura antes del push
     if (!warns[user]) warns[user] = { count: 0, motivos: [] }
     if (!Array.isArray(warns[user].motivos)) warns[user].motivos = []
 
@@ -41,7 +39,6 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
 
     await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
 
-    // Si llega a 3 advertencias → eliminar
     if (count >= 3) {
       const msg = `🚫 *El usuario @${user.split('@')[0]} fue eliminado por acumular 3 advertencias.*\n🧹 Adiós 👋`
       try {
@@ -66,7 +63,7 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
   else if (['unwarn', 'quitarwarn', 'sacarwarn'].includes(command)) {
     if (!isAdmin && !isROwner) return m.reply('⚠️ Solo los administradores o el dueño pueden quitar advertencias.')
 
-    const target = m.quoted?.sender || m.mentionedJid?.[0]
+    const target = normalizeJid(m.quoted?.sender || m.mentionedJid?.[0])
     if (!target)
       return m.reply('❌ Debes mencionar o responder al mensaje del usuario para quitarle una advertencia.')
 
@@ -101,14 +98,15 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     let mentions = []
 
     for (const [jid, w] of entries) {
-      textList += `👤 @${jid.split('@')[0]} → ${w.count}/3\n`
+      const normJid = normalizeJid(jid)
+      textList += `👤 @${normJid.split('@')[0]} → ${w.count}/3\n`
       if (w.motivos?.length) {
         w.motivos.slice(-3).forEach((m, i) => {
           textList += `   ${i + 1}. ${m.motivo} — 🗓️ ${m.fecha}\n`
         })
       }
       textList += '\n'
-      mentions.push(jid)
+      mentions.push(normJid)
     }
 
     await conn.sendMessage(m.chat, {
