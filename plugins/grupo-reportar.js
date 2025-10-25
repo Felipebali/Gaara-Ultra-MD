@@ -21,14 +21,14 @@ let handler = async (m, { conn, args }) => {
   // Frases de alerta militar
   const frases = [
     '🚨 Atención oficiales: se ha detectado un comportamiento subversivo.',
-    '💣 Instrucción militar: todos los reportes serán revisados inmediatamente.',
-    '🪖 La disciplina no se negocia, se impone.',
-    '🔥 Cualquier insubordinación será sancionada sin piedad.',
-    '⚡ El comando de control ha marcado a un objetivo.',
+    '💣 Instrucción: el objetivo será evaluado por el comando de control.',
+    '🪖 La disciplina se mantiene: los reportes se revisan de inmediato.',
+    '🔥 Insubordinación registrada: proceder según protocolo.',
+    '⚡ Objetivo marcado. Acciones disciplinarias bajo revisión.'
   ];
   const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
 
-  // Mensaje estilo militar
+  // Mensaje estilo militar (solo menciones, sin nombres duplicados)
   const text = `⚠️ *ALERTA MILITAR EN EL GRUPO*\n\n` +
                `🎯 *Objetivo:* @${target.split('@')[0]}\n` +
                `👮 *Reportado por:* @${m.sender.split('@')[0]}\n` +
@@ -39,8 +39,8 @@ let handler = async (m, { conn, args }) => {
   // Menciones
   const mentions = [target, m.sender, ...admins];
 
-  // Enviar reporte
-  await conn.sendMessage(m.chat, { text, mentions });
+  // Enviar reporte CITANDO el mensaje reportado para que se vea el contexto
+  await conn.sendMessage(m.chat, { text, mentions }, { quoted: m });
 };
 
 handler.help = ['report', 'reportar'];
