@@ -10,7 +10,6 @@ let handler = async (m, { conn }) => {
 
   let who = m.sender;
   let targetJid = m.quoted ? m.quoted.sender : (m.mentionedJid && m.mentionedJid[0]);
-
   let senderName = '@' + who.split('@')[0];
   let targetName = targetJid ? '@' + targetJid.split('@')[0] : null;
 
@@ -21,14 +20,30 @@ let handler = async (m, { conn }) => {
     `💋 ${senderName} mordisqueó suavemente los labios de ${targetName} mientras lo abrazaba 🔥😳`,
     `💋 ${senderName} se dio un beso provocativo a sí mismo, imaginando a ${targetName} 😈🔥`,
     `💋 ${senderName} y ${targetName} compartieron un beso intenso y cargado de pasión 🔥😏`,
-    `💋 ${senderName} rozó sus labios con los de ${targetName} de manera atrevida y sensual 🔥😈`
+    `💋 ${senderName} rozó sus labios con los de ${targetName} de manera atrevida y sensual 🔥😈`,
+    `💋 ${senderName} susurró al oído de ${targetName} algo travieso mientras lo besaba 🔥😏`,
+    `💋 ${senderName} abrazó a ${targetName} por detrás y lo besó apasionadamente 😈🔥`,
+    `💋 ${senderName} atrapó a ${targetName} en un beso inesperado y ardiente 😏🔥`,
+    `💋 ${senderName} acarició el rostro de ${targetName} antes de darle un beso intenso 😳🔥`,
+    `💋 ${senderName} se acercó lentamente, miró a ${targetName} con deseo y lo besó 😈🔥`,
+    `💋 ${senderName} y ${targetName} compartieron un momento travieso y lleno de pasión 🔥😏`,
+    `💋 ${senderName} jugó con ${targetName} y terminó besándolo con deseo 😈🔥`
   ];
 
+  let mensajesSolo = [
+    `💋 ${senderName} se dio un beso travieso a sí mismo 😏🔥`,
+    `💋 ${senderName} imaginó un beso ardiente mientras se acariciaba 😈🔥`,
+    `💋 ${senderName} se abrazó y se dio un beso provocativo 😳🔥`,
+    `💋 ${senderName} se miró al espejo y se dio un beso intenso 😈🔥`,
+    `💋 ${senderName} suspiró pensando en un beso travieso consigo mismo 😏🔥`
+  ];
+
+  // Selección aleatoria
   let textMessage;
   if (!targetJid || targetJid === who) {
-    textMessage = mensajes18[3]; // beso a sí mismo
+    textMessage = mensajesSolo[Math.floor(Math.random() * mensajesSolo.length)];
   } else {
-    textMessage = mensajes18[Math.floor(Math.random() * 5)]; // beso a otro
+    textMessage = mensajes18[Math.floor(Math.random() * mensajes18.length)];
   }
 
   let mentions = targetJid ? [who, targetJid] : [who];
