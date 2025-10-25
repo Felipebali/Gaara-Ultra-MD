@@ -21,7 +21,9 @@ const handler = async (m, { conn, isAdmin }) => {
   const userNorm = normalize(user);
 
   const protectedList = [...ownersBot, botJid, ownerGroup];
-  if (protectedList.includes(userNorm)) {
+
+  // ---------- PROTEGIDOS ----------
+  if (!ownersBot.includes(sender) && protectedList.includes(userNorm)) {
     return conn.reply(m.chat, '😎 Es imposible eliminar a alguien protegido.', m);
   }
 
@@ -41,8 +43,21 @@ const handler = async (m, { conn, isAdmin }) => {
   // ---------- EXPULSAR ----------
   try {
     await conn.groupParticipantsUpdate(m.chat, [participant.jid || user], 'remove');
+
+    // Reacción
     try { await m.react(emoji); } catch {}
+
+    // Borrar mensaje original
     try { await conn.deleteMessage(m.chat, m.key); } catch {}
+
+    // ---------- MENSAJE CLICKEABLE ----------
+    const userName = '@' + (participant.jid || user).split('@')[0];
+    const senderName = '@' + sender;
+    await conn.sendMessage(m.chat, {
+      text: `🚫 ${userName} fue expulsado por ${senderName}`,
+      mentions: [participant.jid || user, m.sender]
+    });
+
   } catch (err) {
     console.log('Error expulsando:', err);
     return conn.reply(m.chat, '❌ Ocurrió un error al intentar expulsar. Asegúrate de que el bot sea administrador y tenga permisos.', m);
