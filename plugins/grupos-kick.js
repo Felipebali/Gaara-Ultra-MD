@@ -6,11 +6,9 @@ const handler = async (m, { conn, isAdmin }) => {
   const ownerGroup = groupInfo.owner.replace(/\D/g, '');
   const botJid = conn.user.jid.replace(/\D/g, '');
 
-  // Lista de números owners/protegidos
   const ownersBot = ['59898719147','59896026646']; // dueños del bot
 
   // ---------- PERMISO ----------
-  // Permite: admins del grupo, dueños del bot, dueño del grupo
   if (!isAdmin && !ownersBot.includes(sender) && sender !== ownerGroup) {
     return conn.reply(m.chat, '❌ Solo admins, dueño del grupo o dueños del bot pueden usar este comando.', m);
   }
@@ -22,7 +20,6 @@ const handler = async (m, { conn, isAdmin }) => {
   const normalize = jid => String(jid || '').replace(/\D/g, '');
   const userNorm = normalize(user);
 
-  // ---------- PROTEGIDOS ----------
   const protectedList = [...ownersBot, botJid, ownerGroup];
   if (protectedList.includes(userNorm)) {
     return conn.reply(m.chat, '😎 Es imposible eliminar a alguien protegido.', m);
@@ -32,10 +29,14 @@ const handler = async (m, { conn, isAdmin }) => {
   const participant = groupInfo.participants.find(p => normalize(p.jid) === userNorm) || {};
   const targetIsAdmin = !!participant.admin;
 
-  // Bloquear expulsión de otros admins si no sos owner del bot
-  if (targetIsAdmin && !ownersBot.includes(sender)) {
-    return conn.reply(m.chat, '❌ No puedes expulsar a otro administrador. Solo los dueños del bot pueden hacerlo.', m);
+  // ---------- LÓGICA DE EXPULSIÓN ----------
+  if (!ownersBot.includes(sender)) {
+    // Admin normal: solo puede eliminar usuarios que NO sean admins
+    if (targetIsAdmin) {
+      return conn.reply(m.chat, '❌ No puedes expulsar a otro administrador. Solo los dueños del bot pueden hacerlo.', m);
+    }
   }
+  // Owners del bot pueden eliminar a todos (usuarios y admins)
 
   // ---------- EXPULSAR ----------
   try {
