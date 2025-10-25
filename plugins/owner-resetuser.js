@@ -1,4 +1,9 @@
 // plugins/owner-resetuser.js
+function normalizeJid(jid) {
+  if (!jid) return null;
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net');
+}
+
 const handler = async (m, { conn, text, mentionedJid }) => {
   const emoji = '♻️';
   const done = '✅';
@@ -10,7 +15,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
   else if (m.quoted && m.quoted.sender) user = m.quoted.sender;
   else return conn.reply(m.chat, `${emoji} Debes mencionar, responder o escribir el número del usuario.\n\n📌 Ejemplo:\n.r @usuario\n.r 59898719147`, m);
 
-  const userJid = user.toLowerCase();
+  const userJid = normalizeJid(user);
 
   // 🧩 2️⃣ Asegurar existencia de las bases
   global.db.data.users = global.db.data.users || {};
@@ -24,9 +29,13 @@ const handler = async (m, { conn, text, mentionedJid }) => {
   // 🧩 4️⃣ Eliminar datos del usuario
   delete global.db.data.users[userJid];
 
-  // 🧩 5️⃣ Eliminar advertencias (y motivos) del usuario en todos los grupos
+  // 🧩 5️⃣ Eliminar advertencias y motivos del usuario en todos los grupos
   Object.values(global.db.data.chats).forEach(chat => {
-    if (chat.warns && chat.warns[userJid]) delete chat.warns[userJid];
+    if (chat.warns && chat.warns[userJid]) {
+      chat.warns[userJid].count = 0;       // Reinicia contador
+      chat.warns[userJid].motivos = [];    // Limpia motivos
+      delete chat.warns[userJid];          // Borra la entrada por completo
+    }
   });
 
   // 🧩 6️⃣ Guardar cambios
@@ -38,7 +47,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
 
   await conn.sendMessage(m.chat, { 
     text: `${emoji} *Reinicio completado*\n\n👤 Usuario: @${name}\n🧾 Estado: Datos y advertencias eliminados\n📅 Fecha: ${fecha}\n\n${done} Base de datos actualizada correctamente.`,
-    mentions: [user]
+    mentions: [userJid]
   });
 };
 
