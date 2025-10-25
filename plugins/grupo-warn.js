@@ -12,10 +12,11 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     if (!isAdmin) return m.reply('❌ Solo los administradores pueden advertir.')
     if (!isBotAdmin) return m.reply('🤖 Necesito ser administrador para poder eliminar usuarios.')
 
-    const user = normalizeJid(m.mentionedJid?.[0] || m.quoted?.sender)
-    if (!user)
-      return m.reply(`⚠️ Debes mencionar o responder a alguien.\n📌 Ejemplo: ${usedPrefix}${command} @usuario [motivo]`)
+    const userRaw = m.mentionedJid?.[0] || m.quoted?.sender
+    const user = normalizeJid(userRaw)
+    if (!user) return m.reply(`⚠️ Debes mencionar o responder a alguien.\n📌 Ejemplo: ${usedPrefix}${command} @usuario [motivo]`)
 
+    // --- Limpiar el texto para obtener el motivo correctamente ---
     let motivo = text?.trim()
       .replace(new RegExp(`^@${user.split('@')[0]}`, 'gi'), '')
       .replace(new RegExp(`^${usedPrefix}${command}`, 'gi'), '')
@@ -29,6 +30,7 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     if (!chatDB.warns) chatDB.warns = {}
     const warns = chatDB.warns
 
+    // 🔒 Asegurar estructura antes del push
     if (!warns[user]) warns[user] = { count: 0, motivos: [] }
     if (!Array.isArray(warns[user].motivos)) warns[user].motivos = []
 
@@ -39,6 +41,7 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
 
     await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
 
+    // Si llega a 3 advertencias → eliminar
     if (count >= 3) {
       const msg = `🚫 *El usuario @${user.split('@')[0]} fue eliminado por acumular 3 advertencias.*\n🧹 Adiós 👋`
       try {
@@ -63,9 +66,9 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
   else if (['unwarn', 'quitarwarn', 'sacarwarn'].includes(command)) {
     if (!isAdmin && !isROwner) return m.reply('⚠️ Solo los administradores o el dueño pueden quitar advertencias.')
 
-    const target = normalizeJid(m.quoted?.sender || m.mentionedJid?.[0])
-    if (!target)
-      return m.reply('❌ Debes mencionar o responder al mensaje del usuario para quitarle una advertencia.')
+    const targetRaw = m.quoted?.sender || m.mentionedJid?.[0]
+    const target = normalizeJid(targetRaw)
+    if (!target) return m.reply('❌ Debes mencionar o responder al mensaje del usuario para quitarle una advertencia.')
 
     const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
     if (!chatDB.warns) chatDB.warns = {}
@@ -76,11 +79,13 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
 
     warns[target].count = Math.max(0, warns[target].count - 1)
     warns[target].motivos?.pop()
+    // Si count llega a 0 y no quieres mantener el objeto, puedes eliminarlo:
+    if (warns[target].count === 0 && (!warns[target].motivos || warns[target].motivos.length === 0)) delete warns[target]
     await global.db.write()
 
     await conn.sendMessage(m.chat, { react: { text: '🟢', key: m.key } })
     await conn.sendMessage(m.chat, {
-      text: `🟢 *Advertencia retirada a:* @${target.split('@')[0]}\n📋 Ahora tiene *${warns[target].count}/3* advertencias.`,
+      text: `🟢 *Advertencia retirada a:* @${target.split('@')[0]}\n📋 Ahora tiene *${warns[target]?.count || 0}/3* advertencias.`,
       mentions: [target]
     })
   }
