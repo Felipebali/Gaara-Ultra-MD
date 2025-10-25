@@ -1,7 +1,7 @@
 // plugins/owner-resetuser.js
 function normalizeJid(jid) {
   if (!jid) return null;
-  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net');
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp.net$/, '@s.whatsapp.net');
 }
 
 const handler = async (m, { conn, text, mentionedJid }) => {
@@ -9,7 +9,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
   const done = '✅';
   let user = '';
 
-  // 🧩 1️⃣ Detectar usuario (mención / número / respuesta)
+  // 1️⃣ Detectar usuario
   if (mentionedJid && mentionedJid.length > 0) user = mentionedJid[0];
   else if (text?.match(/\d+/g)) user = text.match(/\d+/g).join('') + '@s.whatsapp.net';
   else if (m.quoted && m.quoted.sender) user = m.quoted.sender;
@@ -17,31 +17,29 @@ const handler = async (m, { conn, text, mentionedJid }) => {
 
   const userJid = normalizeJid(user);
 
-  // 🧩 2️⃣ Asegurar existencia de las bases
+  // 2️⃣ Asegurar existencia de la base
   global.db.data.users = global.db.data.users || {};
   global.db.data.chats = global.db.data.chats || {};
 
-  // 🧩 3️⃣ Verificar si el usuario está en la base
+  // 3️⃣ Verificar si existe
   if (!global.db.data.users[userJid]) {
     return conn.reply(m.chat, `⚠️ El usuario no se encuentra en la base de datos.`, m);
   }
 
-  // 🧩 4️⃣ Eliminar datos del usuario
+  // 4️⃣ Eliminar datos del usuario
   delete global.db.data.users[userJid];
 
-  // 🧩 5️⃣ Eliminar advertencias y motivos del usuario en todos los grupos
+  // 5️⃣ Eliminar advertencias y motivos en todos los grupos
   Object.values(global.db.data.chats).forEach(chat => {
     if (chat.warns && chat.warns[userJid]) {
-      chat.warns[userJid].count = 0;       // Reinicia contador
-      chat.warns[userJid].motivos = [];    // Limpia motivos
-      delete chat.warns[userJid];          // Borra la entrada por completo
+      delete chat.warns[userJid];
     }
   });
 
-  // 🧩 6️⃣ Guardar cambios
+  // 6️⃣ Guardar cambios
   if (global.db.write) await global.db.write();
 
-  // 🧩 7️⃣ Mensaje final en grupo
+  // 7️⃣ Mensaje final
   const name = user.split('@')[0];
   const fecha = new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' });
 
@@ -53,6 +51,6 @@ const handler = async (m, { conn, text, mentionedJid }) => {
 
 handler.tags = ['owner'];
 handler.command = ['r','deletedatauser','resetuser','borrardatos'];
-handler.owner = true; // Solo dueño
+handler.owner = true;
 
 export default handler;
