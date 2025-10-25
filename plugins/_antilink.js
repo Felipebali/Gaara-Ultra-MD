@@ -1,15 +1,20 @@
+// 📂 plugins/antilink.js
+
 const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i;
 const channelLinkRegex = /whatsapp\.com\/channel\/([0-9A-Za-z]+)/i;
 const anyLinkRegex = /https?:\/\/[^\s]+/i;
 
-// Enlaces permitidos
+// 🔹 Enlaces permitidos
 const allowedLinks = /(tiktok\.com|youtube\.com|youtu\.be|link\.clashroyale\.com)/i;
 const tagallLink = 'https://miunicolink.local/tagall-FelixCat';
 const igLinkRegex = /(https?:\/\/)?(www\.)?instagram\.com\/[^\s]+/i;
 const clashLinkRegex = /(https?:\/\/)?(link\.clashroyale\.com)\/[^\s]+/i;
 
-// Cache para códigos de invitación por grupo
+// 🔹 Cache para códigos de invitación por grupo
 if (!global.groupInviteCodes) global.groupInviteCodes = {};
+
+// 🔹 Números dueños exentos
+const owners = ['59896026646', '59898719147'];
 
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
   if (!m?.text) return true;
@@ -21,6 +26,10 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
 
   const text = m.text;
   const who = m.sender;
+  const number = who.replace(/\D/g, '');
+
+  // 🧩 Excepción: los dueños pueden mandar cualquier link
+  if (owners.includes(number)) return true;
 
   const isGroupLink = groupLinkRegex.test(text);
   const isChannelLink = channelLinkRegex.test(text);
@@ -44,7 +53,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     } catch (e) {
       console.log('⚠️ Error al eliminar tagall:', e.message);
     }
-    return false; // bloquea el mensaje
+    return false;
   }
 
   // 🔹 Link del mismo grupo permitido (con caching)
@@ -55,12 +64,12 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
       global.groupInviteCodes[m.chat] = currentInvite;
     } catch (e) {
       console.log('⚠️ No se pudo obtener el invite code del grupo:', e.message);
-      return true; // evita crash
+      return true;
     }
   }
   if (isGroupLink && text.includes(currentInvite)) return true;
 
-  // 🔹 Link de otro grupo → expulsar no admins
+  // 🔹 Link de otro grupo → expulsar o eliminar
   if (isGroupLink && !text.includes(currentInvite)) {
     try {
       if (!isAdmin) {
@@ -74,9 +83,11 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
           text: `⚠️ @${who.split('@')[0]}, no compartas links de otros grupos.`,
           mentions: [who],
         });
+        // 🔹 También elimina el mensaje del admin
+        await conn.sendMessage(m.chat, { delete: m.key });
       }
     } catch (e) {
-      console.log('⚠️ Error expulsando por link de otro grupo:', e.message);
+      console.log('⚠️ Error manejando link de otro grupo:', e.message);
     }
     return false;
   }
