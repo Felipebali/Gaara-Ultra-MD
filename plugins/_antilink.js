@@ -29,17 +29,23 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
   const isIG = igLinkRegex.test(text);
   const isClash = clashLinkRegex.test(text);
 
+  const who = m.sender;
+
   // 🔹 Links permitidos totalmente: IG, canales, Clash, allowedLinks
   if (isIG || isChannelLink || isClash || isAllowedLink) return true;
 
-  // 🔹 Tagall no permitido
+  // 🔹 Tagall no permitido → eliminar + aviso
   if (isTagall) {
-    const who = m.sender;
-    await conn.sendMessage(m.chat, {
-      text: `😮‍💨 Qué compartís el tagall inútil @${who.split('@')[0]}...`,
-      mentions: [who],
-    });
-    return true;
+    try {
+      await conn.sendMessage(m.chat, {
+        text: `😮‍💨 Qué compartís el tagall inútil @${who.split('@')[0]}...`,
+        mentions: [who],
+      });
+      await conn.deleteMessage(m.chat, m.key);
+    } catch (e) {
+      console.log('⚠️ Error al eliminar tagall:', e.message);
+    }
+    return false;
   }
 
   // 🔹 Link del mismo grupo permitido (con caching para evitar rate limit)
@@ -53,34 +59,41 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
       return true; // Evita crash si hay rate limit
     }
   }
-
   if (isGroupLink && text.includes(currentInvite)) return true;
 
-  // 🔹 Link de otro grupo
+  // 🔹 Link de otro grupo → expulsar no admins
   if (isGroupLink && !text.includes(currentInvite)) {
-    const who = m.sender;
     if (!isAdmin) {
-      await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
-      await conn.sendMessage(m.chat, {
-        text: `🚫 @${who.split('@')[0]} fue *expulsado* por compartir un link de *otro grupo*.`,
-        mentions: [who],
-      });
+      try {
+        await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
+        await conn.sendMessage(m.chat, {
+          text: `🚫 @${who.split('@')[0]} fue *expulsado* por compartir un link de *otro grupo*.`,
+          mentions: [who],
+        });
+      } catch (e) {
+        console.log('⚠️ Error expulsando por link de otro grupo:', e.message);
+      }
     } else {
       await conn.sendMessage(m.chat, {
         text: `⚠️ @${who.split('@')[0]}, no compartas links de otros grupos.`,
         mentions: [who],
       });
     }
-    return true;
+    return false;
   }
 
-  // 🔹 Otros links no permitidos
+  // 🔹 Otros links no permitidos → eliminar + aviso
   if (isAnyLink) {
-    const who = m.sender;
-    await conn.sendMessage(m.chat, {
-      text: `⚠️ @${who.split('@')[0]}, tu link fue eliminado (no permitido).`,
-      mentions: [who],
-    });
+    try {
+      await conn.sendMessage(m.chat, {
+        text: `⚠️ @${who.split('@')[0]}, tu link fue eliminado (no permitido).`,
+        mentions: [who],
+      });
+      await conn.deleteMessage(m.chat, m.key);
+    } catch (e) {
+      console.log('⚠️ Error eliminando link no permitido:', e.message);
+    }
+    return false;
   }
 
   return true;
