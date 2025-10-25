@@ -5,24 +5,31 @@ const handler = async (m, { conn, participants }) => {
 
   const admins = participants.filter(p => p.admin);
   const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id));
-
-  // Separar admins que no son dueños
   const otherAdmins = admins.filter(a => !ownerNumbers.includes(a.id));
 
-  // Rangos personalizados para los dueños
+  // Rangos personalizados para dueños
   const ownerRanks = {
-    '59898719147@s.whatsapp.net': 'Comandante Supremo',
-    '59896026646@s.whatsapp.net': 'Mariscal General'
+    '59898719147@s.whatsapp.net': 'Comandante Supremo 👑',
+    '59896026646@s.whatsapp.net': 'Mariscal General 👑'
   };
 
-  // Admins normales con rangos cíclicos
-  const adminRanks = ['Coronel', 'Teniente', 'Sargento', 'Capitán', 'Mayor'];
+  // Rangos y emojis para admins
+  const adminRanks = [
+    { title: 'Mayor', emoji: '🛡️' },
+    { title: 'Capitán', emoji: '⚔️' },
+    { title: 'Teniente', emoji: '🪖' },
+    { title: 'Sargento', emoji: '🔰' },
+    { title: 'Coronel', emoji: '📜' }
+  ];
 
-  // Dueños con rango personalizado
-  const ownerMentions = ownersInGroup.map(o => `👑 @${o.id.split('@')[0]} (${ownerRanks[o.id]})`);
+  // Construir menciones
+  const ownerMentions = ownersInGroup.map(o => `@${o.id.split('@')[0]}`);
+  const ownerText = ownersInGroup.map(o => `${ownerRanks[o.id]} @${o.id.split('@')[0]}`);
 
-  // Admins con rango cíclico
-  const adminMentions = otherAdmins.map((a, i) => `${adminRanks[i % adminRanks.length]} @${a.id.split('@')[0]}`);
+  const adminText = otherAdmins.map((a, i) => {
+    const rank = adminRanks[i % adminRanks.length];
+    return `${rank.emoji} ${rank.title} @${a.id.split('@')[0]}`;
+  });
 
   // Frases militares grotescas
   const frases = [
@@ -39,21 +46,19 @@ const handler = async (m, { conn, participants }) => {
 
   let texto = `👑 *JEFES SUPREMOS DEL GRUPO* 👑\n\n`;
 
-  // Dueños siempre aparecen primero
   if (ownersInGroup.length > 0) {
     texto += `💫 *COMANDANTES SUPREMOS:*\n`;
-    texto += ownerMentions.join('\n');
+    texto += ownerText.join('\n');
     texto += `\n\n"${fraseAleatoria}"\n\n`;
   }
 
-  // Luego admins normales
   texto += `⚡ *ADMINISTRADORES DEL GRUPO:*\n`;
-  texto += adminMentions.join('\n') || 'Ninguno';
+  texto += adminText.join('\n') || 'Ninguno';
   texto += `\n\n⚠️ *Respeten a los jefes o sufrirán las consecuencias de la disciplina militar.*`;
 
   await conn.sendMessage(m.chat, {
     text: texto,
-    mentions: [...ownersInGroup.map(o => o.id), ...otherAdmins.map(a => a.id)]
+    mentions: [...ownerMentions, ...otherAdmins.map(a => a.id)]
   });
 };
 
