@@ -1,5 +1,5 @@
-// plugins/dar-todos-admin.js
-let handler = async (m, { conn, isOwner }) => {
+// plugins/_dar.js
+const handler = async (m, { conn, isOwner }) => {
   if (!m.isGroup) 
     return await conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' }, { quoted: m });
   
@@ -33,10 +33,12 @@ let handler = async (m, { conn, isOwner }) => {
   }
 };
 
+// Datos del comando
 handler.help = ['dar'];
 handler.tags = ['owner'];
 handler.command = /^dar$/i;
 handler.group = true;
-handler.rowner = true; // 🔹 solo el dueño real del bot puede usarlo
+handler.rowner = true; // solo el owner puede usarlo
 
-module.exports = handler;
+// ✅ Exportación en ES Module
+export default handler;
