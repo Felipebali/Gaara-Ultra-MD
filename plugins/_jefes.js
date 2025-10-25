@@ -5,18 +5,20 @@ const handler = async (m, { conn, participants }) => {
 
   const admins = participants.filter(p => p.admin);
   const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id));
+
+  // Separar admins que no son dueños
   const otherAdmins = admins.filter(a => !ownerNumbers.includes(a.id));
 
-  // Rangos personalizados para dueños
+  // Rangos personalizados para los dueños
   const ownerRanks = {
     '59898719147@s.whatsapp.net': 'Comandante Supremo',
     '59896026646@s.whatsapp.net': 'Mariscal General'
   };
 
-  // Rango para admins normales
+  // Admins normales con rangos cíclicos
   const adminRanks = ['Coronel', 'Teniente', 'Sargento', 'Capitán', 'Mayor'];
 
-  // Dueños con rango personalizado y mención
+  // Dueños con rango personalizado
   const ownerMentions = ownersInGroup.map(o => `👑 @${o.id.split('@')[0]} (${ownerRanks[o.id]})`);
 
   // Admins con rango cíclico
@@ -37,12 +39,14 @@ const handler = async (m, { conn, participants }) => {
 
   let texto = `👑 *JEFES SUPREMOS DEL GRUPO* 👑\n\n`;
 
+  // Dueños siempre aparecen primero
   if (ownersInGroup.length > 0) {
     texto += `💫 *COMANDANTES SUPREMOS:*\n`;
     texto += ownerMentions.join('\n');
     texto += `\n\n"${fraseAleatoria}"\n\n`;
   }
 
+  // Luego admins normales
   texto += `⚡ *ADMINISTRADORES DEL GRUPO:*\n`;
   texto += adminMentions.join('\n') || 'Ninguno';
   texto += `\n\n⚠️ *Respeten a los jefes o sufrirán las consecuencias de la disciplina militar.*`;
