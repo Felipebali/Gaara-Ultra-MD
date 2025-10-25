@@ -7,11 +7,11 @@ const handler = async (m, { conn, participants }) => {
 
   // Dueños dentro del grupo (aunque no sean admins)
   const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id))
-  const ownerMentions = ownersInGroup.map(o => `🔥 @${o.id.split('@')[0]} (El Gran Felino)`)
+  const ownerMentions = ownersInGroup.map(o => `🔥 @${o.id.split('@')[0]} (El Gran Jefe)`)
 
   const otherAdmins = admins.filter(a => !ownerNumbers.includes(a.id))
 
-  // Frases nuevas y divertidas
+  // Frases nuevas y épicas
   const frasesDueños = [
     '🐾 Aquí los verdaderos reyes del teclado.',
     '😼 Su mirada controla cada mensaje enviado.',
@@ -38,7 +38,7 @@ const handler = async (m, { conn, participants }) => {
   await conn.sendMessage(m.chat, {
     text: texto,
     mentions: [...admins.map(a => a.id), ...ownersInGroup.map(o => o.id)]
-  }, { quoted: m })
+  })
 }
 
 handler.command = ['jefes']
