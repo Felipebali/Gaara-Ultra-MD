@@ -2,12 +2,14 @@ const groupLinkRegex = /chat\.whatsapp\.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
 const channelLinkRegex = /whatsapp\.com\/channel\/([0-9A-Za-z]+)/i;
 const anyLinkRegex = /https?:\/\/[^\s]+/i;
 
-// Enlaces permitidos (no se borran ni sancionan)
+// Enlaces permitidos
 const allowedLinks = /(tiktok\.com|youtube\.com|youtu\.be|link\.clashroyale\.com)/i;
-
 const tagallLink = 'https://miunicolink.local/tagall-FelixCat';
 const igLinkRegex = /(https?:\/\/)?(www\.)?instagram\.com\/[^\s]+/i;
 const clashLinkRegex = /(https?:\/\/)?(link\.clashroyale\.com)\/[^\s]+/i;
+
+// Cache para códigos de invitación por grupo
+if (!global.groupInviteCodes) global.groupInviteCodes = {};
 
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
   if (!m?.text) return true;
@@ -40,8 +42,18 @@ export async function before(m, { conn, isAdmin, isBotAdmin }) {
     return true;
   }
 
-  // 🔹 Link del mismo grupo permitido
-  const currentInvite = await conn.groupInviteCode(m.chat);
+  // 🔹 Link del mismo grupo permitido (con caching para evitar rate limit)
+  let currentInvite = global.groupInviteCodes[m.chat];
+  if (!currentInvite) {
+    try {
+      currentInvite = await conn.groupInviteCode(m.chat);
+      global.groupInviteCodes[m.chat] = currentInvite;
+    } catch (e) {
+      console.log('⚠️ No se pudo obtener el invite code del grupo:', e.message);
+      return true; // Evita crash si hay rate limit
+    }
+  }
+
   if (isGroupLink && text.includes(currentInvite)) return true;
 
   // 🔹 Link de otro grupo
