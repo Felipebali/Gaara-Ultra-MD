@@ -1,7 +1,7 @@
 // plugins/propietario-ln.js
 function normalizeJid(jid) {
   if (!jid) return null
-  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp.net$/, '@s.whatsapp.net')
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
 }
 
 const handler = async (m, { conn, command, text }) => {
@@ -13,7 +13,7 @@ const handler = async (m, { conn, command, text }) => {
   const reactions = { ln: '✅', unln: '☢️', cln: '👀', verln: '📜', usln: '🧹' }
   if (reactions[command]) await conn.sendMessage(m.chat, { react: { text: reactions[command], key: m.key } })
 
-  // Detectar usuario
+  // Detectar usuario objetivo
   let userJid = null
   if (m.quoted) userJid = normalizeJid(m.quoted.sender)
   else if (m.mentionedJid?.length) userJid = normalizeJid(m.mentionedJid[0])
@@ -22,7 +22,7 @@ const handler = async (m, { conn, command, text }) => {
     if (num) userJid = `${num}@s.whatsapp.net`
   }
 
-  // Motivo (elimina @ y el número del usuario)
+  // Motivo (elimina número o mención)
   let reason = text ? text.replace(/@/g, '').replace(userJid?.split('@')[0] || '', '').trim() : ''
   if (!reason) reason = 'No especificado'
 
@@ -37,10 +37,8 @@ const handler = async (m, { conn, command, text }) => {
     db[userJid].banReason = reason
     db[userJid].bannedBy = m.sender
 
-    const userName = await conn.getName(userJid) || userJid.split('@')[0]
-
     await conn.sendMessage(m.chat, {
-      text: `${done} @${userName} fue agregado a la lista negra.\n📝 Motivo: ${reason}`,
+      text: `${done} @${userJid.split('@')[0]} fue agregado a la lista negra.\n📝 Motivo: ${reason}`,
       mentions: [userJid]
     })
 
@@ -51,7 +49,7 @@ const handler = async (m, { conn, command, text }) => {
       if (member) {
         try {
           await conn.sendMessage(jid, {
-            text: `🚫 @${userName} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
+            text: `🚫 @${userJid.split('@')[0]} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
             mentions: [userJid]
           })
           await new Promise(r => setTimeout(r, 500))
@@ -106,8 +104,7 @@ const handler = async (m, { conn, command, text }) => {
     const mentions = []
 
     for (const [jid, data] of bannedUsers) {
-      const userName = await conn.getName(jid) || jid.split('@')[0]
-      list += `• @${userName}\n  Motivo: ${data.banReason || 'No especificado'}\n\n`
+      list += `• @${jid.split('@')[0]}\n  Motivo: ${data.banReason || 'No especificado'}\n\n`
       mentions.push(jid)
     }
 
@@ -135,10 +132,9 @@ handler.before = async function (m, { conn }) {
   const db = global.db.data.users || {}
   const sender = normalizeJid(m.sender)
   if (db[sender]?.banned) {
-    const userName = await conn.getName(sender) || sender.split('@')[0]
     const reason = db[sender].banReason || 'No especificado'
     await conn.sendMessage(m.chat, {
-      text: `🚫 @${userName} está en la lista negra y será eliminado.\n📝 Motivo: ${reason}`,
+      text: `🚫 @${sender.split('@')[0]} está en la lista negra y será eliminado.\n📝 Motivo: ${reason}`,
       mentions: [sender]
     })
     await new Promise(r => setTimeout(r, 500))
@@ -160,11 +156,10 @@ handler.participantsUpdate = async function (event) {
     for (const user of participants) {
       const u = normalizeJid(user)
       if (db[u]?.banned) {
-        const userName = await conn.getName(u) || u.split('@')[0]
         const reason = db[u].banReason || 'No especificado'
         try {
           await conn.sendMessage(id, {
-            text: `🚫 @${userName} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
+            text: `🚫 @${u.split('@')[0]} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
             mentions: [u]
           })
           await new Promise(r => setTimeout(r, 500))
