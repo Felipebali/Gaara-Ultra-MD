@@ -22,6 +22,15 @@ const handler = async (m, { conn, isAdmin }) => {
 
   const protectedList = [...ownersBot, botJid, ownerGroup].filter(Boolean);
 
+  // ---------- INTENTO DE EXPULSAR AL DUEÑO DEL GRUPO ----------
+  if (userNorm === ownerGroup && sender !== ownerGroup && !ownersBot.includes(sender)) {
+    const userName = '@' + user.split('@')[0];
+    return conn.sendMessage(m.chat, {
+      text: `😏 Tranquilo campeón... ${userName} es el dueño del grupo.\nNi los dioses del código pueden echarlo.`,
+      mentions: [user]
+    });
+  }
+
   // ---------- PROTEGIDOS ----------
   if (protectedList.includes(userNorm)) {
     return conn.reply(m.chat, '😎 Es imposible eliminar a alguien protegido.', m);
