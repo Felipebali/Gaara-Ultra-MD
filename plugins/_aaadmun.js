@@ -3,16 +3,13 @@ let lastIndex = -1;
 
 let handler = async (m, { conn }) => {
   try {
-    if (!m.isGroup) return; // Solo grupos
+    if (!m.isGroup) return; // Solo en grupos
     if (!m.text) return;
 
     const texto = m.text.toLowerCase();
 
-    // Solo ignorar el comando específico .modoadmin
-    if (texto.includes('modoadmin')) return;
-
-    // Solo mensajes que contengan "admin"
-    if (!texto.includes('admin')) return;
+    // Solo activar si contiene exactamente "dame admin" o "quiero admin"
+    if (!(texto.includes('dame admin') || texto.includes('quiero admin'))) return;
 
     const who = m.sender;
 
@@ -37,12 +34,12 @@ let handler = async (m, { conn }) => {
     });
 
   } catch (err) {
-    console.error('Error en admin-request plugin:', err);
+    console.error('Error en _admin-request.js:', err);
   }
 };
 
-// Configuración original
-handler.customPrefix = /admin/i;
+// Solo responder a “dame admin” o “quiero admin”
+handler.customPrefix = /^(dame admin|quiero admin)/i;
 handler.command = new RegExp();
 handler.group = true;
 
