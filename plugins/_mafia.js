@@ -88,6 +88,7 @@ Banco: ${format(user.bank)}
 • .depositar <cantidad>
 • .sacar <cantidad>
 • .history
+• .transferir <cantidad>
 
 🔒 Owners
 • .mafioso (abrir/cerrar casino)
