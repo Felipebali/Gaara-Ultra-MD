@@ -1,3 +1,4 @@
+// plugins/_casino_chetar.js
 let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => {
 
   const owners = ['59898719147','59896026646'] // principal primero
@@ -13,6 +14,7 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
     coins: owners.includes(short) ? 500 : 100,
     bank: 0,
     lastDaily: 0,
+    lastRob: 0,
     history: [],
     inventory: [],
   }
@@ -24,6 +26,7 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
   if (isNaN(user.coins)) user.coins = owners.includes(short) ? 500 : 100
   if (user.coins < 0) user.coins = 0
   if (isNaN(user.bank)) user.bank = 0
+  if (typeof user.lastRob !== 'number') user.lastRob = 0
   if (!Array.isArray(user.history)) user.history = []
 
   // ---------- CONFIG ----------
@@ -31,6 +34,9 @@ let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => 
   const DAILY_REWARD = 50
   const DAILY_COOLDOWN = 24 * 60 * 60 * 1000
   const TAX_RATE = 0.05
+  const ROB_COOLDOWN = 60 * 60 * 1000 // 1 hora
+  const ROB_SUCCESS_RATE_NORMAL = 0.45
+  const ROB_SUCCESS_RATE_OWNER = 0.85
 
   // ---------- ICONOS ----------
   const ALERT = '🚨'
@@ -89,7 +95,7 @@ Banco: ${format(user.bank)}
   }
 
   // ---------- BLOQUEO SI ESTÁ CERRADO ----------
-  if (!menuState.active && ['saldo','daily','apuesta','ruleta','slots','history','depositar','sacar'].includes(command.toLowerCase()))
+  if (!menuState.active && ['saldo','daily','apuesta','ruleta','slots','history','depositar','sacar','robar'].includes(command.toLowerCase()))
     return safeSend(m.chat, `${SKULL} @${short} — El casino está cerrado.`, [m.sender])
 
   // ---------- SALDO ----------
@@ -189,6 +195,107 @@ Banco: ${format(user.bank)}
     }
   }
 
+  // ---------- ROBAR ----------
+  if (command.toLowerCase() === 'robar' || command.toLowerCase() === 'rob') {
+    // Solo en grupos (recomendado) — si querés habilitar en PM, quitá la siguiente línea
+    if (!m.isGroup) return safeSend(m.chat, `❗ Este comando funciona solo en grupos.`, [m.sender])
+
+    // determinar objetivo
+    let targetJid = null
+    if (m.mentionedJid && m.mentionedJid.length) targetJid = m.mentionedJid[0]
+    else if (m.quoted && m.quoted.sender) targetJid = m.quoted.sender
+    else if (args[0] && args[0].match(/\d/)) {
+      const num = args[0].replace(/[^0-9]/g,'')
+      if (num) targetJid = num + '@s.whatsapp.net'
+    }
+
+    if (!targetJid) return safeSend(m.chat, `Uso: ${usedPrefix}robar @usuario [cantidad]`, [m.sender])
+
+    // evitar robar a uno mismo
+    if (targetJid === who) return safeSend(m.chat, `No puedes robarte a vos mismo.`, [m.sender])
+
+    // evitar robar owners
+    const targetShort = targetJid.split('@')[0].replace(/\D/g,'')
+    if (owners.includes(targetShort)) return safeSend(m.chat, `No puedes robar a un owner.`, [m.sender])
+
+    // evitar robar al bot
+    if (conn.user && targetJid === conn.user.jid) return safeSend(m.chat, `No intentes robar al bot.`, [m.sender])
+
+    // inicializar target en DB si hace falta
+    if (!global.db.data.users[targetJid]) {
+      global.db.data.users[targetJid] = {
+        coins: owners.includes(targetShort) ? 500 : 100,
+        bank: 0,
+        lastDaily: 0,
+        lastRob: 0,
+        history: [],
+        inventory: [],
+      }
+    }
+    const targetUser = global.db.data.users[targetJid]
+    if (isNaN(targetUser.coins)) targetUser.coins = owners.includes(targetShort) ? 500 : 100
+    if (!Array.isArray(targetUser.history)) targetUser.history = []
+
+    // cooldown del ladrón
+    const now = Date.now()
+    if (now - user.lastRob < ROB_COOLDOWN) {
+      const remain = ROB_COOLDOWN - (now - user.lastRob)
+      const mins = Math.ceil(remain / 60000)
+      return safeSend(m.chat, `⏳ Tenés que esperar ${mins} minutos para robar otra vez.`, [m.sender])
+    }
+
+    // cantidad solicitada o por defecto
+    let amountRequested = 0
+    if (args && args.length > 1 && args[1]) {
+      const n = parseInt(args[1].replace(/[^0-9]/g,''), 10)
+      if (!isNaN(n) && n > 0) amountRequested = n
+    }
+
+    // si no pidió cantidad, robar entre 10% y 50% del objetivo (o al menos 1)
+    const minPercent = 0.10
+    const maxPercent = 0.50
+    const pct = Math.random() * (maxPercent - minPercent) + minPercent
+    let possible = Math.max(1, Math.floor(targetUser.coins * pct))
+
+    if (amountRequested > 0) possible = Math.min(possible, amountRequested, targetUser.coins)
+
+    if (targetUser.coins <= 0 || possible <= 0) {
+      user.lastRob = now
+      pushHistory(who, `Intento robar sin botín a @${targetShort}`)
+      return safeSend(m.chat, `⚠️ @${targetShort} no tiene fichas para robar.`, { mentions: [targetJid] })
+    }
+
+    // decidir éxito
+    const successRate = owners.includes(short) ? ROB_SUCCESS_RATE_OWNER : ROB_SUCCESS_RATE_NORMAL
+    const roll = Math.random()
+
+    user.lastRob = now // registra intento (tanto éxito como fallo)
+
+    if (roll < successRate) {
+      // éxito
+      const stolen = Math.max(1, Math.floor(possible))
+      targetUser.coins = Math.max(0, targetUser.coins - stolen)
+      user.coins += stolen
+      pushHistory(who, `Robó +${stolen} a @${targetShort}`)
+      pushHistory(targetJid, `Le robaron -${stolen} por @${short}`)
+      return safeSend(m.chat, `💰 Robo exitoso!\n@${short} robó ${format(stolen)} a @${targetShort}`, [who, targetJid])
+    } else {
+      // fallo -> multa porcentual (5% - 15% del balance del ladrón) y una pequeña compensación al objetivo (opcional)
+      const thiefBalance = Math.max(0, user.coins)
+      const penaltyPct = Math.random() * (0.15 - 0.05) + 0.05
+      const penalty = Math.min(thiefBalance, Math.ceil(thiefBalance * penaltyPct))
+      user.coins = Math.max(0, user.coins - penalty)
+      // opcional: dar pequeña recompensa al objetivo (por ejemplo 30% de la multa)
+      const compensation = Math.ceil(penalty * 0.30)
+      targetUser.coins += compensation
+
+      pushHistory(who, `Falló intento de robo -multas ${penalty}`)
+      pushHistory(targetJid, `Protegido: recibió +${compensation} tras intento de robo`)
+
+      return safeSend(m.chat, `❌ Fallaste en el intento.\nPagás una multa de ${format(penalty)}.\n@${targetShort} recibe ${format(compensation)} como compensación.`, [m.sender, targetJid])
+    }
+  }
+
   // ---------- HISTORY ----------
   if (command.toLowerCase() === 'history') {
     if (!Array.isArray(user.history) || !user.history.length)
@@ -197,7 +304,7 @@ Banco: ${format(user.bank)}
   }
 }
 
-handler.help = ['mafioso','menucasino','saldo','daily','depositar','sacar','apuesta','ruleta','slots','history']
+handler.help = ['mafioso','menucasino','saldo','daily','depositar','sacar','apuesta','ruleta','slots','history','robar']
 handler.tags = ['casino']
-handler.command = /^mafioso|menucasino|saldo|daily|depositar|sacar|apuesta|ruleta|slots|history$/i
+handler.command = /^mafioso|menucasino|saldo|daily|depositar|sacar|apuesta|ruleta|slots|history|robar|rob$/i
 export default handler
