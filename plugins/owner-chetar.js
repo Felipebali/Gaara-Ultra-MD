@@ -1,52 +1,61 @@
-import MessageType from '@whiskeysockets/baileys';
+// plugins/_casino_chetar.js
+let handler = async (m, { conn, text, args }) => {
 
-let handler = async (m, { conn, text }) => {
-    let who;
+  const owners = ['59898719147','59896026646'] // Dueños del casino
+  const senderShort = m.sender.split('@')[0]
+  if (!owners.includes(senderShort))
+    return m.reply(`🚫 @${senderShort} — No tienes permiso para usar este comando.`, null, { mentions: [m.sender] })
 
-    if (text) {
-        who = text.trim();
-        if (!who.endsWith('@s.whatsapp.net')) {
-            who += '@s.whatsapp.net';
-        }
-    }
+  let who
+  let cantidad = 999999 // valor por defecto si no se indica cantidad
 
-    if (m.isGroup) {
-        if (!who && m.mentionedJid.length > 0) {
-            who = m.mentionedJid[0];
-        } else if (!who && m.replyMessage && m.replyMessage.sender) {
-            who = m.replyMessage.sender;
-        }
-    }
+  // --- detectar usuario ---
+  if (m.isGroup) {
+    if (m.mentionedJid && m.mentionedJid.length > 0) who = m.mentionedJid[0]
+    else if (m.quoted && m.quoted.sender) who = m.quoted.sender
+  }
 
-    if (!who) {
-        who = m.sender;
-    }
+  // --- detectar texto o número ---
+  if (text) {
+    const partes = text.trim().split(/\s+/)
+    if (!who && partes[0].match(/\d+/)) who = partes[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+    if (partes[1] && !isNaN(partes[1])) cantidad = parseInt(partes[1])
+  }
 
-    let users = global.db.data.users;
+  if (!who) who = m.sender
+  if (isNaN(cantidad) || cantidad <= 0) cantidad = 999999
 
-    if (!users[who]) {
-        users[who] = { coin: 0, exp: 0, level: 0 };
-    }
+  // --- base de datos ---
+  if (!global.db) global.db = { data: {} }
+  if (!global.db.data.users) global.db.data.users = {}
+  if (!global.db.data.users[who]) global.db.data.users[who] = {
+    coins: 100,
+    bank: 0,
+    lastDaily: 0,
+    history: [],
+    inventory: [],
+  }
 
-    users[who].coin = Number.MAX_SAFE_INTEGER;
-    users[who].exp = Number.MAX_SAFE_INTEGER;
-    users[who].level = Number.MAX_SAFE_INTEGER;
+  const user = global.db.data.users[who]
 
-    await m.reply(
-        `👑 *¡Usuario chetado con éxito!*\n\n` +
-        `➣ Usuario: @${who.split`@`[0]}\n` +
-        `➣ ${moneda}: *${users[who].coin.toLocaleString()}*\n` +
-        `➣ Experiencia: *${users[who].exp.toLocaleString()}*\n` +
-        `➣ Nivel: *${users[who].level.toLocaleString()}*`,
-        null,
-        { mentions: [who] }
-    );
-};
+  // --- aplicar chetada ---
+  user.coins = cantidad
+  user.bank = cantidad
+  user.history.unshift(`💼 Don Feli te chetó (${new Date().toLocaleDateString()}) con ${cantidad} fichas.`)
+  if (user.history.length > 50) user.history.pop()
 
-handler.help = ['chetar *@user*', 'chetar *<número>*'];
-handler.tags = ['owner'];
-handler.command = ['chetar'];
-handler.register = true;
-handler.rowner = true;
+  await conn.sendMessage(m.chat, {
+    text: `👑 *¡Cuentas chetadas con éxito!*\n\n` +
+          `🎩 Usuario: @${who.split('@')[0]}\n` +
+          `💰 Fichas: ${user.coins.toLocaleString()}\n` +
+          `🏦 Banco: ${user.bank.toLocaleString()}`,
+    mentions: [who]
+  })
+}
 
-export default handler;
+handler.help = ['chetar *@usuario* <cantidad>']
+handler.tags = ['owner']
+handler.command = /^chetar$/i
+handler.rowner = true
+
+export default handler
