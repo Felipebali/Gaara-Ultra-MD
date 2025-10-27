@@ -1,7 +1,7 @@
 // plugins/propietario-ln.js
 function normalizeJid(jid) {
   if (!jid) return null
-  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp.net$/, '@s.whatsapp.net')
 }
 
 const handler = async (m, { conn, command, text }) => {
@@ -10,110 +10,85 @@ const handler = async (m, { conn, command, text }) => {
   const db = global.db.data.users || (global.db.data.users = {})
 
   // Reacciones por comando
-  const reactions = { ln: '✅', unln: '☢️', cln: '👀', verln: '📜', usln: '🧹' }
+  const reactions = { ln: '✅', unln: '☢️', cln: '👀', verln: '📜', usln: '🧹', checkln: '🔎' }
   if (reactions[command]) await conn.sendMessage(m.chat, { react: { text: reactions[command], key: m.key } })
 
   // Detectar usuario objetivo
   let userJid = null
-  if (m.quoted) userJid = normalizeJid(m.quoted.sender)
-  else if (m.mentionedJid?.length) userJid = normalizeJid(m.mentionedJid[0])
-  else if (text) {
-    const num = text.match(/\d{5,}/)?.[0]
-    if (num) userJid = `${num}@s.whatsapp.net`
-  }
-
-  // Motivo
-  let reason = text ? text.replace(/@/g, '').replace(userJid?.split('@')[0] || '', '').trim() : ''
-  if (!reason) reason = 'No especificado'
-
-  if (!userJid && !['verln', 'usln'].includes(command))
-    return conn.reply(m.chat, `${emoji} Debes responder, mencionar o escribir el número del usuario.`, m)
-
-  if (userJid && !db[userJid]) db[userJid] = {}
-
-  // --- AGREGAR A LISTA NEGRA ---
-  if (command === 'ln') {
-    db[userJid].banned = true
-    db[userJid].banReason = reason
-    db[userJid].bannedBy = m.sender
-
-    await conn.sendMessage(m.chat, {
-      text: `${done} @${userJid.split('@')[0]} fue agregado a la lista negra.\n📝 Motivo: ${reason}`,
-      mentions: [userJid]
-    })
-
-    // Expulsar de todos los grupos donde esté
-    const groups = Object.keys(await conn.groupFetchAllParticipating())
-    for (const jid of groups) {
-      await new Promise(r => setTimeout(r, 2500)) // 2.5s entre cada grupo
-      try {
-        const group = await conn.groupMetadata(jid)
-        const member = group.participants.find(p => normalizeJid(p.id) === normalizeJid(userJid))
-        if (member) {
-          await conn.sendMessage(jid, {
-            text: `🚫 @${userJid.split('@')[0]} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
-            mentions: [userJid]
-          })
-          await new Promise(r => setTimeout(r, 2000))
-          await conn.groupParticipantsUpdate(jid, [member.id], 'remove')
-          console.log(`[AUTO-KICK] Expulsado ${userJid} de ${group.subject}`)
-        }
-      } catch (e) {
-        if (e.data === 429 || e.message.includes('rate-overlimit')) {
-          console.log(`⚠️ Saltando grupo ${jid} por rate limit`)
-          continue
-        }
-        console.log(`⚠️ No se pudo expulsar de ${jid}: ${e.message}`)
-      }
+  if (['ln','unln','cln'].includes(command)) {
+    if (m.quoted) userJid = normalizeJid(m.quoted.sender)
+    else if (m.mentionedJid?.length) userJid = normalizeJid(m.mentionedJid[0])
+    else if (text) {
+      const num = text.match(/\d{5,}/)?.[0]
+      if (num) userJid = `${num}@s.whatsapp.net`
     }
-  }
+    let reason = text ? text.replace(/@/g, '').replace(userJid?.split('@')[0] || '', '').trim() : ''
+    if (!reason) reason = 'No especificado'
+    if (!userJid && !['verln', 'usln'].includes(command))
+      return conn.reply(m.chat, `${emoji} Debes responder, mencionar o escribir el número del usuario.`, m)
+    if (userJid && !db[userJid]) db[userJid] = {}
+    // --- AGREGAR, QUITAR, CONSULTAR ---
+    if (command === 'ln') {
+      db[userJid].banned = true
+      db[userJid].banReason = reason
+      db[userJid].bannedBy = m.sender
 
-  // --- QUITAR DE LISTA NEGRA ---
-  else if (command === 'unln') {
-    if (!db[userJid]?.banned)
-      return conn.sendMessage(m.chat, {
-        text: `${emoji} @${userJid.split('@')[0]} no está en la lista negra.`,
+      await conn.sendMessage(m.chat, {
+        text: `${done} @${userJid.split('@')[0]} fue agregado a la lista negra.\n📝 Motivo: ${reason}`,
         mentions: [userJid]
       })
 
-    db[userJid].banned = false
-    db[userJid].banReason = ''
-    db[userJid].bannedBy = null
-
-    await conn.sendMessage(m.chat, {
-      text: `${done} @${userJid.split('@')[0]} fue eliminado de la lista negra.`,
-      mentions: [userJid]
-    })
-  }
-
-  // --- CONSULTAR ESTADO ---
-  else if (command === 'cln') {
-    if (!db[userJid]?.banned)
-      return conn.sendMessage(m.chat, {
-        text: `✅ @${userJid.split('@')[0]} no está en la lista negra.`,
+      // Expulsar de todos los grupos donde esté
+      const groups = Object.keys(await conn.groupFetchAllParticipating())
+      for (const jid of groups) {
+        await new Promise(r => setTimeout(r, 2500)) // espera para evitar rate-limit
+        try {
+          const group = await conn.groupMetadata(jid)
+          const member = group.participants.find(p => normalizeJid(p.id) === normalizeJid(userJid))
+          if (member) {
+            await conn.sendMessage(jid, {
+              text: `🚫 @${userJid.split('@')[0]} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
+              mentions: [userJid]
+            })
+            await new Promise(r => setTimeout(r, 2000))
+            await conn.groupParticipantsUpdate(jid, [member.id], 'remove')
+            console.log(`[AUTO-KICK] Expulsado ${userJid} de ${group.subject}`)
+          }
+        } catch (e) {
+          if (e.data === 429 || e.message.includes('rate-overlimit')) {
+            console.log(`⚠️ Saltando grupo ${jid} por rate limit`)
+            continue
+          }
+          console.log(`⚠️ No se pudo expulsar de ${jid}: ${e.message}`)
+        }
+      }
+    } else if (command === 'unln') {
+      if (!db[userJid]?.banned)
+        return conn.sendMessage(m.chat, { text: `${emoji} @${userJid.split('@')[0]} no está en la lista negra.`, mentions: [userJid] })
+      db[userJid].banned = false
+      db[userJid].banReason = ''
+      db[userJid].bannedBy = null
+      await conn.sendMessage(m.chat, { text: `${done} @${userJid.split('@')[0]} fue eliminado de la lista negra.`, mentions: [userJid] })
+    } else if (command === 'cln') {
+      if (!db[userJid]?.banned)
+        return conn.sendMessage(m.chat, { text: `✅ @${userJid.split('@')[0]} no está en la lista negra.`, mentions: [userJid] })
+      await conn.sendMessage(m.chat, {
+        text: `${emoji} @${userJid.split('@')[0]} está en la lista negra.\n📝 Motivo: ${db[userJid].banReason || 'No especificado'}`,
         mentions: [userJid]
       })
-
-    await conn.sendMessage(m.chat, {
-      text: `${emoji} @${userJid.split('@')[0]} está en la lista negra.\n📝 Motivo: ${db[userJid].banReason || 'No especificado'}`,
-      mentions: [userJid]
-    })
+    }
   }
 
   // --- VER LISTA COMPLETA ---
   else if (command === 'verln') {
     const bannedUsers = Object.entries(db).filter(([_, data]) => data?.banned)
-    if (bannedUsers.length === 0)
-      return conn.sendMessage(m.chat, { text: `${done} No hay usuarios en la lista negra.` })
-
+    if (bannedUsers.length === 0) return conn.sendMessage(m.chat, { text: `${done} No hay usuarios en la lista negra.` })
     let list = '🚫 *Lista negra actual:*\n\n'
     const mentions = []
-
     for (const [jid, data] of bannedUsers) {
       list += `• @${jid.split('@')[0]}\n  Motivo: ${data.banReason || 'No especificado'}\n\n`
       mentions.push(jid)
     }
-
     await conn.sendMessage(m.chat, { text: list.trim(), mentions })
   }
 
@@ -127,6 +102,39 @@ const handler = async (m, { conn, command, text }) => {
       }
     }
     await conn.sendMessage(m.chat, { text: `${done} La lista negra ha sido vaciada.` })
+  }
+
+  // --- CHECKLN: expulsar usuarios en lista negra aunque no hablen ---
+  else if (command === 'checkln') {
+    const groups = Object.keys(await conn.groupFetchAllParticipating())
+    let total = 0
+    for (const jid of groups) {
+      await new Promise(r => setTimeout(r, 2500)) // espera para no spamear
+      try {
+        const group = await conn.groupMetadata(jid)
+        for (const participant of group.participants) {
+          const user = normalizeJid(participant.id)
+          if (db[user]?.banned) {
+            const reason = db[user].banReason || 'No especificado'
+            await conn.sendMessage(jid, {
+              text: `🚫 @${user.split('@')[0]} está en la lista negra y será eliminado automáticamente.\n📝 Motivo: ${reason}`,
+              mentions: [user]
+            })
+            await new Promise(r => setTimeout(r, 2000))
+            await conn.groupParticipantsUpdate(jid, [user], 'remove')
+            console.log(`[CHECKLN] Expulsado ${user} de ${group.subject}`)
+            total++
+          }
+        }
+      } catch (e) {
+        if (e.data === 429 || e.message.includes('rate-overlimit')) {
+          console.log(`⚠️ Saltando grupo ${jid} por rate limit`)
+          continue
+        }
+        console.log(`⚠️ Error en grupo ${jid}: ${e.message}`)
+      }
+    }
+    await conn.sendMessage(m.chat, { text: `✅ CHECKLN finalizado. Total expulsados: ${total}` })
   }
 
   if (global.db.write) await global.db.write()
@@ -144,12 +152,7 @@ handler.before = async function (m, { conn }) {
       mentions: [sender]
     })
     await new Promise(r => setTimeout(r, 2000))
-    try {
-      await conn.groupParticipantsUpdate(m.chat, [sender], 'remove')
-      console.log(`[AUTO-KICK] Eliminado ${sender}`)
-    } catch (e) {
-      console.log(`⚠️ No se pudo eliminar a ${sender}: ${e.message}`)
-    }
+    try { await conn.groupParticipantsUpdate(m.chat, [sender], 'remove') } catch {}
   }
 }
 
@@ -170,22 +173,18 @@ handler.participantsUpdate = async function (event) {
           })
           await new Promise(r => setTimeout(r, 2000))
           await conn.groupParticipantsUpdate(id, [u], 'remove')
-          console.log(`[AUTO-KICK JOIN] ${u} eliminado`)
         } catch (e) {
-          if (e.data === 429 || e.message.includes('rate-overlimit')) {
-            console.log(`⚠️ Saltando expulsión de ${u} por rate limit`)
-            continue
-          }
-          console.log(`⚠️ No se pudo eliminar a ${u} al unirse: ${e.message}`)
+          if (e.data === 429 || e.message.includes('rate-overlimit')) continue
+          console.log(`⚠️ No se pudo eliminar a ${u}: ${e.message}`)
         }
       }
     }
   }
 }
 
-handler.help = ['ln', 'unln', 'cln', 'verln', 'usln']
+handler.help = ['ln','unln','cln','verln','usln','checkln']
 handler.tags = ['owner']
-handler.command = ['ln', 'unln', 'cln', 'verln', 'usln']
+handler.command = ['ln','unln','cln','verln','usln','checkln']
 handler.rowner = true
 
 export default handler
