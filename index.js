@@ -1,3 +1,4 @@
+// import './plugins/_allfake.js'
 import { fileURLToPath, pathToFileURL } from 'url'
 import path from 'path'
 import os from 'os'
