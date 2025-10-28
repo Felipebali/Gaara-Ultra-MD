@@ -71,7 +71,6 @@ watchFile(file, () => {
   import(`${file}?update=${Date.now()}`)
 })
 
-
 //================ PLUGIN ANTI-LINK =================//
 
 const groupLinkRegex = /chat.whatsapp.com\/(?:invite\/)?([0-9A-Za-z]{20,24})/i
@@ -117,3 +116,7 @@ export async function antilinkCommand(m, { conn, args, isAdmin }) {
     await global.db.write()
     conn.reply(m.chat, `✅ Anti-Link ahora está ${chat.antiLink ? "activado" : "desactivado"} en este grupo.`, m)
 }
+
+//================ EXPORT DEFAULT =================//
+
+export default { before, antilinkCommand }
